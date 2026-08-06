@@ -1,0 +1,159 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    function currentUserRole() {
+      return isSignedIn() ? getUserRole(request.auth.uid) : null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && currentUserRole() == 'admin';
+    }
+
+    function isCoordinator() {
+      return isSignedIn() && currentUserRole() == 'coordinator';
+    }
+
+    function isStaff() {
+      return isAdmin() || isCoordinator();
+    }
+
+    function isAlumni() {
+      return isSignedIn() && currentUserRole() == 'alumni';
+    }
+
+    function isGuest() {
+      return request.auth == null || currentUserRole() == 'guest';
+    }
+
+    function ownerOfResource() {
+      return isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+
+    function ownerOfRequest() {
+      return isSignedIn() && request.auth.uid == request.resource.data.userId;
+    }
+
+    function isPublicResource() {
+      return resource.data.visibility == 'public';
+    }
+
+    match /users/{userId} {
+      allow read: if isAdmin() || isCoordinator() || (isAlumni() && request.auth.uid == userId);
+      allow create: if isAdmin() || (request.auth.uid == userId && request.resource.data.role in ['alumni', 'guest']);
+      allow update: if isAdmin() || isCoordinator() ||
+                    (request.auth.uid == userId && request.resource.data.role == resource.data.role && request.resource.data.role in ['alumni', 'guest']);
+      allow delete: if isAdmin();
+    }
+
+    match /employment_records/{recordId} {
+      allow read: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+      allow create: if isAlumni() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+    }
+
+    match /career_milestones/{id} {
+      allow read: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+      allow create: if isAlumni() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+    }
+
+    match /certificates/{id} {
+      allow read: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+      allow create: if isAlumni() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+    }
+
+    match /skills/{id} {
+      allow read: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+      allow create: if isAlumni() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+    }
+
+    match /surveys/{surveyId} {
+      allow read: if isStaff() || isPublicResource();
+      allow create, update, delete: if isStaff();
+    }
+
+    match /survey_responses/{responseId} {
+      allow read: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+      allow create: if isAlumni() && request.auth.uid == request.resource.data.userId;
+      allow update: if isAlumni() && resource.data.userId == request.auth.uid;
+      allow delete: if isStaff();
+    }
+
+    match /announcements/{id} {
+      allow read: if isPublicResource() || isSignedIn();
+      allow write: if isStaff();
+      allow delete: if isStaff();
+    }
+
+    match /events/{id} {
+      allow read: if isPublicResource() || isSignedIn();
+      allow write: if isStaff();
+      allow delete: if isStaff();
+    }
+
+    match /event_registrations/{id} {
+      allow read: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+      allow create: if isAlumni() && request.auth.uid == request.resource.data.userId;
+      allow delete: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+    }
+
+    match /jobs/{id} {
+      allow read: if isPublicResource() || isSignedIn();
+      allow write: if isStaff();
+      allow delete: if isStaff();
+    }
+
+    match /notifications/{id} {
+      allow read, update: if isAlumni() && resource.data.userId == request.auth.uid;
+      allow create: if isStaff() || (isAlumni() && request.auth.uid == request.resource.data.userId);
+      allow delete: if isStaff() || (isAlumni() && resource.data.userId == request.auth.uid);
+    }
+
+    match /reports/{id} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /activity_logs/{id} {
+      allow read: if isAdmin();
+      allow create: if isStaff();
+      allow update, delete: if false;
+    }
+
+    match /system_settings/{id} {
+      allow read: if isStaff();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /conversations/{conversationId} {
+      allow read, update, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
+    }
+
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if ownerOfRequest();
+      allow update, delete: if false;
+    }
+
+    match /audit_logs/{id} {
+      allow read: if isAdmin();
+      allow create: if isStaff();
+      allow update, delete: if false;
+    }
+  }
+}
