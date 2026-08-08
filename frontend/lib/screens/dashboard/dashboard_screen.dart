@@ -193,12 +193,15 @@ class _DesktopSidebar extends StatelessWidget {
         children: [
           Row(
             children: [
-              Image.asset('assets/images/logo.png', width: 46, height: 46),
+              Image.asset('assets/images/logo_full.png', width: 58, height: 46, fit: BoxFit.contain),
               const SizedBox(width: 10),
               const Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(text: 'Grad'),
+                    TextSpan(
+                      text: 'Grad',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     TextSpan(
                       text: 'Track',
                       style: TextStyle(color: AppColors.gold),
@@ -208,7 +211,6 @@ class _DesktopSidebar extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.primaryBlue,
                 ),
               ),
             ],

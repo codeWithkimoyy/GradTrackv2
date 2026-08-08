@@ -243,7 +243,7 @@ class _AuthLogo extends StatelessWidget {
     return SizedBox(
       width: 150,
       height: 58,
-      child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+      child: Image.asset('assets/images/logo_full.png', fit: BoxFit.contain),
     );
   }
 }

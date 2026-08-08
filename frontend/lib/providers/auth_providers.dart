@@ -1,13 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/firebase_options.dart';
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
+
+final firebaseConfiguredProvider = Provider<bool>((_) {
+  return DefaultFirebaseOptions.isConfigured;
+});
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
 /// Emits the raw FirebaseAuth user (null when signed out).
 final authStateProvider = StreamProvider<User?>((ref) {
+  if (!ref.watch(firebaseConfiguredProvider)) {
+    return Stream<User?>.value(null);
+  }
   return ref.watch(authServiceProvider).authStateChanges;
 });
 
@@ -32,6 +40,10 @@ final userRepositoryProvider =
 /// Emits the Firestore profile document for the currently signed-in user,
 /// falling back to a local profile when Firestore is unavailable.
 final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
+  if (!ref.watch(firebaseConfiguredProvider)) {
+    return Stream<UserModel?>.value(null);
+  }
+
   final authState = ref.watch(authStateProvider);
   ref.watch(localProfileProvider);
   return authState.when(

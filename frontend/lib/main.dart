@@ -16,10 +16,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: 'assets/.env');
-  final firebaseInitialized = await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  ).then((_) => true).catchError((_) => false);
-  if (kIsWeb) {
+  final firebaseInitialized = DefaultFirebaseOptions.isConfigured
+      ? await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ).then((_) => true).catchError((_) => false)
+      : false;
+
+  if (firebaseInitialized && kIsWeb) {
     FirebaseFirestore.instance.settings = const Settings(
       webExperimentalForceLongPolling: true,
     );

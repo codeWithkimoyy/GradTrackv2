@@ -60,7 +60,7 @@ class SplashBrandContent extends StatelessWidget {
                           child: Padding(
                             padding: EdgeInsets.all(logoSize * .09),
                             child: Image.asset(
-                              'assets/images/logo.png',
+                              'assets/images/logo_full.png',
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -77,26 +77,41 @@ class SplashBrandContent extends StatelessWidget {
                   opacity: logoOpacity,
                   child: Column(
                     children: [
-                      const Text.rich(
+                      Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: 'Grad'),
+                            TextSpan(
+                              text: 'Grad',
+                              style: TextStyle(
+                                color: Colors.white,
+                                shadows: const [
+                                  Shadow(
+                                    color: Color(0x66000000),
+                                    blurRadius: 18,
+                                  ),
+                                ],
+                              ),
+                            ),
                             TextSpan(
                               text: 'Track',
-                              style: TextStyle(color: Color(0xFFFFC83D)),
+                              style: TextStyle(
+                                color: Color(0xFFFFC83D),
+                                shadows: const [
+                                  Shadow(
+                                    color: Color(0x66000000),
+                                    blurRadius: 18,
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
+                        style: const TextStyle(
                           fontSize: 40,
                           height: 1,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0,
-                          shadows: [
-                            Shadow(color: Color(0x66000000), blurRadius: 18),
-                          ],
                         ),
                       ),
                       const SizedBox(height: 12),
