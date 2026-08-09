@@ -1,14 +1,25 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+<<<<<<< HEAD
 
+=======
+import '../config/firebase_options.dart';
+>>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
+
+final firebaseConfiguredProvider = Provider<bool>((_) {
+  return DefaultFirebaseOptions.isConfigured;
+});
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
 /// Emits the raw FirebaseAuth user (null when signed out).
 final authStateProvider = StreamProvider<User?>((ref) {
+  if (!ref.watch(firebaseConfiguredProvider)) {
+    return Stream<User?>.value(null);
+  }
   return ref.watch(authServiceProvider).authStateChanges;
 });
 
@@ -32,6 +43,10 @@ final userRepositoryProvider =
 /// Emits the Firestore profile for the signed-in user. A local profile keeps
 /// role routing usable during temporary Firestore/network failures.
 final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
+  if (!ref.watch(firebaseConfiguredProvider)) {
+    return Stream<UserModel?>.value(null);
+  }
+
   final authState = ref.watch(authStateProvider);
   ref.watch(localProfileProvider);
 

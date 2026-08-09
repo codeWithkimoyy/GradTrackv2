@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/avatar_utils.dart';
+import '../../widgets/empty_state_widget.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -13,11 +15,15 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(currentUserProfileProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       appBar: AppBar(
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -26,86 +32,139 @@ class ProfileScreen extends ConsumerWidget {
             }
           },
         ),
-        title: const Text('My Profile'),
+        title: Text(
+          'My Profile',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_outlined),
+            icon: const Icon(Icons.edit_outlined, color: AppColors.primaryBlue),
             onPressed: () => context.push(AppRoutes.editProfile),
           ),
         ],
       ),
       body: profileAsync.when(
         data: (user) {
-          if (user == null) return const Center(child: Text('No profile'));
+          if (user == null) {
+            return const EmptyStateWidget(
+              icon: Icons.person_off_rounded,
+              title: 'No Profile Found',
+              message: 'Your user profile could not be loaded.',
+            );
+          }
           return ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(24),
             children: [
               Container(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+                clipBehavior: Clip.antiAlias,
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primaryBlue, AppColors.secondaryBlue],
+                  color: isDark ? AppColors.cardDark : Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
                   ),
-                  borderRadius: BorderRadius.circular(AppRadius.card),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.16),
-                      blurRadius: 22,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.white.withValues(alpha: 0.16),
-                      backgroundImage: user.photoUrl != null
-                          ? avatarProvider(user.photoUrl)
-                          : null,
-                      child: user.photoUrl == null
-                          ? Text(
-                              user.fullName.isNotEmpty
-                                  ? user.fullName[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                  fontSize: 32,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      user.fullName,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                  boxShadow: isDark
+                      ? []
+                      : const [
+                          BoxShadow(
+                            color: Color(0x0C0F172A),
+                            blurRadius: 18,
+                            offset: Offset(0, 6),
                           ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.role.label,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(999),
+                        ],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -25,
+                      bottom: -25,
+                      child: Opacity(
+                        opacity: isDark ? 0.08 : 0.05,
+                        child: Image.asset(
+                          'assets/images/bisu.png',
+                          width: 160,
+                          height: 160,
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                      child: const Text(
-                        'Verified Graduate Profile',
-                        style: TextStyle(color: Colors.white, fontSize: 12),
-                      ),
+                    ),
+                    Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+                          backgroundImage: user.photoUrl != null
+                              ? avatarProvider(user.photoUrl)
+                              : null,
+                          child: user.photoUrl == null
+                              ? Text(
+                                  user.fullName.isNotEmpty
+                                      ? user.fullName[0].toUpperCase()
+                                      : '?',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 32,
+                                    color: AppColors.primaryBlue,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          user.fullName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : AppColors.primaryNavy,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.role.label,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: AppColors.teal,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: AppColors.goldDark.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.verified_rounded,
+                                  color: AppColors.goldDark, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Verified BISU Graduate',
+                                style: GoogleFonts.poppins(
+                                  color: AppColors.goldDark,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+<<<<<<< HEAD
               const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
                 onPressed: () => context.push(AppRoutes.editProfile),
@@ -116,17 +175,20 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
+=======
+              const SizedBox(height: 24),
+>>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
               _InfoTile(
                   icon: Icons.email_outlined,
-                  label: 'Email',
+                  label: 'Email Address',
                   value: user.email),
               _InfoTile(
                   icon: Icons.badge_outlined,
                   label: 'Student Number',
-                  value: user.studentNumber ?? 'Not set'),
+                  value: user.studentNumber ?? 'Not provided'),
               _InfoTile(
                   icon: Icons.school_outlined,
-                  label: 'Course',
+                  label: 'Degree Program / Course',
                   value: user.course ?? 'Not set'),
               _InfoTile(
                   icon: Icons.calendar_today_outlined,
@@ -134,30 +196,37 @@ class ProfileScreen extends ConsumerWidget {
                   value: user.graduationYear?.toString() ?? 'Not set'),
               _InfoTile(
                   icon: Icons.phone_outlined,
-                  label: 'Phone',
-                  value: user.phoneNumber ?? 'Not set'),
+                  label: 'Contact Phone',
+                  value: user.phoneNumber ?? 'Not provided'),
               _InfoTile(
                   icon: Icons.work_outline,
                   label: 'Employment Status',
                   value: user.employmentStatus.label),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 24),
               OutlinedButton.icon(
                 onPressed: () async {
                   await ref.read(authServiceProvider).signOut();
                   if (context.mounted) context.go(AppRoutes.login);
                 },
-                icon: const Icon(Icons.logout, color: AppColors.error),
-                label: const Text('Sign Out',
-                    style: TextStyle(color: AppColors.error)),
+                icon: const Icon(Icons.logout_rounded, color: AppColors.error),
+                label: Text(
+                  'Sign Out',
+                  style: GoogleFonts.poppins(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.error),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryBlue),
+        ),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
@@ -174,13 +243,64 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: ListTile(
-        leading: Icon(icon, color: AppColors.primaryBlue),
-        title: Text(label,
-            style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-        subtitle: Text(value, style: const TextStyle(fontSize: 15)),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0A0F172A),
+                  blurRadius: 12,
+                  offset: Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primaryBlue, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontSize: 11.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

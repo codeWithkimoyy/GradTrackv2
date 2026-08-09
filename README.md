@@ -31,6 +31,23 @@ flutter pub get
 flutter run
 ```
 
+### Running for Google Sign-In (Fixed Web Port)
+
+Google OAuth requires a fixed origin (e.g. `http://localhost:3000`). To launch Flutter Web with a fixed port:
+
+```powershell
+# Option A: PowerShell helper script
+.\run_web.ps1 -Port 3000
+
+# Option B: Direct Flutter CLI command
+cd frontend
+flutter run -d chrome --web-port=3000
+```
+
+> **Google OAuth Configuration Checklist:**
+> 1. In **Google Cloud Console** -> *APIs & Services* -> *Credentials*, add `http://localhost:3000` under **Authorized JavaScript origins**.
+> 2. In **Firebase Console** -> *Authentication* -> *Settings* -> *Authorized domains*, ensure `localhost` is listed.
+
 The FlutterFire command generates the ignored project-specific files,
 including `lib/config/firebase_options.dart` and
 `android/app/google-services.json`.
@@ -55,6 +72,8 @@ Setup:
 ```powershell
 cd backend
 Copy-Item .env.example .env
+# Populate Firebase Admin credentials for authenticated routes:
+# FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY
 npm install
 npm run dev
 ```

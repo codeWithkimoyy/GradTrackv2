@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../constants/app_constants.dart';
 import '../../models/employment_model.dart';
@@ -57,6 +58,17 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
       initialDate: _dateHired,
       firstDate: DateTime(1990),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primaryBlue,
+              surface: AppColors.cardDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) setState(() => _dateHired = picked);
   }
@@ -69,7 +81,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
     setState(() => _saving = true);
 
     final record = EmploymentRecord(
-      id: '', // Firestore auto-generates the doc ID
+      id: '',
       userId: user.uid,
       company: _companyController.text.trim(),
       position: _positionController.text.trim(),
@@ -94,7 +106,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
       await ref.read(employmentRepositoryProvider).addRecord(record);
       if (mounted) {
         Navigator.of(context).pop();
-        showAppSnackBar(context, 'Employment record added',
+        showAppSnackBar(context, 'Employment record added successfully',
             backgroundColor: AppColors.success);
       }
     } catch (e) {
@@ -109,25 +121,65 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Employment')),
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      appBar: AppBar(
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Add Employment Record',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(24),
           children: [
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('This is my current job'),
-              value: _isCurrent,
-              onChanged: (v) => setState(() => _isCurrent = v),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardDark : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
+              ),
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                activeThumbColor: AppColors.primaryBlue,
+                title: Text(
+                  'This is my current employment',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
+                  ),
+                ),
+                value: _isCurrent,
+                onChanged: (v) => setState(() => _isCurrent = v),
+              ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            _text('Company', _companyController, required: true),
-            _text('Position', _positionController, required: true),
-            _text('Industry', _industryController, required: true),
+            const SizedBox(height: 20),
+            _text('Company / Employer Name', _companyController, required: true),
+            _text('Job Title / Position', _positionController, required: true),
+            _text('Industry Sector', _industryController, required: true),
             DropdownButtonFormField<String>(
               initialValue: _employmentType,
+              dropdownColor: isDark ? AppColors.cardDark : Colors.white,
+              style: GoogleFonts.poppins(
+                color: isDark ? Colors.white : AppColors.primaryNavy,
+                fontSize: 13.5,
+              ),
               decoration: const InputDecoration(labelText: 'Employment Type'),
               isExpanded: true,
               items: _employmentTypes
@@ -135,47 +187,107 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
                   .toList(),
               onChanged: (v) => setState(() => _employmentType = v ?? _employmentType),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _salaryRange,
-              decoration: const InputDecoration(labelText: 'Salary Range'),
+              dropdownColor: isDark ? AppColors.cardDark : Colors.white,
+              style: GoogleFonts.poppins(
+                color: isDark ? Colors.white : AppColors.primaryNavy,
+                fontSize: 13.5,
+              ),
+              decoration: const InputDecoration(labelText: 'Salary Range (Optional)'),
               isExpanded: true,
               items: _salaryRanges
                   .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                   .toList(),
               onChanged: (v) => setState(() => _salaryRange = v),
             ),
-            const SizedBox(height: AppSpacing.md),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date Hired'),
-              subtitle: Text(DateFormat.yMMMd().format(_dateHired)),
-              trailing: const Icon(Icons.calendar_today_outlined),
-              onTap: _pickDate,
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardDark : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
+              ),
+              child: InkWell(
+                onTap: _pickDate,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Date Hired',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.5,
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat.yMMMd().format(_dateHired),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : AppColors.primaryNavy,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.calendar_today_rounded, color: AppColors.primaryBlue, size: 20),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(child: _text('Country', _countryController, required: true)),
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: 12),
                 Expanded(child: _text('Province', _provinceController)),
               ],
             ),
-            _text('City', _cityController, required: true),
-            Text('Work Setup', style: Theme.of(context).textTheme.bodyMedium),
+            _text('City / Municipality', _cityController, required: true),
+            Text(
+              'Work Setup',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.primaryNavy,
+              ),
+            ),
             const SizedBox(height: 8),
             SegmentedButton<WorkSetup>(
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: AppColors.primaryBlue,
+                selectedForegroundColor: Colors.white,
+                foregroundColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+              ),
               segments: WorkSetup.values
                   .map((w) => ButtonSegment(value: w, label: Text(w.label)))
                   .toList(),
               selected: {_workSetup},
               onSelectionChanged: (s) => setState(() => _workSetup = s.first),
             ),
-            const SizedBox(height: AppSpacing.md),
-            _text('Job Description (optional)', _descriptionController, maxLines: 4),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 16),
+            _text('Job Description (Optional)', _descriptionController, maxLines: 3),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _saving ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               child: _saving
                   ? const SizedBox(
                       width: 20,
@@ -191,11 +303,17 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
 
   Widget _text(String label, TextEditingController controller,
       {bool required = false, int maxLines = 1}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
+        style: GoogleFonts.poppins(
+          color: isDark ? Colors.white : AppColors.primaryNavy,
+          fontSize: 13.5,
+        ),
         decoration: InputDecoration(labelText: label),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null

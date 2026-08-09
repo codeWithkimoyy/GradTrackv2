@@ -408,7 +408,7 @@ class _GradTrackLogo extends StatelessWidget {
         ],
       ),
       child: Image.asset(
-        'assets/images/logo.png',
+        'assets/images/logo_full.png',
         fit: BoxFit.contain,
         alignment: Alignment.centerLeft,
       ),
