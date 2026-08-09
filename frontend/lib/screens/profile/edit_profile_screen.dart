@@ -153,19 +153,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(currentUserProfileProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Edit Profile',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
       ),
       body: profileAsync.when(
@@ -189,7 +193,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       CircleAvatar(
                         radius: 54,
-                        backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.2),
+                        backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
                         backgroundImage: _selectedPhotoBytes != null
                             ? MemoryImage(_selectedPhotoBytes!) as ImageProvider<Object>
                             : (user.photoUrl != null
@@ -202,7 +206,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     : '?',
                                 style: GoogleFonts.poppins(
                                   fontSize: 28,
-                                  color: Colors.white,
+                                  color: AppColors.primaryBlue,
                                   fontWeight: FontWeight.bold,
                                 ),
                               )
@@ -240,7 +244,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     'Add or change your official profile photo',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: const Color(0xFF94A3B8),
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -257,7 +261,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -289,7 +293,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primaryBlue),
         ),
-        error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
+        error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
   }
@@ -301,13 +305,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        style: GoogleFonts.poppins(color: Colors.white, fontSize: 13.5),
+        style: GoogleFonts.poppins(
+          color: isDark ? Colors.white : AppColors.primaryNavy,
+          fontSize: 13.5,
+        ),
         decoration: InputDecoration(labelText: label),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null

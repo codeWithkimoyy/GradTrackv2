@@ -35,6 +35,7 @@ class DashboardShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
     final currentIndex = _selectedIndex(location);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     void navigate(int index) {
       switch (index) {
@@ -61,7 +62,7 @@ class DashboardShell extends ConsumerWidget {
         final desktop = constraints.maxWidth >= 900;
         if (desktop) {
           return Scaffold(
-            backgroundColor: AppColors.surfaceDark,
+            backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             body: SafeArea(
               child: Row(
                 children: [
@@ -75,7 +76,7 @@ class DashboardShell extends ConsumerWidget {
                         const _DesktopTopBar(),
                         Expanded(
                           child: ColoredBox(
-                            color: AppColors.surfaceDark,
+                            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                             child: child,
                           ),
                         ),
@@ -89,7 +90,7 @@ class DashboardShell extends ConsumerWidget {
         }
 
         return Scaffold(
-          backgroundColor: AppColors.surfaceDark,
+          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
           body: SafeArea(child: child),
           extendBody: true,
           bottomNavigationBar: SafeArea(
@@ -100,14 +101,16 @@ class DashboardShell extends ConsumerWidget {
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.cardDark.withValues(alpha: .92),
+                    color: isDark
+                        ? AppColors.cardDark.withValues(alpha: .92)
+                        : Colors.white.withValues(alpha: .92),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
-                      color: AppColors.borderDark,
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x40000000),
+                        color: Color(0x1A0F172A),
                         blurRadius: 24,
                         offset: Offset(0, 10),
                       ),
@@ -116,36 +119,36 @@ class DashboardShell extends ConsumerWidget {
                   child: NavigationBar(
                     height: 68,
                     backgroundColor: Colors.transparent,
-                    indicatorColor: AppColors.primaryBlue.withValues(alpha: .35),
+                    indicatorColor: AppColors.primaryBlue.withValues(alpha: .20),
                     selectedIndex: currentIndex,
                     animationDuration: const Duration(milliseconds: 320),
                     labelBehavior:
                         NavigationDestinationLabelBehavior.onlyShowSelected,
                     onDestinationSelected: navigate,
-                    destinations: const [
+                    destinations: [
                       NavigationDestination(
-                        icon: Icon(Icons.dashboard_outlined, color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.dashboard_rounded, color: Colors.white, size: 26),
+                        icon: Icon(Icons.dashboard_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                        selectedIcon: const Icon(Icons.dashboard_rounded, color: AppColors.primaryBlue, size: 26),
                         label: 'Home',
                       ),
                       NavigationDestination(
-                        icon: Icon(Icons.groups_outlined, color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.groups_rounded, color: Colors.white, size: 26),
+                        icon: Icon(Icons.groups_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                        selectedIcon: const Icon(Icons.groups_rounded, color: AppColors.primaryBlue, size: 26),
                         label: 'Alumni',
                       ),
                       NavigationDestination(
-                        icon: Icon(Icons.work_outline, color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.work_rounded, color: Colors.white, size: 26),
+                        icon: Icon(Icons.work_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                        selectedIcon: const Icon(Icons.work_rounded, color: AppColors.primaryBlue, size: 26),
                         label: 'Employment',
                       ),
                       NavigationDestination(
-                        icon: Icon(Icons.description_outlined, color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.description_rounded, color: Colors.white, size: 26),
+                        icon: Icon(Icons.description_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                        selectedIcon: const Icon(Icons.description_rounded, color: AppColors.primaryBlue, size: 26),
                         label: 'Documents',
                       ),
                       NavigationDestination(
-                        icon: Icon(Icons.person_outline, color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.person_rounded, color: Colors.white, size: 26),
+                        icon: Icon(Icons.person_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                        selectedIcon: const Icon(Icons.person_rounded, color: AppColors.primaryBlue, size: 26),
                         label: 'Profile',
                       ),
                     ],
@@ -179,17 +182,28 @@ class _DesktopSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: 260,
       padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDarkAlt,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDarkAlt : Colors.white,
         border: Border(
           right: BorderSide(
-            color: AppColors.borderDark,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
             width: 1,
           ),
         ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x080F172A),
+                  blurRadius: 20,
+                  offset: Offset(4, 0),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -204,9 +218,11 @@ class _DesktopSidebar extends StatelessWidget {
                   height: 42,
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: AppColors.cardDark,
+                    color: isDark ? AppColors.cardDark : AppColors.surfaceLightAlt,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderDark),
+                    border: Border.all(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    ),
                   ),
                   child: Image.asset(
                     'assets/images/logo_full.png',
@@ -224,11 +240,13 @@ class _DesktopSidebar extends StatelessWidget {
                           children: [
                             TextSpan(
                               text: 'Grad',
-                              style: GoogleFonts.poppins(color: Colors.white),
+                              style: GoogleFonts.poppins(
+                                color: isDark ? Colors.white : AppColors.primaryNavy,
+                              ),
                             ),
-                            TextSpan(
+                            const TextSpan(
                               text: 'Track',
-                              style: GoogleFonts.poppins(color: AppColors.gold),
+                              style: TextStyle(color: AppColors.goldDark),
                             ),
                           ],
                         ),
@@ -243,8 +261,8 @@ class _DesktopSidebar extends StatelessWidget {
                         'BISU ALUMNI PORTAL',
                         style: GoogleFonts.poppins(
                           fontSize: 9.5,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.tealLight,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.teal,
                           letterSpacing: 0.8,
                         ),
                       ),
@@ -264,7 +282,7 @@ class _DesktopSidebar extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF64748B),
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 letterSpacing: 1.4,
               ),
             ),
@@ -294,9 +312,11 @@ class _DesktopSidebar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.cardDark,
+              color: isDark ? AppColors.cardDark : AppColors.primarySoft,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderDark),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,12 +328,12 @@ class _DesktopSidebar extends StatelessWidget {
                       height: 28,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.gold.withValues(alpha: 0.15),
+                        color: AppColors.gold.withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
                         Icons.verified_user_rounded,
-                        color: AppColors.gold,
+                        color: AppColors.goldDark,
                         size: 16,
                       ),
                     ),
@@ -324,7 +344,7 @@ class _DesktopSidebar extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : AppColors.primaryNavy,
                         ),
                       ),
                     ),
@@ -335,7 +355,7 @@ class _DesktopSidebar extends StatelessWidget {
                   'Official & Encrypted Portal for BISU Graduates.',
                   style: GoogleFonts.poppins(
                     fontSize: 11,
-                    color: const Color(0xFF94A3B8),
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     height: 1.3,
                   ),
                 ),
@@ -392,24 +412,26 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Color backgroundColor;
     if (widget.selected) {
-      backgroundColor = _isHovered
-          ? AppColors.primaryBlue.withValues(alpha: 0.90)
-          : AppColors.primaryBlue;
+      backgroundColor = AppColors.primaryBlue;
     } else {
       backgroundColor = _isHovered
-          ? AppColors.cardDark
+          ? (isDark ? AppColors.cardDark : AppColors.surfaceLightAlt)
           : Colors.transparent;
     }
 
     final textColor = widget.selected
         ? Colors.white
-        : (_isHovered ? Colors.white : const Color(0xFF94A3B8));
+        : (_isHovered
+            ? (isDark ? Colors.white : AppColors.primaryNavy)
+            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)));
 
     final iconColor = widget.selected
         ? Colors.white
-        : (_isHovered ? AppColors.secondaryBlue : const Color(0xFF94A3B8));
+        : (_isHovered ? AppColors.primaryBlue : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)));
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -426,13 +448,15 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
             border: Border.all(
               color: widget.selected
                   ? AppColors.primaryBlue
-                  : (_isHovered ? AppColors.borderDark : Colors.transparent),
+                  : (_isHovered
+                      ? (isDark ? AppColors.borderDark : AppColors.borderLight)
+                      : Colors.transparent),
             ),
             boxShadow: widget.selected
                 ? [
                     BoxShadow(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.35),
-                      blurRadius: 12,
+                      color: AppColors.primaryBlue.withValues(alpha: 0.30),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ]
@@ -478,15 +502,16 @@ class _DesktopTopBar extends ConsumerWidget {
     final user = ref.watch(currentUserProfileProvider).valueOrNull;
     final initials = _desktopInitials(user?.fullName ?? 'User');
     final photo = user?.photoUrl;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 28),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.borderDark,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
             width: 1,
           ),
         ),
@@ -503,7 +528,7 @@ class _DesktopTopBar extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppColors.primaryNavy,
                 ),
               ),
               const SizedBox(height: 1),
@@ -513,14 +538,14 @@ class _DesktopTopBar extends ConsumerWidget {
                     'Bohol Island State University',
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: const Color(0xFF94A3B8),
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
                   ),
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
-                      color: AppColors.teal.withValues(alpha: 0.18),
+                      color: AppColors.teal.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -528,7 +553,7 @@ class _DesktopTopBar extends ConsumerWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.tealLight,
+                        color: AppColors.teal,
                       ),
                     ),
                   ),
@@ -550,9 +575,20 @@ class _DesktopTopBar extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.cardDark,
+                    color: isDark ? AppColors.cardDark : Colors.white,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.borderDark),
+                    border: Border.all(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    ),
+                    boxShadow: isDark
+                        ? []
+                        : [
+                            const BoxShadow(
+                              color: Color(0x0A0F172A),
+                              blurRadius: 10,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
                   ),
                   child: Row(
                     children: [
@@ -583,23 +619,23 @@ class _DesktopTopBar extends ConsumerWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: isDark ? Colors.white : AppColors.primaryNavy,
                             ),
                           ),
                           Text(
                             user.role.label,
                             style: GoogleFonts.poppins(
                               fontSize: 10,
-                              color: AppColors.tealLight,
-                              fontWeight: FontWeight.w500,
+                              color: AppColors.teal,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
+                      Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: Color(0xFF94A3B8),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         size: 18,
                       ),
                     ],
@@ -814,6 +850,7 @@ class _DashboardBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final completion = UserModel.computeCompletion(user);
     final unreadCount = ref.watch(unreadCountProvider(user.uid));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hour = DateTime.now().hour;
     final greeting = hour < 12
         ? 'Good Morning'
@@ -883,10 +920,10 @@ class _DashboardBody extends ConsumerWidget {
                           title: 'Tracer Survey Progress',
                           value: '2 / 3 Completed',
                           icon: Icons.fact_check_rounded,
-                          color: AppColors.tealLight,
+                          color: AppColors.teal,
                           progressValue: 0.66,
                           badgeLabel: '1 Pending',
-                          badgeColor: AppColors.gold,
+                          badgeColor: AppColors.goldDark,
                           actionLabel: 'Take Survey',
                           onTap: () => showAppSnackBar(
                             context,
@@ -898,10 +935,10 @@ class _DashboardBody extends ConsumerWidget {
                           title: 'Upcoming Alumni Events',
                           value: '3 Events',
                           icon: Icons.event_available_rounded,
-                          color: AppColors.gold,
+                          color: AppColors.goldDark,
                           subtitle: 'Next: Grand Homecoming 2026',
                           badgeLabel: '2 Scheduled',
-                          badgeColor: AppColors.gold,
+                          badgeColor: AppColors.goldDark,
                         ),
                         DashboardStatCard(
                           title: 'Notifications & Alerts',
@@ -910,7 +947,7 @@ class _DashboardBody extends ConsumerWidget {
                           color: unreadCount == 0 ? AppColors.success : AppColors.primaryBlue,
                           subtitle: 'System announcements & updates',
                           badgeLabel: 'Live Feed',
-                          badgeColor: AppColors.secondaryBlue,
+                          badgeColor: AppColors.primaryBlue,
                         ),
                       ],
                     );
@@ -919,7 +956,7 @@ class _DashboardBody extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // 3. Profile Completion & Next Steps Checklist + Quick Actions
+              // 3. Profile Completion & Next Steps Checklist
               _AnimatedEntrance(
                 delayMs: 180,
                 child: _buildProfileCompletionChecklist(context, completion),
@@ -937,7 +974,7 @@ class _DashboardBody extends ConsumerWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : AppColors.primaryNavy,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -945,7 +982,7 @@ class _DashboardBody extends ConsumerWidget {
                       'Shortcuts to update records, upload documents, and manage your account.',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: const Color(0xFF94A3B8),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -965,14 +1002,14 @@ class _DashboardBody extends ConsumerWidget {
                           _QuickActionCard(
                             icon: Icons.upload_file_rounded,
                             label: 'Upload Resume',
-                            color: AppColors.tealLight,
+                            color: AppColors.teal,
                             onTap: () => context.push(AppRoutes.resume),
                           ),
                           const SizedBox(width: 12),
                           _QuickActionCard(
                             icon: Icons.workspace_premium_rounded,
                             label: 'Add Certificate',
-                            color: AppColors.gold,
+                            color: AppColors.goldDark,
                             onTap: () => context.push(AppRoutes.certificates),
                           ),
                           const SizedBox(width: 12),
@@ -1036,19 +1073,25 @@ class _DashboardBody extends ConsumerWidget {
   }
 
   Widget _buildWelcomeBanner(BuildContext context, String greeting) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderDark),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x30000000),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0C0F172A),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
+                ),
+              ],
       ),
       child: Stack(
         children: [
@@ -1056,7 +1099,7 @@ class _DashboardBody extends ConsumerWidget {
             right: -10,
             bottom: -20,
             child: Opacity(
-              opacity: 0.08,
+              opacity: isDark ? 0.08 : 0.05,
               child: Image.asset(
                 'assets/images/bisu.png',
                 width: 180,
@@ -1069,7 +1112,7 @@ class _DashboardBody extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 32,
-                backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.2),
+                backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
                 backgroundImage: user.photoUrl != null
                     ? avatarProvider(user.photoUrl)
                     : null,
@@ -1081,7 +1124,7 @@ class _DashboardBody extends ConsumerWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.primaryBlue,
                         ),
                       )
                     : null,
@@ -1098,7 +1141,7 @@ class _DashboardBody extends ConsumerWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF94A3B8),
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           ),
                         ),
                         Expanded(
@@ -1107,7 +1150,7 @@ class _DashboardBody extends ConsumerWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: isDark ? Colors.white : AppColors.primaryNavy,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1120,7 +1163,7 @@ class _DashboardBody extends ConsumerWidget {
                       'Welcome to your BISU Alumni Portal. Keep your career information up to date.',
                       style: GoogleFonts.poppins(
                         fontSize: 12.5,
-                        color: const Color(0xFF94A3B8),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -1131,19 +1174,19 @@ class _DashboardBody extends ConsumerWidget {
                         _tagBadge(
                           Icons.verified_rounded,
                           'Verified Graduate',
-                          AppColors.gold,
+                          AppColors.goldDark,
                         ),
                         if (user.course != null && user.course!.isNotEmpty)
                           _tagBadge(
                             Icons.school_rounded,
                             user.course!,
-                            AppColors.tealLight,
+                            AppColors.teal,
                           ),
                         if (user.graduationYear != null)
                           _tagBadge(
                             Icons.calendar_today_rounded,
                             'Class of ${user.graduationYear}',
-                            AppColors.secondaryBlue,
+                            AppColors.primaryBlue,
                           ),
                       ],
                     ),
@@ -1161,9 +1204,9 @@ class _DashboardBody extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1185,13 +1228,25 @@ class _DashboardBody extends ConsumerWidget {
 
   Widget _buildProfileCompletionChecklist(BuildContext context, double completion) {
     final compRound = completion.round();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0C0F172A),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1209,7 +1264,7 @@ class _DashboardBody extends ConsumerWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: isDark ? Colors.white : AppColors.primaryNavy,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1220,13 +1275,13 @@ class _DashboardBody extends ConsumerWidget {
                           ),
                           decoration: BoxDecoration(
                             color: compRound >= 80
-                                ? AppColors.success.withValues(alpha: 0.2)
-                                : AppColors.gold.withValues(alpha: 0.2),
+                                ? AppColors.success.withValues(alpha: 0.15)
+                                : AppColors.gold.withValues(alpha: 0.20),
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
                               color: compRound >= 80
                                   ? AppColors.success
-                                  : AppColors.gold,
+                                  : AppColors.goldDark,
                             ),
                           ),
                           child: Text(
@@ -1236,7 +1291,7 @@ class _DashboardBody extends ConsumerWidget {
                               fontWeight: FontWeight.w700,
                               color: compRound >= 80
                                   ? AppColors.success
-                                  : AppColors.gold,
+                                  : AppColors.goldDark,
                             ),
                           ),
                         ),
@@ -1247,7 +1302,7 @@ class _DashboardBody extends ConsumerWidget {
                       'Complete missing graduate information to help BISU accreditations and tracer statistics.',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: const Color(0xFF94A3B8),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -1277,8 +1332,10 @@ class _DashboardBody extends ConsumerWidget {
             child: LinearProgressIndicator(
               value: completion / 100,
               minHeight: 8,
-              backgroundColor: Colors.white.withValues(alpha: 0.08),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.gold),
+              backgroundColor: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : AppColors.primaryBlue.withValues(alpha: 0.12),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.goldDark),
             ),
           ),
           const SizedBox(height: 18),
@@ -1335,12 +1392,25 @@ class _DashboardBody extends ConsumerWidget {
   }
 
   Widget _buildAnnouncementsSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0C0F172A),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1352,7 +1422,7 @@ class _DashboardBody extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppColors.primaryNavy,
                 ),
               ),
               const Spacer(),
@@ -1362,7 +1432,7 @@ class _DashboardBody extends ConsumerWidget {
                   'View All',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: AppColors.secondaryBlue,
+                    color: AppColors.primaryBlue,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1374,7 +1444,7 @@ class _DashboardBody extends ConsumerWidget {
             title: 'BISU Grand Alumni Homecoming 2026 Registration Open',
             date: '2 hours ago',
             category: 'Event',
-            categoryColor: AppColors.gold,
+            categoryColor: AppColors.goldDark,
             description: 'All graduates are invited to join the annual homecoming assembly at the BISU Main Campus Gymnasium.',
           ),
           const SizedBox(height: 10),
@@ -1382,7 +1452,7 @@ class _DashboardBody extends ConsumerWidget {
             title: 'Annual Graduate Tracer Survey Submission Deadline',
             date: '1 day ago',
             category: 'Survey',
-            categoryColor: AppColors.tealLight,
+            categoryColor: AppColors.teal,
             description: 'Please submit your career updates before the end of the month for CHED national reporting.',
           ),
         ],
@@ -1391,12 +1461,25 @@ class _DashboardBody extends ConsumerWidget {
   }
 
   Widget _buildAlumniSummaryCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0C0F172A),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1406,15 +1489,15 @@ class _DashboardBody extends ConsumerWidget {
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: isDark ? Colors.white : AppColors.primaryNavy,
             ),
           ),
           const SizedBox(height: 14),
-          _infoRow('Student No.', user.studentNumber ?? 'N/A'),
-          _infoRow('Course', user.course ?? 'BS Computer Science'),
-          _infoRow('Graduation Year', user.graduationYear?.toString() ?? '2024'),
-          _infoRow('Phone', user.phoneNumber ?? 'Not provided'),
-          _infoRow('Status', user.employmentStatus.label),
+          _infoRow(context, 'Student No.', user.studentNumber ?? 'N/A'),
+          _infoRow(context, 'Course', user.course ?? 'BS Computer Science'),
+          _infoRow(context, 'Graduation Year', user.graduationYear?.toString() ?? '2024'),
+          _infoRow(context, 'Phone', user.phoneNumber ?? 'Not provided'),
+          _infoRow(context, 'Status', user.employmentStatus.label),
           const Divider(height: 24),
           SizedBox(
             width: double.infinity,
@@ -1432,7 +1515,9 @@ class _DashboardBody extends ConsumerWidget {
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -1442,7 +1527,7 @@ class _DashboardBody extends ConsumerWidget {
             label,
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: const Color(0xFF94A3B8),
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
           Text(
@@ -1450,7 +1535,7 @@ class _DashboardBody extends ConsumerWidget {
             style: GoogleFonts.poppins(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: isDark ? Colors.white : AppColors.primaryNavy,
             ),
           ),
         ],
@@ -1474,6 +1559,8 @@ class _ChecklistItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1482,7 +1569,7 @@ class _ChecklistItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: AppColors.surfaceDarkAlt,
+            color: isDark ? AppColors.surfaceDarkAlt : AppColors.surfaceLightAlt,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDone
@@ -1508,14 +1595,14 @@ class _ChecklistItem extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : AppColors.primaryNavy,
                       ),
                     ),
                     Text(
                       subtitle,
                       style: GoogleFonts.poppins(
                         fontSize: 10.5,
-                        color: const Color(0xFF94A3B8),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1523,9 +1610,9 @@ class _ChecklistItem extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFF64748B),
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 size: 18,
               ),
             ],
@@ -1551,8 +1638,10 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Material(
-      color: AppColors.cardDark,
+      color: isDark ? AppColors.cardDark : Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -1562,7 +1651,18 @@ class _QuickActionCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            boxShadow: isDark
+                ? []
+                : const [
+                    BoxShadow(
+                      color: Color(0x080F172A),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1572,7 +1672,7 @@ class _QuickActionCard extends StatelessWidget {
                 height: 40,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
+                  color: color.withValues(alpha: isDark ? 0.16 : 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -1586,7 +1686,7 @@ class _QuickActionCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppColors.primaryNavy,
                   height: 1.2,
                 ),
               ),
@@ -1615,12 +1715,16 @@ class _AnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDarkAlt,
+        color: isDark ? AppColors.surfaceDarkAlt : AppColors.surfaceLightAlt,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1647,7 +1751,7 @@ class _AnnouncementCard extends StatelessWidget {
                 date,
                 style: GoogleFonts.poppins(
                   fontSize: 10.5,
-                  color: const Color(0xFF64748B),
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 ),
               ),
             ],
@@ -1658,7 +1762,7 @@ class _AnnouncementCard extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: isDark ? Colors.white : AppColors.primaryNavy,
             ),
           ),
           const SizedBox(height: 4),
@@ -1666,7 +1770,7 @@ class _AnnouncementCard extends StatelessWidget {
             description,
             style: GoogleFonts.poppins(
               fontSize: 11.5,
-              color: const Color(0xFF94A3B8),
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
               height: 1.4,
             ),
           ),
@@ -1682,17 +1786,26 @@ class _DocumentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         Text(
           'Documents Vault',
-          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           'Store and manage your verified resume and professional certificates.',
-          style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+          ),
         ),
         const SizedBox(height: 24),
         _DocumentOptionCard(
@@ -1732,12 +1845,25 @@ class _DocumentOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0C0F172A),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1747,10 +1873,10 @@ class _DocumentOptionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.16),
+                  color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.10),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: AppColors.secondaryBlue, size: 24),
+                child: Icon(icon, color: AppColors.primaryBlue, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1759,7 +1885,7 @@ class _DocumentOptionCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
                 ),
               ),
@@ -1768,7 +1894,10 @@ class _DocumentOptionCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             subtitle,
-            style: GoogleFonts.poppins(fontSize: 12.5, color: const Color(0xFF94A3B8)),
+            style: GoogleFonts.poppins(
+              fontSize: 12.5,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -1791,39 +1920,66 @@ class _JobsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         Text(
           'Employment & Career Records',
-          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           'Log your employment history, promotions, and work setup to update tracer metrics.',
-          style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+          ),
         ),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.cardDark,
+            color: isDark ? AppColors.cardDark : Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            boxShadow: isDark
+                ? []
+                : const [
+                    BoxShadow(
+                      color: Color(0x0C0F172A),
+                      blurRadius: 18,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Work Tracker Status',
-                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.primaryNavy,
+                ),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Text(
                     'Current Status: ',
-                    style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
                   ),
                   Text(
                     user.employmentStatus.label,
@@ -1832,7 +1988,7 @@ class _JobsTab extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: user.employmentStatus == EmploymentStatus.employed
                           ? AppColors.success
-                          : AppColors.gold,
+                          : AppColors.goldDark,
                     ),
                   ),
                 ],
@@ -1857,38 +2013,62 @@ class _AlumniTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         Text(
           'Alumni Community',
-          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           'Connect with fellow BISU graduates and access alumni network resources.',
-          style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+          ),
         ),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.cardDark,
+            color: isDark ? AppColors.cardDark : Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            boxShadow: isDark
+                ? []
+                : const [
+                    BoxShadow(
+                      color: Color(0x0C0F172A),
+                      blurRadius: 18,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Your Registered Alumni Credentials',
-                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.primaryNavy,
+                ),
               ),
               const SizedBox(height: 12),
-              _itemLine('Full Name', user.fullName),
-              _itemLine('Course Program', user.course ?? 'BS Computer Science'),
-              _itemLine('Graduation Batch', user.graduationYear?.toString() ?? '2024'),
-              _itemLine('Status', user.employmentStatus.label),
+              _itemLine(context, 'Full Name', user.fullName),
+              _itemLine(context, 'Course Program', user.course ?? 'BS Computer Science'),
+              _itemLine(context, 'Graduation Batch', user.graduationYear?.toString() ?? '2024'),
+              _itemLine(context, 'Status', user.employmentStatus.label),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.push(AppRoutes.editProfile),
@@ -1901,14 +2081,29 @@ class _AlumniTab extends StatelessWidget {
     );
   }
 
-  Widget _itemLine(String k, String v) {
+  Widget _itemLine(BuildContext context, String k, String v) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(k, style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF94A3B8))),
-          Text(v, style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white)),
+          Text(
+            k,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
+          ),
+          Text(
+            v,
+            style: GoogleFonts.poppins(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : AppColors.primaryNavy,
+            ),
+          ),
         ],
       ),
     );

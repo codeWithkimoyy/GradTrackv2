@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 
-/// Centralized University-themed palette: Deep Navy, Royal Blue, Teal, Gold
+/// University-themed palette inspired by StudyBuddy & BISU branding:
+/// Deep Ink Navy, Royal Cover Blue, Sky Cyan, University Gold, Soft Ice Surfaces
 class AppColors {
   AppColors._();
 
-  static const Color primaryBlue = Color(0xFF2563EB);
+  // Core Brand
+  static const Color primaryBlue = Color(0xFF2563EB); // Royal Blue
   static const Color primaryBlueDark = Color(0xFF1D4ED8);
+  static const Color primaryLight = Color(0xFF38BDF8); // Sky Cyan
   static const Color secondaryBlue = Color(0xFF3B82F6);
-  static const Color accentBlue = Color(0xFF60A5FA);
 
-  static const Color primaryNavy = Color(0xFF0F172A);
+  // Deep Ink & Text
+  static const Color primaryNavy = Color(0xFF0F172A); // Deep Ink Text / Navy
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
+
+  // Surfaces & Backgrounds (StudyBuddy Cool Paper / Ice)
+  static const Color surfaceLight = Color(0xFFF3F8FC); // Cool Paper Light BG
+  static const Color cardLight = Colors.white; // Pure White Card
+  static const Color surfaceLightAlt = Color(0xFFEEF5FA); // Soft Cool Grey Fill
+
   static const Color surfaceDark = Color(0xFF0F172A);
   static const Color surfaceDarkAlt = Color(0xFF0B132B);
   static const Color cardDark = Color(0xFF1E293B);
-  static const Color cardDarkElevated = Color(0xFF24334D);
 
-  static const Color surfaceLight = Color(0xFFF8FAFC);
-  static const Color cardLight = Colors.white;
-
+  // Accents
   static const Color teal = Color(0xFF0D9488);
   static const Color tealLight = Color(0xFF14B8A6);
   static const Color cyan = Color(0xFF06B6D4);
@@ -26,16 +35,25 @@ class AppColors {
   static const Color goldDark = Color(0xFFD97706);
   static const Color goldLight = Color(0xFFFDE68A);
 
+  // Status Colors
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
+  static const Color info = Color(0xFF2563EB);
 
-  // Border & Divider colors
-  static const Color borderDark = Color(0xFF334155);
+  // Soft Fills (for Squircle icons and badges in Light Theme)
+  static const Color primarySoft = Color(0xFFEFF6FF);
+  static const Color goldSoft = Color(0xFFFFFBEB);
+  static const Color greenSoft = Color(0xFFECFDF5);
+  static const Color redSoft = Color(0xFFFEF2F2);
+  static const Color tealSoft = Color(0xFFF0FDFA);
+
+  // Borders & Dividers
   static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color borderSoftLight = Color(0xFFEDF2F7);
+  static const Color borderDark = Color(0xFF334155);
 
-  // Squircle icon background colors
+  // Icon background colors
   static const Color iconBgBlue = Color(0xFF1E3A8A);
   static const Color iconBgTeal = Color(0xFF115E59);
   static const Color iconBgGold = Color(0xFF78350F);

@@ -22,6 +22,8 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -34,16 +36,18 @@ class EmptyStateWidget extends StatelessWidget {
               height: 80,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withValues(alpha: 0.12),
+                color: isDark
+                    ? AppColors.primaryBlue.withValues(alpha: 0.12)
+                    : AppColors.primarySoft,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.25),
+                  color: AppColors.primaryBlue.withValues(alpha: 0.20),
                 ),
               ),
               child: Icon(
                 icon,
                 size: iconSize,
-                color: AppColors.secondaryBlue,
+                color: AppColors.primaryBlue,
               ),
             ),
             const SizedBox(height: 20),
@@ -53,7 +57,7 @@ class EmptyStateWidget extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: isDark ? Colors.white : AppColors.primaryNavy,
               ),
             ),
             const SizedBox(height: 8),
@@ -64,7 +68,7 @@ class EmptyStateWidget extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 13,
-                  color: const Color(0xFF94A3B8),
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                   height: 1.5,
                 ),
               ),

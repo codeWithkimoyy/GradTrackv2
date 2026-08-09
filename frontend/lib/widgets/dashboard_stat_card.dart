@@ -30,30 +30,36 @@ class DashboardStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final effectiveBadgeColor = badgeColor ?? color;
 
     final content = AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: color.withValues(alpha: 0.30),
+          color: isDark
+              ? color.withValues(alpha: 0.30)
+              : AppColors.borderLight,
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-          const BoxShadow(
-            color: Color(0x20000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: const Color(0x0C0F172A),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,10 +72,12 @@ class DashboardStatCard extends StatelessWidget {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
+                  color: isDark
+                      ? color.withValues(alpha: 0.16)
+                      : color.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: color.withValues(alpha: 0.25),
+                    color: color.withValues(alpha: 0.20),
                   ),
                 ),
                 child: Icon(icon, color: color, size: 22),
@@ -82,10 +90,10 @@ class DashboardStatCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: effectiveBadgeColor.withValues(alpha: 0.18),
+                    color: effectiveBadgeColor.withValues(alpha: isDark ? 0.18 : 0.12),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: effectiveBadgeColor.withValues(alpha: 0.35),
+                      color: effectiveBadgeColor.withValues(alpha: 0.30),
                     ),
                   ),
                   child: Text(
@@ -104,10 +112,10 @@ class DashboardStatCard extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                    color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.15 : 0.08),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                      color: AppColors.primaryBlue.withValues(alpha: 0.25),
                     ),
                   ),
                   child: Row(
@@ -118,14 +126,14 @@ class DashboardStatCard extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.secondaryBlue,
+                          color: AppColors.primaryBlue,
                         ),
                       ),
                       const SizedBox(width: 3),
                       const Icon(
                         Icons.arrow_forward_rounded,
                         size: 12,
-                        color: AppColors.secondaryBlue,
+                        color: AppColors.primaryBlue,
                       ),
                     ],
                   ),
@@ -145,7 +153,7 @@ class DashboardStatCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                     height: 1.1,
                   ),
                 ),
@@ -158,7 +166,7 @@ class DashboardStatCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF94A3B8),
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 ),
               ),
               if (subtitle != null && subtitle!.isNotEmpty) ...[
@@ -169,7 +177,7 @@ class DashboardStatCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     fontSize: 11,
-                    color: const Color(0xFF64748B),
+                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                   ),
                 ),
               ],
@@ -180,7 +188,9 @@ class DashboardStatCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: progressValue,
                     minHeight: 6,
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    backgroundColor: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : AppColors.primaryBlue.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),

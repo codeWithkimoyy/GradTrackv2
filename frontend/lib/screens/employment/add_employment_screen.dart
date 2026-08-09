@@ -121,14 +121,23 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           'Add Employment Record',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
       ),
       body: Form(
@@ -139,9 +148,11 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: isDark ? AppColors.cardDark : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderDark),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
               ),
               child: SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -151,7 +162,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
                 ),
                 value: _isCurrent,
@@ -164,8 +175,11 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
             _text('Industry Sector', _industryController, required: true),
             DropdownButtonFormField<String>(
               initialValue: _employmentType,
-              dropdownColor: AppColors.cardDark,
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13.5),
+              dropdownColor: isDark ? AppColors.cardDark : Colors.white,
+              style: GoogleFonts.poppins(
+                color: isDark ? Colors.white : AppColors.primaryNavy,
+                fontSize: 13.5,
+              ),
               decoration: const InputDecoration(labelText: 'Employment Type'),
               isExpanded: true,
               items: _employmentTypes
@@ -176,8 +190,11 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _salaryRange,
-              dropdownColor: AppColors.cardDark,
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13.5),
+              dropdownColor: isDark ? AppColors.cardDark : Colors.white,
+              style: GoogleFonts.poppins(
+                color: isDark ? Colors.white : AppColors.primaryNavy,
+                fontSize: 13.5,
+              ),
               decoration: const InputDecoration(labelText: 'Salary Range (Optional)'),
               isExpanded: true,
               items: _salaryRanges
@@ -189,9 +206,11 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: isDark ? AppColors.cardDark : Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderDark),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
               ),
               child: InkWell(
                 onTap: _pickDate,
@@ -203,17 +222,24 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
                         children: [
                           Text(
                             'Date Hired',
-                            style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.5,
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             DateFormat.yMMMd().format(_dateHired),
-                            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : AppColors.primaryNavy,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.calendar_today_rounded, color: AppColors.secondaryBlue, size: 20),
+                    const Icon(Icons.calendar_today_rounded, color: AppColors.primaryBlue, size: 20),
                   ],
                 ),
               ),
@@ -229,15 +255,19 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
             _text('City / Municipality', _cityController, required: true),
             Text(
               'Work Setup',
-              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.primaryNavy,
+              ),
             ),
             const SizedBox(height: 8),
             SegmentedButton<WorkSetup>(
               style: SegmentedButton.styleFrom(
                 selectedBackgroundColor: AppColors.primaryBlue,
                 selectedForegroundColor: Colors.white,
-                foregroundColor: const Color(0xFF94A3B8),
-                backgroundColor: AppColors.cardDark,
+                foregroundColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                backgroundColor: isDark ? AppColors.cardDark : Colors.white,
               ),
               segments: WorkSetup.values
                   .map((w) => ButtonSegment(value: w, label: Text(w.label)))
@@ -273,11 +303,17 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
 
   Widget _text(String label, TextEditingController controller,
       {bool required = false, int maxLines = 1}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
+        style: GoogleFonts.poppins(
+          color: isDark ? Colors.white : AppColors.primaryNavy,
+          fontSize: 13.5,
+        ),
         decoration: InputDecoration(labelText: label),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null

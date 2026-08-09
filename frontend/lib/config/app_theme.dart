@@ -30,19 +30,22 @@ class AppTheme {
       scaffoldBackgroundColor:
           isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       textTheme: GoogleFonts.poppinsTextTheme(base.textTheme).apply(
-        bodyColor: isDark ? Colors.white : colorScheme.onSurface,
-        displayColor: isDark ? Colors.white : colorScheme.onSurface,
+        bodyColor: isDark ? Colors.white : AppColors.primaryNavy,
+        displayColor: isDark ? Colors.white : AppColors.primaryNavy,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        foregroundColor: isDark ? Colors.white : colorScheme.onSurface,
+        foregroundColor: isDark ? Colors.white : AppColors.primaryNavy,
         titleTextStyle: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: isDark ? Colors.white : colorScheme.onSurface,
+          color: isDark ? Colors.white : AppColors.primaryNavy,
+        ),
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : AppColors.primaryNavy,
         ),
       ),
       cardTheme: CardThemeData(
@@ -62,13 +65,11 @@ class AppTheme {
         thickness: 1,
       ),
       iconTheme: IconThemeData(
-        color: isDark ? Colors.white70 : AppColors.primaryBlue,
+        color: isDark ? Colors.white70 : AppColors.primaryNavy,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark
-            ? AppColors.cardDark
-            : Colors.black.withValues(alpha: 0.03),
+        fillColor: isDark ? AppColors.cardDark : AppColors.surfaceLightAlt,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
@@ -92,6 +93,9 @@ class AppTheme {
         ),
         labelStyle: TextStyle(
           color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+        ),
+        hintStyle: TextStyle(
+          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -141,20 +145,20 @@ class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.transparent,
-        indicatorColor: AppColors.primaryBlue.withValues(alpha: 0.25),
+        backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+        indicatorColor: AppColors.primaryBlue.withValues(alpha: 0.15),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: AppColors.primaryBlue,
             );
           }
           return GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF94A3B8),
+            color: const Color(0xFF64748B),
           );
         }),
       ),

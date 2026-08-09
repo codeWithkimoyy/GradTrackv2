@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
 import '../../providers/auth_providers.dart';
 import '../../services/auth_service.dart';
@@ -42,7 +43,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return GlassAuthScaffold(
       title: 'Reset Password',
-      subtitle: "We'll email you a reset link",
+      subtitle: "Enter your account email to receive a password reset link",
       child: _sent ? _buildSentState(context) : _buildForm(),
     );
   }
@@ -56,23 +57,32 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
             decoration: const InputDecoration(
-              labelText: 'Email',
+              hintText: 'Email Address',
               prefixIcon: Icon(Icons.email_outlined),
             ),
             validator: (v) =>
                 (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _loading ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
             child: _loading
                 ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Text('Send Reset Link'),
+                : Text('Send Password Reset Link', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -83,25 +93,40 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.mark_email_read_outlined,
-            size: 56, color: AppColors.success),
-        const SizedBox(height: AppSpacing.md),
+        Container(
+          width: 64,
+          height: 64,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.18),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.mark_email_read_rounded, size: 36, color: AppColors.success),
+        ),
+        const SizedBox(height: 16),
         Text(
           'Check your inbox',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: 6),
         Text(
           'We sent a password reset link to ${_emailController.text.trim()}',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey[600]),
+          style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13, height: 1.4),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Back to Sign In'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: Text('Back to Sign In', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ),
       ],

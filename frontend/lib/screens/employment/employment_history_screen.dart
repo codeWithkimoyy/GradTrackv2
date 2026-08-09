@@ -16,21 +16,25 @@ class EmploymentHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final recordsAsync = ref.watch(myEmploymentRecordsProvider);
     final milestonesAsync = ref.watch(myCareerMilestonesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         title: Text(
           'Employment & Career',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
         bottom: TabBar(
           indicatorColor: AppColors.primaryBlue,
           indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: const Color(0xFF94A3B8),
+          labelColor: isDark ? Colors.white : AppColors.primaryNavy,
+          unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
           labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
           tabs: const [
             Tab(text: 'Work History'),
@@ -50,12 +54,12 @@ class EmploymentHistoryScreen extends ConsumerWidget {
           recordsAsync.when(
             data: (records) => _HistoryList(records: records),
             loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
-            error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
+            error: (e, _) => Center(child: Text('Error: $e')),
           ),
           milestonesAsync.when(
             data: (milestones) => _CareerTimeline(milestones: milestones),
             loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
-            error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
+            error: (e, _) => Center(child: Text('Error: $e')),
           ),
         ],
       ),
@@ -99,6 +103,8 @@ class _HistoryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (records.isEmpty) {
       return EmptyStateWidget(
         icon: Icons.work_outline_rounded,
@@ -110,7 +116,7 @@ class _HistoryList extends ConsumerWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(24),
       itemCount: records.length,
       itemBuilder: (context, i) {
         final r = records[i];
@@ -122,7 +128,7 @@ class _HistoryList extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 20),
             decoration: BoxDecoration(
               color: AppColors.error,
-              borderRadius: BorderRadius.circular(AppRadius.card),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(Icons.delete, color: Colors.white),
           ),
@@ -130,11 +136,13 @@ class _HistoryList extends ConsumerWidget {
             final confirmed = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
-                title: const Text('Delete Record'),
-                content: Text('Delete "${r.position}" at ${r.company}?'),
+                backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                title: Text('Delete Record', style: GoogleFonts.poppins(color: isDark ? Colors.white : AppColors.primaryNavy)),
+                content: Text('Delete "${r.position}" at ${r.company}?', style: GoogleFonts.poppins(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                 actions: [
                   TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: AppColors.error))),
                 ],
               ),
             );
@@ -145,9 +153,20 @@ class _HistoryList extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: AppColors.cardDark,
+              color: isDark ? AppColors.cardDark : Colors.white,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.borderDark),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+              boxShadow: isDark
+                  ? []
+                  : const [
+                      BoxShadow(
+                        color: Color(0x0C0F172A),
+                        blurRadius: 12,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,7 +179,7 @@ class _HistoryList extends ConsumerWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : AppColors.primaryNavy,
                         ),
                       ),
                     ),
@@ -169,7 +188,7 @@ class _HistoryList extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withValues(alpha: 0.18),
+                          color: AppColors.success.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(AppRadius.chip),
                           border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
                         ),
@@ -192,17 +211,20 @@ class _HistoryList extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text(
                   r.company,
-                  style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13.5),
+                  style: GoogleFonts.poppins(
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontSize: 13.5,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _tag(Icons.calendar_today_outlined, DateFormat.yMMM().format(r.dateHired)),
-                    _tag(Icons.location_on_outlined, '${r.city}, ${r.country}'),
-                    _tag(Icons.laptop_mac_outlined, r.workSetup.label),
-                    _tag(Icons.badge_outlined, r.employmentType),
+                    _tag(context, Icons.calendar_today_outlined, DateFormat.yMMM().format(r.dateHired)),
+                    _tag(context, Icons.location_on_outlined, '${r.city}, ${r.country}'),
+                    _tag(context, Icons.laptop_mac_outlined, r.workSetup.label),
+                    _tag(context, Icons.badge_outlined, r.employmentType),
                   ],
                 ),
               ],
@@ -213,22 +235,29 @@ class _HistoryList extends ConsumerWidget {
     );
   }
 
-  Widget _tag(IconData icon, String text) {
+  Widget _tag(BuildContext context, IconData icon, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryBlue.withValues(alpha: 0.15),
+        color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.15 : 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: AppColors.primaryBlue.withValues(alpha: 0.20),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.secondaryBlue),
+          Icon(icon, size: 14, color: AppColors.primaryBlue),
           const SizedBox(width: 5),
           Text(
             text,
-            style: GoogleFonts.poppins(fontSize: 11.5, color: Colors.white),
+            style: GoogleFonts.poppins(
+              fontSize: 11.5,
+              color: isDark ? Colors.white : AppColors.primaryNavy,
+            ),
           ),
         ],
       ),
@@ -258,6 +287,8 @@ class _CareerTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (milestones.isEmpty) {
       return const EmptyStateWidget(
         icon: Icons.timeline_rounded,
@@ -266,12 +297,10 @@ class _CareerTimeline extends StatelessWidget {
       );
     }
 
-    // Already sorted descending by date from the repository query.
     final sorted = milestones;
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       itemCount: sorted.length,
       itemBuilder: (context, i) {
         final m = sorted[i];
@@ -289,28 +318,30 @@ class _CareerTimeline extends StatelessWidget {
                       color: _colorFor(m.type).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(_iconFor(m.type),
-                        size: 18, color: _colorFor(m.type)),
+                    child: Icon(_iconFor(m.type), size: 18, color: _colorFor(m.type)),
                   ),
                   if (!isLast)
                     Expanded(
                       child: Container(
                         width: 2,
-                        color: Colors.grey[300],
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
                       ),
                     ),
                 ],
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: 16),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  padding: const EdgeInsets.only(bottom: 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         DateFormat.yMMMd().format(m.date),
-                        style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -318,13 +349,16 @@ class _CareerTimeline extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : AppColors.primaryNavy,
                         ),
                       ),
                       if (m.description != null)
                         Text(
                           m.description!,
-                          style: GoogleFonts.poppins(fontSize: 12.5, color: const Color(0xFF94A3B8)),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12.5,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
                         ),
                     ],
                   ),

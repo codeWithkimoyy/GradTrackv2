@@ -95,19 +95,23 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
   @override
   Widget build(BuildContext context) {
     final resumeAsync = ref.watch(myResumeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Resume & CV',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
       ),
       body: Padding(
@@ -131,13 +135,16 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
                     children: [
                       LinearProgressIndicator(
                         value: _progress,
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.primaryBlue.withValues(alpha: 0.1),
                         valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Uploading… ${(_progress * 100).round()}%',
-                        style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 12),
+                        style: GoogleFonts.poppins(
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   )
@@ -159,7 +166,10 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
                 Center(
                   child: Text(
                     'Supported formats: PDF or DOCX (Max size: 10 MB).',
-                    style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11.5),
+                    style: GoogleFonts.poppins(
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      fontSize: 11.5,
+                    ),
                   ),
                 ),
               ],
@@ -169,7 +179,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
             child: CircularProgressIndicator(color: AppColors.primaryBlue),
           ),
           error: (e, _) => Center(
-            child: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+            child: Text('Error: $e'),
           ),
         ),
       ),
@@ -184,13 +194,26 @@ class _ResumeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final sizeMb = (resume.sizeBytes / (1024 * 1024)).toStringAsFixed(2);
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0C0F172A),
+                  blurRadius: 12,
+                  offset: Offset(0, 2),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -199,7 +222,7 @@ class _ResumeCard extends StatelessWidget {
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.16),
+              color: AppColors.error.withValues(alpha: isDark ? 0.16 : 0.10),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error, size: 24),
@@ -214,7 +237,7 @@ class _ResumeCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -222,13 +245,16 @@ class _ResumeCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '$sizeMb MB • Uploaded ${DateFormat.yMMMd().format(resume.uploadedAt)}',
-                  style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.open_in_new_rounded, color: AppColors.secondaryBlue, size: 20),
+            icon: const Icon(Icons.open_in_new_rounded, color: AppColors.primaryBlue, size: 20),
             onPressed: () => launchUrl(
               Uri.parse(resume.fileUrl),
               mode: LaunchMode.externalApplication,

@@ -169,19 +169,23 @@ class _CertificateGalleryScreenState
   @override
   Widget build(BuildContext context) {
     final certsAsync = ref.watch(myCertificatesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Certificates Gallery',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -203,7 +207,7 @@ class _CertificateGalleryScreenState
           if (_uploading)
             LinearProgressIndicator(
               value: _progress,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.primaryBlue.withValues(alpha: 0.1),
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
             ),
           Expanded(
@@ -225,9 +229,20 @@ class _CertificateGalleryScreenState
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.cardDark,
+                            color: isDark ? AppColors.cardDark : Colors.white,
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: AppColors.borderDark),
+                            border: Border.all(
+                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            ),
+                            boxShadow: isDark
+                                ? []
+                                : const [
+                                    BoxShadow(
+                                      color: Color(0x0C0F172A),
+                                      blurRadius: 12,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
                           ),
                           child: Row(
                             children: [
@@ -236,11 +251,11 @@ class _CertificateGalleryScreenState
                                 height: 44,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: AppColors.gold.withValues(alpha: 0.16),
+                                  color: AppColors.gold.withValues(alpha: isDark ? 0.16 : 0.12),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.verified_rounded,
-                                    color: AppColors.gold, size: 22),
+                                    color: AppColors.goldDark, size: 22),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -252,7 +267,7 @@ class _CertificateGalleryScreenState
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        color: isDark ? Colors.white : AppColors.primaryNavy,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -260,13 +275,16 @@ class _CertificateGalleryScreenState
                                     const SizedBox(height: 2),
                                     Text(
                                       '${cert.provider.label} • ${DateFormat.yMMMd().format(cert.uploadedAt)}',
-                                      style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 11.5,
+                                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.open_in_new_rounded, color: AppColors.secondaryBlue, size: 20),
+                                icon: const Icon(Icons.open_in_new_rounded, color: AppColors.primaryBlue, size: 20),
                                 onPressed: () => launchUrl(
                                   Uri.parse(cert.fileUrl),
                                   mode: LaunchMode.externalApplication,
@@ -287,7 +305,7 @@ class _CertificateGalleryScreenState
                 child: CircularProgressIndicator(color: AppColors.primaryBlue),
               ),
               error: (e, _) => Center(
-                child: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+                child: Text('Error: $e'),
               ),
             ),
           ),

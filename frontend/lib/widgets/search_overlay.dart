@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../constants/app_constants.dart';
 
 class SearchOverlay extends StatefulWidget {
   final Widget child;
@@ -54,7 +55,6 @@ class _SearchOverlayState extends State<SearchOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SizedBox(
       width: _isOpen ? null : 360,
       child: _isOpen
@@ -64,22 +64,20 @@ class _SearchOverlayState extends State<SearchOverlay>
                 return Container(
                   height: 44,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.5),
+                    color: AppColors.cardDark,
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: theme.colorScheme.primary.withValues(
-                          alpha: 0.3 + _animation.value * 0.4),
+                      color: AppColors.primaryBlue.withValues(
+                          alpha: 0.4 + _animation.value * 0.4),
                     ),
                   ),
                   child: Row(
                     children: [
                       const SizedBox(width: 14),
-                      Icon(
+                      const Icon(
                         Icons.search,
                         size: 20,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.5),
+                        color: Color(0xFF94A3B8),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -87,15 +85,16 @@ class _SearchOverlayState extends State<SearchOverlay>
                           controller: _controller,
                           focusNode: _focusNode,
                           autofocus: true,
-                          style: GoogleFonts.poppins(fontSize: 14),
+                          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
                           decoration: InputDecoration(
                             hintText: 'Search alumni, surveys, records...',
                             hintStyle: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.35),
+                              color: const Color(0xFF64748B),
                             ),
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -104,7 +103,7 @@ class _SearchOverlayState extends State<SearchOverlay>
                       ),
                       if (_controller.text.isNotEmpty)
                         IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
+                          icon: const Icon(Icons.clear, size: 18, color: Color(0xFF94A3B8)),
                           onPressed: () {
                             _controller.clear();
                             setState(() {});
@@ -115,7 +114,7 @@ class _SearchOverlayState extends State<SearchOverlay>
                               const BoxConstraints(minWidth: 32, minHeight: 32),
                         ),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 18),
+                        icon: const Icon(Icons.close, size: 18, color: Color(0xFF94A3B8)),
                         onPressed: _closeSearch,
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
@@ -134,26 +133,24 @@ class _SearchOverlayState extends State<SearchOverlay>
                 height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.5),
+                  color: AppColors.cardDark,
                   borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: AppColors.borderDark),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.search,
                       size: 20,
-                      color: theme.colorScheme.onSurface
-                          .withValues(alpha: 0.4),
+                      color: Color(0xFF94A3B8),
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Search...',
+                      'Search portal records...',
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.35),
+                        fontSize: 13.5,
+                        color: const Color(0xFF64748B),
                       ),
                     ),
                   ],

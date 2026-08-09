@@ -15,14 +15,15 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(currentUserProfileProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -35,12 +36,12 @@ class ProfileScreen extends ConsumerWidget {
           'My Profile',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: isDark ? Colors.white : AppColors.primaryNavy,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.secondaryBlue),
+            icon: const Icon(Icons.edit_outlined, color: AppColors.primaryBlue),
             onPressed: () => context.push(AppRoutes.editProfile),
           ),
         ],
@@ -61,16 +62,20 @@ class ProfileScreen extends ConsumerWidget {
                 clipBehavior: Clip.antiAlias,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: isDark ? AppColors.cardDark : Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.borderDark),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x30000000),
-                      blurRadius: 20,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
+                  border: Border.all(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  ),
+                  boxShadow: isDark
+                      ? []
+                      : const [
+                          BoxShadow(
+                            color: Color(0x0C0F172A),
+                            blurRadius: 18,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
                 ),
                 child: Stack(
                   children: [
@@ -78,7 +83,7 @@ class ProfileScreen extends ConsumerWidget {
                       right: -25,
                       bottom: -25,
                       child: Opacity(
-                        opacity: 0.08,
+                        opacity: isDark ? 0.08 : 0.05,
                         child: Image.asset(
                           'assets/images/bisu.png',
                           width: 160,
@@ -91,7 +96,7 @@ class ProfileScreen extends ConsumerWidget {
                       children: [
                         CircleAvatar(
                           radius: 48,
-                          backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.2),
+                          backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
                           backgroundImage: user.photoUrl != null
                               ? avatarProvider(user.photoUrl)
                               : null,
@@ -102,7 +107,7 @@ class ProfileScreen extends ConsumerWidget {
                                       : '?',
                                   style: GoogleFonts.poppins(
                                     fontSize: 32,
-                                    color: Colors.white,
+                                    color: AppColors.primaryBlue,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 )
@@ -114,7 +119,7 @@ class ProfileScreen extends ConsumerWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: isDark ? Colors.white : AppColors.primaryNavy,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -122,8 +127,8 @@ class ProfileScreen extends ConsumerWidget {
                           user.role.label,
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: AppColors.tealLight,
-                            fontWeight: FontWeight.w500,
+                            color: AppColors.teal,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -134,19 +139,19 @@ class ProfileScreen extends ConsumerWidget {
                             color: AppColors.gold.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
-                              color: AppColors.gold.withValues(alpha: 0.3),
+                              color: AppColors.goldDark.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.verified_rounded,
-                                  color: AppColors.gold, size: 16),
+                                  color: AppColors.goldDark, size: 16),
                               const SizedBox(width: 6),
                               Text(
                                 'Verified BISU Graduate',
                                 style: GoogleFonts.poppins(
-                                  color: AppColors.gold,
+                                  color: AppColors.goldDark,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -225,13 +230,26 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Color(0x0A0F172A),
+                  blurRadius: 12,
+                  offset: Offset(0, 2),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -240,10 +258,10 @@ class _InfoTile extends StatelessWidget {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withValues(alpha: 0.16),
+              color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.secondaryBlue, size: 20),
+            child: Icon(icon, color: AppColors.primaryBlue, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -253,7 +271,7 @@ class _InfoTile extends StatelessWidget {
                 Text(
                   label,
                   style: GoogleFonts.poppins(
-                    color: const Color(0xFF94A3B8),
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     fontSize: 11.5,
                   ),
                 ),
@@ -263,7 +281,7 @@ class _InfoTile extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
                 ),
               ],
