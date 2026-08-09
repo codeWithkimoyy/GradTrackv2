@@ -89,6 +89,7 @@ class UserModel {
   final EmploymentStatus employmentStatus;
   final bool isVerified;
   final bool emailVerified;
+  final bool disabled;
   final double profileCompletion;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -113,6 +114,7 @@ class UserModel {
     this.employmentStatus = EmploymentStatus.unemployed,
     this.isVerified = false,
     this.emailVerified = false,
+    this.disabled = false,
     this.profileCompletion = 0.0,
     required this.createdAt,
     this.updatedAt,
@@ -140,6 +142,7 @@ class UserModel {
           EmploymentStatusX.fromString(map['employmentStatus'] ?? 'unemployed'),
       isVerified: map['isVerified'] ?? false,
       emailVerified: map['emailVerified'] ?? false,
+      disabled: map['disabled'] ?? false,
       profileCompletion: (map['profileCompletion'] ?? 0.0).toDouble(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
@@ -168,6 +171,7 @@ class UserModel {
         'employmentStatus': employmentStatus.name,
         'isVerified': isVerified,
         'emailVerified': emailVerified,
+        'disabled': disabled,
         'profileCompletion': profileCompletion,
         'createdAt': Timestamp.fromDate(createdAt),
         'updatedAt': Timestamp.now(),

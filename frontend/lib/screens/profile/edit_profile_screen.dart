@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,9 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/profile_edit_provider.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/avatar_utils.dart';
-import '../../providers/document_providers.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -31,8 +30,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final ImagePicker _picker = ImagePicker();
 
   bool _initialized = false;
-  bool _saving = false;
-  bool _uploadingPhoto = false;
   Uint8List? _selectedPhotoBytes;
   String? _selectedPhotoName;
 
@@ -47,6 +44,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _linkedInController.text = user.socialLinks.linkedIn ?? '';
     _githubController.text = user.socialLinks.github ?? '';
     _initialized = true;
+    ref.read(profileEditControllerProvider.notifier).startEditing();
   }
 
   Future<void> _pickPhoto() async {
@@ -71,40 +69,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
-  Future<String?> _uploadPhotoIfNeeded(UserModel current) async {
-    if (_selectedPhotoBytes == null) return current.photoUrl;
-
-    setState(() => _uploadingPhoto = true);
-    try {
-      final result = await ref.read(storageServiceProvider).uploadProfilePhoto(
-            userId: current.uid,
-            fileName: _selectedPhotoName ?? 'profile_photo.jpg',
-            bytes: _selectedPhotoBytes!,
-          );
-      return result.url;
-    } catch (e) {
-      if (mounted) {
-        final msg = e.toString().contains('storage')
-            ? 'Storage not enabled. Go to Firebase Console > Storage and enable it.'
-            : 'Photo upload skipped – $e';
-        showAppSnackBar(context, msg, duration: const Duration(seconds: 4));
-      }
-      return current.photoUrl;
-    } finally {
-      if (mounted) setState(() => _uploadingPhoto = false);
-    }
-  }
-
   Future<void> _save(UserModel current) async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
 
-    try {
-      final photoUrl = await _uploadPhotoIfNeeded(current);
-
-      final updated = current.copyWith(
+    final controller = ref.read(profileEditControllerProvider.notifier);
+    final success = await controller.save(
+      current: current,
+      updated: current.copyWith(
         fullName: _nameController.text.trim(),
-        photoUrl: photoUrl,
         studentNumber: _studentNumberController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         currentAddress: _currentAddressController.text.trim(),
@@ -116,42 +88,31 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           portfolio: current.socialLinks.portfolio,
           facebook: current.socialLinks.facebook,
         ),
-      );
+      ),
+      photoBytes: _selectedPhotoBytes,
+      photoName: _selectedPhotoName,
+    );
 
-      final withCompletion = updated.copyWith(
-        profileCompletion: UserModel.computeCompletion(updated),
-      );
-
-      try {
-        await ref.read(userRepositoryProvider).saveUser(withCompletion);
-      } catch (_) {
-        // Firestore unavailable — save locally instead.
-        ref.read(localProfileProvider.notifier).state = withCompletion;
-      }
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        showAppSnackBar(context, 'Profile updated',
-            backgroundColor: AppColors.success);
-      }
-    } catch (e) {
-      if (mounted) {
-        showAppSnackBar(context, 'Failed to save: $e',
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () => _save(current),
-            ));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
+    if (!mounted) return;
+    if (!success) {
+      showAppSnackBar(context, 'Failed to save profile. Please try again.',
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 5));
+      return;
     }
+    showAppSnackBar(
+      context,
+      controller.message.isEmpty ? 'Profile updated successfully.' : controller.message,
+      backgroundColor: AppColors.success,
+    );
+    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(currentUserProfileProvider);
+    final editState = ref.watch(profileEditControllerProvider);
+    final saving = editState.isSaving;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Profile')),
@@ -159,6 +120,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         data: (user) {
           if (user == null) return const Center(child: Text('No profile'));
           _hydrate(user);
+
+          final isGuest = user.role == UserRole.guest;
 
           return Form(
             key: _formKey,
@@ -196,12 +159,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         bottom: 0,
                         right: 0,
                         child: InkWell(
-                          onTap: _uploadingPhoto ? null : _pickPhoto,
+                          onTap: saving ? null : _pickPhoto,
                           borderRadius: BorderRadius.circular(999),
                           child: CircleAvatar(
                             radius: 18,
                             backgroundColor: AppColors.primaryBlue,
-                            child: _uploadingPhoto
+                            child: saving
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
@@ -229,25 +192,33 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 _field('Full Name', _nameController, required: true),
-                _field('Student Number', _studentNumberController),
+                if (!isGuest) ...[
+                  _field('Student Number', _studentNumberController),
+                ],
                 _field('Phone Number', _phoneController,
                     keyboardType: TextInputType.phone),
-                _field('Current Address', _currentAddressController),
-                _field('Permanent Address', _permanentAddressController),
+                if (!isGuest) ...[
+                  _field('Current Address', _currentAddressController),
+                  _field('Permanent Address', _permanentAddressController),
+                ],
                 _field('Biography', _bioController, maxLines: 4),
-                const SizedBox(height: AppSpacing.sm),
-                Text('Social Links',
+                if (!isGuest) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Social Links',
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: AppSpacing.sm),
-                _field('LinkedIn URL', _linkedInController),
-                _field('GitHub URL', _githubController),
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _field('LinkedIn URL', _linkedInController),
+                  _field('GitHub URL', _githubController),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
-                  onPressed: _saving ? null : () => _save(user),
-                  child: _saving
+                  onPressed: saving ? null : () => _save(user),
+                  child: saving
                       ? const SizedBox(
                           width: 20,
                           height: 20,

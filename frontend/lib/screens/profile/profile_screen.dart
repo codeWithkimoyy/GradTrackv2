@@ -107,6 +107,15 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: () => context.push(AppRoutes.editProfile),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Edit Profile'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
               _InfoTile(
                   icon: Icons.email_outlined,
                   label: 'Email',

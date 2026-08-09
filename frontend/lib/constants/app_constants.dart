@@ -58,4 +58,6 @@ class FirestoreCollections {
   static const String skills = 'skills';
   static const String certificates = 'certificates';
   static const String careerMilestones = 'career_milestones';
+  static const String reports = 'reports';
+  static const String systemSettings = 'system_settings';
 }

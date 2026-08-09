@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
@@ -12,28 +13,28 @@ final authStateProvider = StreamProvider<User?>((ref) {
 });
 
 /// Holds a locally-saved profile, updated by edit screens when Firestore is
-/// unavailable. The [currentUserProfileProvider] merges this into its stream.
+/// unavailable. The profile stream merges this into its result.
 final localProfileProvider = StateProvider<UserModel?>((_) => null);
 
-/// Creates a local [UserModel] from raw FirebaseAuth user data as fallback.
-UserModel _localProfileFromAuth(User u) => UserModel(
-      uid: u.uid,
-      email: u.email ?? '',
-      fullName: u.displayName ?? '',
+UserModel _localProfileFromAuth(User user) => UserModel(
+      uid: user.uid,
+      email: user.email ?? '',
+      fullName: user.displayName ?? '',
       role: UserRole.alumni,
-      photoUrl: u.photoURL,
-      emailVerified: u.emailVerified,
+      photoUrl: user.photoURL,
+      emailVerified: user.emailVerified,
       createdAt: DateTime.now(),
     );
 
 final userRepositoryProvider =
     Provider<UserRepository>((ref) => UserRepository());
 
-/// Emits the Firestore profile document for the currently signed-in user,
-/// falling back to a local profile when Firestore is unavailable.
+/// Emits the Firestore profile for the signed-in user. A local profile keeps
+/// role routing usable during temporary Firestore/network failures.
 final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
   final authState = ref.watch(authStateProvider);
   ref.watch(localProfileProvider);
+
   return authState.when(
     data: (authUser) async* {
       if (authUser == null) {
@@ -43,22 +44,27 @@ final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
 
       final fallback = _localProfileFromAuth(authUser);
       final localProfile = ref.read(localProfileProvider);
-
-      if (localProfile != null && localProfile.uid == authUser.uid) {
-        yield localProfile;
-      } else {
-        yield fallback;
-      }
-
       final authService = ref.read(authServiceProvider);
       final userRepository = ref.read(userRepositoryProvider);
+
+      // Emit the best data we already have immediately so the UI never
+      // blocks on a slow or unreachable Firestore connection.
+      yield (localProfile != null && localProfile.uid == authUser.uid)
+          ? localProfile
+          : fallback;
+
+      // Best-effort profile bootstrap; never blocks the stream.
+      authService.ensureUserProfile(authUser.uid).then(
+            (_) {},
+            onError: (_) {},
+          );
+
       try {
-        await authService.ensureUserProfile(authUser.uid);
         await for (final profile in userRepository.watchUser(authUser.uid)) {
-          yield profile ?? (localProfile ?? fallback);
+          yield profile ?? fallback;
         }
       } catch (_) {
-        // Firestore unavailable – keep current yield.
+        yield fallback;
       }
     },
     loading: () => Stream.value(null),
@@ -66,7 +72,6 @@ final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
   );
 });
 
-/// Convenience bool provider for guards/UI.
 final isAuthenticatedProvider = Provider<bool>((ref) {
   return ref.watch(authStateProvider).value != null;
 });

@@ -1,0 +1,37 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../repositories/stats_repository.dart';
+import 'role_providers.dart';
+
+final statsRepositoryProvider =
+    Provider<StatsRepository>((ref) => StatsRepository());
+
+/// Live staff-facing aggregate stats (admin + coordinator).
+/// Admins see every role; coordinators are scoped to alumni and guests.
+final staffStatsProvider =
+    StreamProvider<DashboardStats>((ref) {
+  final isAdmin = ref.watch(isAdminProvider);
+  return ref
+      .watch(statsRepositoryProvider)
+      .watchStaffStats(adminScope: isAdmin);
+});
+
+/// Live survey progress for a specific alumni user.
+final surveyProgressProvider =
+    StreamProvider.family<SurveyProgress, String>((ref, userId) {
+  return ref.watch(statsRepositoryProvider).watchSurveyProgress(userId);
+});
+
+/// Live announcement list (alumni view).
+final announcementsProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  return ref.watch(statsRepositoryProvider).watchAnnouncements();
+});
+
+/// Live public announcement list (guest view).
+final publicAnnouncementsProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  return ref
+      .watch(statsRepositoryProvider)
+      .watchAnnouncements(publicOnly: true);
+});

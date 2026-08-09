@@ -84,74 +84,191 @@ class DashboardShell extends ConsumerWidget {
           extendBody: true,
           bottomNavigationBar: SafeArea(
             minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surface
-                        .withValues(alpha: .88),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: .48),
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x260B1F3A),
-                        blurRadius: 24,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: NavigationBar(
-                    height: 68,
-                    backgroundColor: Colors.transparent,
-                    indicatorColor:
-                        AppColors.primaryBlue.withValues(alpha: .13),
-                    selectedIndex: currentIndex,
-                    animationDuration: const Duration(milliseconds: 320),
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.onlyShowSelected,
-                    onDestinationSelected: navigate,
-                    destinations: const [
-                      NavigationDestination(
-                        icon: Icon(Icons.dashboard_outlined),
-                        selectedIcon: Icon(Icons.dashboard_rounded, size: 27),
-                        label: 'Home',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.groups_outlined),
-                        selectedIcon: Icon(Icons.groups_rounded, size: 27),
-                        label: 'Alumni',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.work_outline),
-                        selectedIcon: Icon(Icons.work_rounded, size: 27),
-                        label: 'Employment',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.description_outlined),
-                        selectedIcon: Icon(Icons.description_rounded, size: 27),
-                        label: 'Documents',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.person_outline),
-                        selectedIcon: Icon(Icons.person_rounded, size: 27),
-                        label: 'Profile',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: _PremiumBottomNavigation(
+              selectedIndex: currentIndex,
+              onSelected: navigate,
             ),
           ),
         );
       },
     );
   }
+}
+
+class _PremiumBottomNavigation extends StatelessWidget {
+  const _PremiumBottomNavigation({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  static const _items = [
+    _BottomNavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
+    _BottomNavItem(Icons.groups_outlined, Icons.groups_rounded, 'Alumni'),
+    _BottomNavItem(
+      Icons.work_outline_rounded,
+      Icons.work_rounded,
+      'Employment',
+    ),
+    _BottomNavItem(
+      Icons.description_outlined,
+      Icons.description_rounded,
+      'Documents',
+    ),
+    _BottomNavItem(
+      Icons.person_outline_rounded,
+      Icons.person_rounded,
+      'Profile',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inactiveColor =
+        isDark ? Colors.white.withValues(alpha: .68) : const Color(0xFF667085);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: .34)
+                : const Color(0xFF0B1F3A).withValues(alpha: .16),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 78,
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF171B24).withValues(alpha: .94)
+                  : Colors.white.withValues(alpha: .92),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: .10)
+                    : Colors.white.withValues(alpha: .72),
+              ),
+            ),
+            child: Row(
+              children: List.generate(_items.length, (index) {
+                final item = _items[index];
+                final selected = selectedIndex == index;
+                return Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: selected,
+                    label: item.label,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(22),
+                        child: InkWell(
+                          onTap: () => onSelected(index),
+                          borderRadius: BorderRadius.circular(22),
+                          splashColor: AppColors.secondaryBlue
+                              .withValues(alpha: selected ? .20 : .13),
+                          highlightColor:
+                              AppColors.primaryBlue.withValues(alpha: .06),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOutCubic,
+                            constraints: const BoxConstraints(minHeight: 58),
+                            decoration: BoxDecoration(
+                              gradient: selected
+                                  ? const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0xFF3978F6),
+                                        Color(0xFF1E40AF),
+                                      ],
+                                    )
+                                  : null,
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: selected
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.primaryBlue
+                                            .withValues(alpha: .32),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                AnimatedScale(
+                                  scale: selected ? 1 : .90,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOutCubic,
+                                  child: Icon(
+                                    selected ? item.activeIcon : item.icon,
+                                    size: selected ? 28 : 24,
+                                    color:
+                                        selected ? Colors.white : inactiveColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 220),
+                                  curve: Curves.easeInOut,
+                                  style: TextStyle(
+                                    color:
+                                        selected ? Colors.white : inactiveColor,
+                                    fontSize:
+                                        item.label == 'Employment' ? 8.5 : 9.5,
+                                    height: 1,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      item.label,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavItem {
+  const _BottomNavItem(this.icon, this.activeIcon, this.label);
+
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
 }
 
 class _DesktopSidebar extends StatelessWidget {
