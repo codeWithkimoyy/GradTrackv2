@@ -302,10 +302,10 @@ class _AccountActionsRow extends StatelessWidget {
     final fontSize = isCompact ? 13.0 : 15.0;
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Flexible(
-          fit: FlexFit.loose,
+        Expanded(
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () => onRememberChanged(!rememberMe),
@@ -332,18 +332,14 @@ class _AccountActionsRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Remember Me',
-                      maxLines: 1,
-                      softWrap: false,
-                      style: GoogleFonts.poppins(
-                        color: _LoginScreenState._primaryText,
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  child: Text(
+                    'Remember Me',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      color: _LoginScreenState._primaryText,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -351,34 +347,20 @@ class _AccountActionsRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        Flexible(
-          fit: FlexFit.tight,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onForgotPassword,
-                style: TextButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  foregroundColor: _LoginScreenState._accentBlue,
-                  textStyle: GoogleFonts.poppins(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                child: const Text(
-                  'Forgot Password?',
-                  maxLines: 1,
-                  softWrap: false,
-                ),
-              ),
+        const SizedBox(width: 8),
+        TextButton(
+          onPressed: onForgotPassword,
+          style: TextButton.styleFrom(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            foregroundColor: _LoginScreenState._accentBlue,
+            textStyle: GoogleFonts.poppins(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
             ),
           ),
+          child: const Text('Forgot Password?'),
         ),
       ],
     );

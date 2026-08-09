@@ -198,11 +198,29 @@ class AuthService {
     return _userRepository.watchUser(uid);
   }
 
-  /// Maps FirebaseAuthException codes to friendly, user-facing messages.
+  /// Maps exceptions to friendly, actionable, user-facing error messages.
   static String friendlyError(Object error) {
-    if (error is StateError &&
-        error.message.contains('Firebase is not configured')) {
-      return 'Firebase is not configured yet. Add the real project values to assets/.env or run flutterfire configure.';
+    if (error is StateError) {
+      if (error.message.contains('Firebase is not configured')) {
+        return 'Firebase is not configured yet. Run flutterfire configure or populate assets/.env.';
+      }
+      return error.message;
+    }
+
+    final String errStr = error.toString();
+
+    if (errStr.contains('popup-closed-by-user') ||
+        errStr.contains('cancelled-popup-request')) {
+      return 'Google sign-in was cancelled.';
+    }
+
+    if (errStr.contains('unauthorized-domain')) {
+      return 'Domain not authorized for Google Sign-In. Add localhost to Firebase Console.';
+    }
+
+    if (errStr.contains('invalid-api-key') ||
+        errStr.contains('api-key-not-valid')) {
+      return 'Firebase API key is invalid or placeholder. Run flutterfire configure.';
     }
 
     if (error is FirebaseAuthException) {
@@ -215,9 +233,17 @@ class AuthService {
         'invalid-email' => 'Please enter a valid email address.',
         'too-many-requests' => 'Too many attempts. Please try again later.',
         'network-request-failed' => 'Network error. Check your connection.',
-        _ => error.message ?? 'Something went wrong. Please try again.',
+        'popup-closed-by-user' => 'Google sign-in was cancelled.',
+        'unauthorized-domain' => 'Domain not authorized in Firebase Console.',
+        _ => error.message ?? 'Authentication error (${error.code}).',
       };
     }
-    return 'Something went wrong. Please try again.';
+
+    if (error is Exception) {
+      final msg = error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      return msg.isNotEmpty ? msg : 'An error occurred during authentication.';
+    }
+
+    return error.toString();
   }
 }
