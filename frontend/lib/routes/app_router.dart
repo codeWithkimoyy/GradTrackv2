@@ -6,7 +6,6 @@ import '../dashboards/admin_dashboard.dart';
 import '../dashboards/alumni_dashboard.dart';
 import '../dashboards/coordinator_dashboard.dart';
 import '../dashboards/guest_dashboard.dart';
-import '../dashboards/role_dashboard_shell.dart';
 import '../models/user_model.dart';
 import '../constants/app_constants.dart';
 import '../providers/auth_providers.dart';
@@ -19,6 +18,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/onboarding_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/splash_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/documents/certificate_gallery_screen.dart';
 import '../screens/documents/resume_upload_screen.dart';
 import '../screens/employment/add_employment_screen.dart';
@@ -191,7 +191,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const AccountDisabledScreen(),
       ),
       ShellRoute(
-        builder: (_, __, child) => RoleDashboardShell(child: child),
+        builder: (_, __, child) => DashboardShell(child: child),
         routes: [
           GoRoute(path: AppRoutes.staffUsers, builder: (context, state) {
             final role = state.uri.queryParameters['role'];

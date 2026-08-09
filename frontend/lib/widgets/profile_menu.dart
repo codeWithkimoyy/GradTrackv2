@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_constants.dart';
 import '../models/user_model.dart';
 import '../providers/auth_providers.dart';
+import '../providers/theme_provider.dart';
 import '../routes/app_router.dart';
 import '../utils/app_snack_bar.dart';
 
@@ -46,7 +47,10 @@ class ProfileMenu extends ConsumerWidget {
         _showChangePasswordDialog(context, ref);
         break;
       case 'theme':
-        showInfo(context, 'Theme settings coming soon');
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        ref.read(themeModeProvider.notifier).setTheme(
+              isDark ? AppThemeMode.light : AppThemeMode.dark,
+            );
         break;
       case 'notifications':
         showInfo(context, 'Notification preferences coming soon');
@@ -220,6 +224,15 @@ class ProfileMenu extends ConsumerWidget {
       PopupMenuItem(
         value: 'change_password',
         child: _menuItem(Icons.lock_outline, 'Change Password'),
+      ),
+      PopupMenuItem(
+        value: 'theme',
+        child: _menuItem(
+          theme.brightness == Brightness.dark
+              ? Icons.light_mode_outlined
+              : Icons.dark_mode_outlined,
+          theme.brightness == Brightness.dark ? 'Light Mode' : 'Dark Mode',
+        ),
       ),
       PopupMenuItem(
         value: 'settings',

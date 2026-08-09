@@ -10,6 +10,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'config/app_theme.dart';
 import 'config/firebase_options.dart';
 import 'constants/app_constants.dart';
+import 'providers/theme_provider.dart';
 import 'routes/app_router.dart';
 
 Future<void> main() async {
@@ -51,7 +52,7 @@ class GradTrackApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.light,
+      themeMode: ref.watch(effectiveThemeModeProvider),
       routerConfig: router,
       builder: (context, child) => ResponsiveBreakpoints.builder(
         child: child ?? const SizedBox.shrink(),
