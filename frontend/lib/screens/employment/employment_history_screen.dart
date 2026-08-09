@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../constants/app_constants.dart';
 import '../../models/employment_model.dart';
 import '../../providers/employment_providers.dart';
+import '../../widgets/empty_state_widget.dart';
 
 
 class EmploymentHistoryScreen extends ConsumerWidget {
@@ -16,29 +18,44 @@ class EmploymentHistoryScreen extends ConsumerWidget {
     final milestonesAsync = ref.watch(myCareerMilestonesProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.surfaceDark,
       appBar: AppBar(
-        title: const Text('Employment & Career'),
-        bottom: const TabBar(tabs: [
-          Tab(text: 'History'),
-          Tab(text: 'Timeline'),
-        ]),
+        backgroundColor: AppColors.surfaceDark,
+        elevation: 0,
+        title: Text(
+          'Employment & Career',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        bottom: TabBar(
+          indicatorColor: AppColors.primaryBlue,
+          indicatorWeight: 3,
+          labelColor: Colors.white,
+          unselectedLabelColor: const Color(0xFF94A3B8),
+          labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
+          tabs: const [
+            Tab(text: 'Work History'),
+            Tab(text: 'Career Timeline'),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: Colors.white,
         onPressed: () => context.push('/employment/add'),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Job'),
+        icon: const Icon(Icons.add_rounded),
+        label: Text('Add Job Record', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
       ),
       body: TabBarView(
         children: [
           recordsAsync.when(
             data: (records) => _HistoryList(records: records),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
+            error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
           ),
           milestonesAsync.when(
             data: (milestones) => _CareerTimeline(milestones: milestones),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
+            error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
           ),
         ],
       ),
@@ -83,9 +100,12 @@ class _HistoryList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (records.isEmpty) {
-      return const _EmptyState(
-        icon: Icons.work_outline,
-        message: 'No employment records yet.\nTap "Add Job" to get started.',
+      return EmptyStateWidget(
+        icon: Icons.work_outline_rounded,
+        title: 'No Employment Records',
+        message: 'Log your current position or past work experience to keep your alumni tracer updated.',
+        actionLabel: 'Add Job Record',
+        onAction: () => context.push('/employment/add'),
       );
     }
 
@@ -121,62 +141,71 @@ class _HistoryList extends ConsumerWidget {
             return confirmed ?? false;
           },
           onDismissed: (_) => _delete(context, ref, r),
-          child: Card(
-            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.cardDark,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.borderDark),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        r.position,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    if (r.isCurrent)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(AppRadius.chip),
+                          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                        ),
                         child: Text(
-                          r.position,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      if (r.isCurrent)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(AppRadius.chip),
+                          'Current Job',
+                          style: GoogleFonts.poppins(
+                            color: AppColors.success,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                          child: const Text('Current',
-                              style: TextStyle(
-                                  color: AppColors.success,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600)),
                         ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
-                        onPressed: () => _delete(context, ref, r),
-                        tooltip: 'Delete',
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(r.company,
-                      style: TextStyle(color: Colors.grey[700], fontSize: 14)),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      _tag(Icons.calendar_today_outlined,
-                          DateFormat.yMMM().format(r.dateHired)),
-                      _tag(Icons.location_on_outlined, '${r.city}, ${r.country}'),
-                      _tag(Icons.laptop_mac_outlined, r.workSetup.label),
-                      _tag(Icons.badge_outlined, r.employmentType),
-                    ],
-                  ),
-                ],
-              ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+                      onPressed: () => _delete(context, ref, r),
+                      tooltip: 'Delete',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  r.company,
+                  style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13.5),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _tag(Icons.calendar_today_outlined, DateFormat.yMMM().format(r.dateHired)),
+                    _tag(Icons.location_on_outlined, '${r.city}, ${r.country}'),
+                    _tag(Icons.laptop_mac_outlined, r.workSetup.label),
+                    _tag(Icons.badge_outlined, r.employmentType),
+                  ],
+                ),
+              ],
             ),
           ),
         );
@@ -185,12 +214,24 @@ class _HistoryList extends ConsumerWidget {
   }
 
   Widget _tag(IconData icon, String text) {
-    return Chip(
-      avatar: Icon(icon, size: 16),
-      label: Text(text, style: const TextStyle(fontSize: 12)),
-      visualDensity: VisualDensity.compact,
-      backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.06),
-      side: BorderSide.none,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlue.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.secondaryBlue),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: GoogleFonts.poppins(fontSize: 11.5, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -218,10 +259,10 @@ class _CareerTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (milestones.isEmpty) {
-      return const _EmptyState(
-        icon: Icons.timeline_outlined,
-        message:
-            'No career milestones yet.\nThey\'ll appear here as you log jobs,\npromotions, and certifications.',
+      return const EmptyStateWidget(
+        icon: Icons.timeline_rounded,
+        title: 'No Career Milestones Yet',
+        message: 'Your career achievements, promotions, and job milestones will automatically appear here as you update your profile.',
       );
     }
 
@@ -269,20 +310,21 @@ class _CareerTimeline extends StatelessWidget {
                     children: [
                       Text(
                         DateFormat.yMMMd().format(m.date),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         m.title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       if (m.description != null)
                         Text(
                           m.description!,
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: GoogleFonts.poppins(fontSize: 12.5, color: const Color(0xFF94A3B8)),
                         ),
                     ],
                   ),
@@ -292,28 +334,6 @@ class _CareerTimeline extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String message;
-  const _EmptyState({required this.icon, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 56, color: Colors.grey[300]),
-          const SizedBox(height: AppSpacing.md),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[500])),
-        ],
-      ),
     );
   }
 }

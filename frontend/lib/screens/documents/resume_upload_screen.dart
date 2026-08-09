@@ -3,6 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../constants/app_constants.dart';
@@ -12,6 +14,7 @@ import '../../providers/document_providers.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/firebase_error_message.dart';
+import '../../widgets/empty_state_widget.dart';
 
 class ResumeUploadScreen extends ConsumerStatefulWidget {
   const ResumeUploadScreen({super.key});
@@ -28,7 +31,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: StorageService.resumeExtensions,
-      withData: true, // needed for web; gives us bytes directly
+      withData: true,
     );
     if (result == null || result.files.isEmpty) return;
 
@@ -62,7 +65,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
           );
 
       if (mounted) {
-        showAppSnackBar(context, 'Resume uploaded',
+        showAppSnackBar(context, 'Resume uploaded successfully',
             backgroundColor: AppColors.success);
       }
     } catch (e) {
@@ -94,42 +97,80 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
     final resumeAsync = ref.watch(myResumeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Resume')),
+      backgroundColor: AppColors.surfaceDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceDark,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Resume & CV',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(24),
         child: resumeAsync.when(
           data: (resume) => SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (resume != null) _ResumeCard(resume: resume, onDelete: () => _deleteResume(resume)),
+                if (resume != null)
+                  _ResumeCard(resume: resume, onDelete: () => _deleteResume(resume)),
                 if (resume == null)
-                  const _EmptyResumeState(),
-                const SizedBox(height: AppSpacing.lg),
+                  const EmptyStateWidget(
+                    icon: Icons.description_outlined,
+                    title: 'No Resume Uploaded',
+                    message: 'Upload your latest CV in PDF or DOCX format to make it available for alumni opportunities.',
+                  ),
+                const SizedBox(height: 24),
                 if (_uploading)
                   Column(
                     children: [
-                      LinearProgressIndicator(value: _progress),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('Uploading… ${(_progress * 100).round()}%'),
+                      LinearProgressIndicator(
+                        value: _progress,
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Uploading… ${(_progress * 100).round()}%',
+                        style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 12),
+                      ),
                     ],
                   )
                 else
                   ElevatedButton.icon(
                     onPressed: _pickAndUpload,
-                    icon: const Icon(Icons.upload_file),
-                    label: Text(resume == null ? 'Upload Resume' : 'Replace Resume'),
+                    icon: const Icon(Icons.upload_file_rounded, size: 20),
+                    label: Text(resume == null ? 'Upload PDF / DOCX Resume' : 'Replace Current Resume'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'PDF or DOCX, maximum 10 MB.',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                const SizedBox(height: 10),
+                Center(
+                  child: Text(
+                    'Supported formats: PDF or DOCX (Max size: 10 MB).',
+                    style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11.5),
+                  ),
                 ),
               ],
             ),
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryBlue),
+          ),
+          error: (e, _) => Center(
+            child: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+          ),
         ),
       ),
     );
@@ -144,52 +185,61 @@ class _ResumeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sizeMb = (resume.sizeBytes / (1024 * 1024)).toStringAsFixed(2);
-    return Card(
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: AppColors.error,
-          child: Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-        ),
-        title: Text(resume.fileName, overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          '$sizeMb MB • Uploaded ${DateFormat.yMMMd().format(resume.uploadedAt)}',
-        ),
-        trailing: OverflowBar(
-          spacing: 0,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.open_in_new),
-              onPressed: () => launchUrl(Uri.parse(resume.fileUrl),
-                  mode: LaunchMode.externalApplication),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.error),
-              onPressed: onDelete,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyResumeState extends StatelessWidget {
-  const _EmptyResumeState();
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderDark),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Icon(Icons.description_outlined, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: AppSpacing.sm),
-          Text('No resume uploaded yet',
-              style: TextStyle(color: Colors.grey[600])),
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  resume.fileName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$sizeMb MB • Uploaded ${DateFormat.yMMMd().format(resume.uploadedAt)}',
+                  style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.open_in_new_rounded, color: AppColors.secondaryBlue, size: 20),
+            onPressed: () => launchUrl(
+              Uri.parse(resume.fileUrl),
+              mode: LaunchMode.externalApplication,
+            ),
+            tooltip: 'Open Document',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+            onPressed: onDelete,
+            tooltip: 'Delete Document',
+          ),
         ],
       ),
     );

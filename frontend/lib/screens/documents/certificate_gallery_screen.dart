@@ -3,6 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../constants/app_constants.dart';
@@ -12,6 +14,7 @@ import '../../providers/document_providers.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/firebase_error_message.dart';
+import '../../widgets/empty_state_widget.dart';
 
 class CertificateGalleryScreen extends ConsumerStatefulWidget {
   const CertificateGalleryScreen({super.key});
@@ -43,12 +46,18 @@ class _CertificateGalleryScreenState
     final provider = await showDialog<CertificateProvider>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Certificate Details'),
+        backgroundColor: AppColors.cardDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Certificate Details',
+          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: TextField(
               controller: titleController,
+              style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 labelText: 'Certificate Title',
                 hintText: 'e.g. AWS Certified Developer',
@@ -56,12 +65,15 @@ class _CertificateGalleryScreenState
               autofocus: true,
             ),
           ),
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.only(left: 24),
-            child:
-                Text('Provider', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 24),
+            child: Text(
+              'Issuing Provider',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+            ),
           ),
+          const SizedBox(height: 6),
           ...CertificateProvider.values.map((p) => SimpleDialogOption(
                 onPressed: () {
                   if (titleController.text.trim().isEmpty) {
@@ -70,7 +82,10 @@ class _CertificateGalleryScreenState
                   }
                   Navigator.pop(ctx, p);
                 },
-                child: Text(p.label),
+                child: Text(
+                  p.label,
+                  style: GoogleFonts.poppins(color: AppColors.secondaryBlue, fontSize: 13),
+                ),
               )),
         ],
       ),
@@ -107,7 +122,7 @@ class _CertificateGalleryScreenState
           );
 
       if (mounted) {
-        showAppSnackBar(context, 'Certificate uploaded',
+        showAppSnackBar(context, 'Certificate added successfully',
             backgroundColor: AppColors.success);
       }
     } catch (e) {
@@ -124,15 +139,17 @@ class _CertificateGalleryScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Certificate'),
-        content: Text('Delete "${cert.title}"?'),
+        backgroundColor: AppColors.cardDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Delete Certificate', style: GoogleFonts.poppins(color: Colors.white)),
+        content: Text('Delete "${cert.title}"?', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete')),
+              child: Text('Delete', style: GoogleFonts.poppins(color: AppColors.error))),
         ],
       ),
     );
@@ -154,80 +171,124 @@ class _CertificateGalleryScreenState
     final certsAsync = ref.watch(myCertificatesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Certificates')),
-      floatingActionButton: FloatingActionButton(
+      backgroundColor: AppColors.surfaceDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceDark,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Certificates Gallery',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: Colors.white,
         onPressed: _uploading ? null : _pickAndUpload,
-        child: _uploading
+        icon: _uploading
             ? const SizedBox(
-                width: 24,
-                height: 24,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: Colors.white),
               )
-            : const Icon(Icons.add),
+            : const Icon(Icons.add_rounded),
+        label: Text('Add Certificate', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
       ),
       body: Column(
         children: [
-          if (_uploading) LinearProgressIndicator(value: _progress),
+          if (_uploading)
+            LinearProgressIndicator(
+              value: _progress,
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+            ),
           Expanded(
             child: certsAsync.when(
               data: (certs) => certs.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.verified_outlined,
-                              size: 64, color: Colors.grey),
-                          SizedBox(height: AppSpacing.sm),
-                          Text('No certificates yet',
-                              style: TextStyle(color: Colors.grey)),
-                          SizedBox(height: AppSpacing.xs),
-                          Text('Tap + to add one',
-                              style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
+                  ? EmptyStateWidget(
+                      icon: Icons.workspace_premium_rounded,
+                      title: 'No Certificates Yet',
+                      message: 'Upload your verified licenses, awards, and course credentials.',
+                      actionLabel: 'Add Certificate',
+                      onAction: _pickAndUpload,
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(AppSpacing.md),
+                      padding: const EdgeInsets.all(24),
                       itemCount: certs.length,
                       itemBuilder: (context, index) {
                         final cert = certs[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  AppColors.goldLight.withValues(alpha: 0.3),
-                              child: const Icon(Icons.verified,
-                                  color: AppColors.gold),
-                            ),
-                            title: Text(cert.title,
-                                overflow: TextOverflow.ellipsis),
-                            subtitle: Text(
-                              '${cert.provider.label} • ${DateFormat.yMMMd().format(cert.uploadedAt)}',
-                            ),
-                            trailing: OverflowBar(
-                              spacing: 0,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.open_in_new),
-                                  onPressed: () => launchUrl(
-                                      Uri.parse(cert.fileUrl),
-                                      mode: LaunchMode.externalApplication),
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardDark,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: AppColors.borderDark),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: AppColors.gold.withValues(alpha: 0.16),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: AppColors.error),
-                                  onPressed: () => _deleteCertificate(cert),
+                                child: const Icon(Icons.verified_rounded,
+                                    color: AppColors.gold, size: 22),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      cert.title,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${cert.provider.label} • ${DateFormat.yMMMd().format(cert.uploadedAt)}',
+                                      style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.open_in_new_rounded, color: AppColors.secondaryBlue, size: 20),
+                                onPressed: () => launchUrl(
+                                  Uri.parse(cert.fileUrl),
+                                  mode: LaunchMode.externalApplication,
+                                ),
+                                tooltip: 'Open Document',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+                                onPressed: () => _deleteCertificate(cert),
+                                tooltip: 'Delete Document',
+                              ),
+                            ],
                           ),
                         );
                       },
                     ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryBlue),
+              ),
+              error: (e, _) => Center(
+                child: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+              ),
             ),
           ),
         ],

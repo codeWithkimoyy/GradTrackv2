@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 
 class DashboardStatCard extends StatelessWidget {
@@ -6,6 +7,11 @@ class DashboardStatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final String? subtitle;
+  final String? badgeLabel;
+  final Color? badgeColor;
+  final double? progressValue;
+  final String? actionLabel;
   final VoidCallback? onTap;
 
   const DashboardStatCard({
@@ -14,126 +20,188 @@ class DashboardStatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     this.color = AppColors.primaryBlue,
+    this.subtitle,
+    this.badgeLabel,
+    this.badgeColor,
+    this.progressValue,
+    this.actionLabel,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final card = LayoutBuilder(
-      builder: (context, constraints) {
-        final isTight =
-            constraints.maxHeight < 170 || constraints.maxWidth < 180;
-        final padding = isTight ? 16.0 : 18.0;
-        final iconSize = isTight ? 22.0 : 25.0;
+    final effectiveBadgeColor = badgeColor ?? color;
 
-        return Container(
-          padding: EdgeInsets.all(padding),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withValues(alpha: 0.22),
-                color.withValues(alpha: 0.08),
-                Theme.of(context).colorScheme.surface.withValues(alpha: .84),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: color.withValues(alpha: 0.28), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+    final content = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withValues(alpha: 0.30),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const BoxShadow(
+            color: Color(0x20000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.13),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Icon(icon, color: color, size: iconSize),
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: color.withValues(alpha: 0.25),
                   ),
-                  const Spacer(),
-                  if (onTap != null)
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withValues(alpha: 0.85),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Open',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: color,
-                                  ),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const Spacer(),
+              if (badgeLabel != null && badgeLabel!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: effectiveBadgeColor.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: effectiveBadgeColor.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Text(
+                    badgeLabel!,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: effectiveBadgeColor,
+                    ),
+                  ),
+                )
+              else if (onTap != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        actionLabel ?? 'View',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.secondaryBlue,
                         ),
                       ),
-                    ),
-                ],
-              ),
-              SizedBox(height: isTight ? 12 : 16),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    value,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                        ),
+                      const SizedBox(width: 3),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 12,
+                        color: AppColors.secondaryBlue,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.1,
                   ),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 title,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: .55),
-                      height: 1.15,
-                    ),
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF94A3B8),
+                ),
               ),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+              if (progressValue != null) ...[
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progressValue,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                ),
+              ],
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
 
     if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: card,
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: content,
+        ),
       );
     }
-    return card;
+
+    return content;
   }
 }

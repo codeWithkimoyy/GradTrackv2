@@ -15,9 +15,10 @@ class AppTheme {
       seedColor: AppColors.primaryBlue,
       brightness: brightness,
       primary: AppColors.primaryBlue,
-      secondary: AppColors.gold,
+      secondary: AppColors.teal,
+      tertiary: AppColors.gold,
       surface: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-      surfaceContainerHigh: isDark ? AppColors.cardDark : Colors.white,
+      surfaceContainerHigh: isDark ? AppColors.cardDark : AppColors.cardLight,
     );
 
     final base = isDark ? ThemeData.dark() : ThemeData.light();
@@ -29,18 +30,19 @@ class AppTheme {
       scaffoldBackgroundColor:
           isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       textTheme: GoogleFonts.poppinsTextTheme(base.textTheme).apply(
-        bodyColor: colorScheme.onSurface,
-        displayColor: colorScheme.onSurface,
+        bodyColor: isDark ? Colors.white : colorScheme.onSurface,
+        displayColor: isDark ? Colors.white : colorScheme.onSurface,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        foregroundColor: colorScheme.onSurface,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        foregroundColor: isDark ? Colors.white : colorScheme.onSurface,
         titleTextStyle: GoogleFonts.poppins(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w700,
+          color: isDark ? Colors.white : colorScheme.onSurface,
         ),
       ),
       cardTheme: CardThemeData(
@@ -49,12 +51,15 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.card),
           side: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : AppColors.primaryBlue.withValues(alpha: 0.08),
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            width: 1,
           ),
         ),
         margin: EdgeInsets.zero,
+      ),
+      dividerTheme: DividerThemeData(
+        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        thickness: 1,
       ),
       iconTheme: IconThemeData(
         color: isDark ? Colors.white70 : AppColors.primaryBlue,
@@ -62,20 +67,20 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: isDark
-            ? Colors.white.withValues(alpha: 0.06)
+            ? AppColors.cardDark
             : Colors.black.withValues(alpha: 0.03),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.button),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.button),
           borderSide: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : AppColors.primaryBlue.withValues(alpha: 0.15),
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -85,12 +90,15 @@ class AppTheme {
             width: 1.8,
           ),
         ),
+        labelStyle: TextStyle(
+          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryBlue,
           foregroundColor: Colors.white,
-          elevation: 2,
+          elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.button),
@@ -104,7 +112,8 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.primaryBlueDark,
+          foregroundColor: AppColors.primaryNavy,
+          elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.button),
@@ -115,21 +124,37 @@ class AppTheme {
           ),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: isDark ? Colors.white : AppColors.primaryNavy,
+          side: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.button),
+          ),
+          textStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
-        indicatorColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+        indicatorColor: AppColors.primaryBlue.withValues(alpha: 0.25),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: AppColors.primaryBlue,
+              color: Colors.white,
             );
           }
           return GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface.withValues(alpha: 0.6),
+            color: const Color(0xFF94A3B8),
           );
         }),
       ),

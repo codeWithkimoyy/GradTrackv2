@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
@@ -9,6 +10,7 @@ import '../../providers/auth_providers.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/avatar_utils.dart';
 import '../../providers/document_providers.dart';
+import '../../widgets/empty_state_widget.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -125,13 +127,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       try {
         await ref.read(userRepositoryProvider).saveUser(withCompletion);
       } catch (_) {
-        // Firestore unavailable — save locally instead.
         ref.read(localProfileProvider.notifier).state = withCompletion;
       }
 
       if (mounted) {
         Navigator.of(context).pop();
-        showAppSnackBar(context, 'Profile updated',
+        showAppSnackBar(context, 'Profile updated successfully',
             backgroundColor: AppColors.success);
       }
     } catch (e) {
@@ -154,39 +155,54 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final profileAsync = ref.watch(currentUserProfileProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Profile')),
+      backgroundColor: AppColors.surfaceDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceDark,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Edit Profile',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
       body: profileAsync.when(
         data: (user) {
-          if (user == null) return const Center(child: Text('No profile'));
+          if (user == null) {
+            return const EmptyStateWidget(
+              icon: Icons.person_off_rounded,
+              title: 'No Profile Found',
+              message: 'Your profile could not be loaded.',
+            );
+          }
           _hydrate(user);
 
           return Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(24),
               children: [
                 Center(
                   child: Stack(
                     children: [
                       CircleAvatar(
                         radius: 54,
-                        backgroundColor:
-                            AppColors.primaryBlue.withValues(alpha: 0.1),
+                        backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.2),
                         backgroundImage: _selectedPhotoBytes != null
-                            ? MemoryImage(_selectedPhotoBytes!)
-                                as ImageProvider<Object>
+                            ? MemoryImage(_selectedPhotoBytes!) as ImageProvider<Object>
                             : (user.photoUrl != null
                                 ? avatarProvider(user.photoUrl)
                                 : null),
-                        child: (_selectedPhotoBytes == null &&
-                                user.photoUrl == null)
+                        child: (_selectedPhotoBytes == null && user.photoUrl == null)
                             ? Text(
                                 user.fullName.isNotEmpty
                                     ? user.fullName[0].toUpperCase()
                                     : '?',
-                                style: const TextStyle(
+                                style: GoogleFonts.poppins(
                                   fontSize: 28,
-                                  color: AppColors.primaryBlue,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
                               )
@@ -210,7 +226,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Icon(Icons.camera_alt_outlined,
+                                : const Icon(Icons.camera_alt_rounded,
                                     size: 18, color: Colors.white),
                           ),
                         ),
@@ -218,49 +234,62 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    'Add or change your profile photo',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    'Add or change your official profile photo',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: const Color(0xFF94A3B8),
+                    ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: 24),
                 _field('Full Name', _nameController, required: true),
                 _field('Student Number', _studentNumberController),
-                _field('Phone Number', _phoneController,
-                    keyboardType: TextInputType.phone),
+                _field('Phone Number', _phoneController, keyboardType: TextInputType.phone),
                 _field('Current Address', _currentAddressController),
                 _field('Permanent Address', _permanentAddressController),
-                _field('Biography', _bioController, maxLines: 4),
-                const SizedBox(height: AppSpacing.sm),
-                Text('Social Links',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: AppSpacing.sm),
-                _field('LinkedIn URL', _linkedInController),
-                _field('GitHub URL', _githubController),
-                const SizedBox(height: AppSpacing.lg),
+                _field('Biography / Career Statement', _bioController, maxLines: 3),
+                const SizedBox(height: 12),
+                Text(
+                  'Social & Portfolio Links',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _field('LinkedIn Profile URL', _linkedInController),
+                _field('GitHub Profile URL', _githubController),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _saving ? null : () => _save(user),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
                   child: _saving
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : const Text('Save Changes'),
+                      : const Text('Save Profile Changes'),
                 ),
               ],
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryBlue),
+        ),
+        error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
       ),
     );
   }
@@ -273,11 +302,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     TextInputType? keyboardType,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
+        style: GoogleFonts.poppins(color: Colors.white, fontSize: 13.5),
         decoration: InputDecoration(labelText: label),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
