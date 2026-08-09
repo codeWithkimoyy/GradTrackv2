@@ -72,6 +72,8 @@ Setup:
 ```powershell
 cd backend
 Copy-Item .env.example .env
+# Populate Firebase Admin credentials for authenticated routes:
+# FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY
 npm install
 npm run dev
 ```
