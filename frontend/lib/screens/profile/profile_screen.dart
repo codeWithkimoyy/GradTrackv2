@@ -164,8 +164,7 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-<<<<<<< HEAD
-              const SizedBox(height: AppSpacing.lg),
+const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
                 onPressed: () => context.push(AppRoutes.editProfile),
                 icon: const Icon(Icons.edit_outlined, size: 18),
@@ -175,9 +174,6 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-=======
-              const SizedBox(height: 24),
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
               _InfoTile(
                   icon: Icons.email_outlined,
                   label: 'Email Address',

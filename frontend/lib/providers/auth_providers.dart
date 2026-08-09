@@ -1,10 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-<<<<<<< HEAD
-
-=======
 import '../config/firebase_options.dart';
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';

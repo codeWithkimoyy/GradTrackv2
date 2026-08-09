@@ -9,11 +9,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/profile_edit_provider.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/avatar_utils.dart';
-<<<<<<< HEAD
-=======
-import '../../providers/document_providers.dart';
 import '../../widgets/empty_state_widget.dart';
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -99,42 +95,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       photoName: _selectedPhotoName,
     );
 
-<<<<<<< HEAD
     if (!mounted) return;
     if (!success) {
       showAppSnackBar(context, 'Failed to save profile. Please try again.',
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 5));
       return;
-=======
-      final withCompletion = updated.copyWith(
-        profileCompletion: UserModel.computeCompletion(updated),
-      );
-
-      try {
-        await ref.read(userRepositoryProvider).saveUser(withCompletion);
-      } catch (_) {
-        ref.read(localProfileProvider.notifier).state = withCompletion;
-      }
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        showAppSnackBar(context, 'Profile updated successfully',
-            backgroundColor: AppColors.success);
-      }
-    } catch (e) {
-      if (mounted) {
-        showAppSnackBar(context, 'Failed to save: $e',
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () => _save(current),
-            ));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
     }
     showAppSnackBar(
       context,
@@ -147,12 +113,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(currentUserProfileProvider);
-<<<<<<< HEAD
     final editState = ref.watch(profileEditControllerProvider);
     final saving = editState.isSaving;
-=======
     final isDark = Theme.of(context).brightness == Brightness.dark;
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -251,8 +214,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 24),
                 _field('Full Name', _nameController, required: true),
-<<<<<<< HEAD
-                if (!isGuest) ...[
+if (!isGuest) ...[
                   _field('Student Number', _studentNumberController),
                 ],
                 _field('Phone Number', _phoneController,
@@ -279,37 +241,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ElevatedButton(
                   onPressed: saving ? null : () => _save(user),
                   child: saving
-=======
-                _field('Student Number', _studentNumberController),
-                _field('Phone Number', _phoneController, keyboardType: TextInputType.phone),
-                _field('Current Address', _currentAddressController),
-                _field('Permanent Address', _permanentAddressController),
-                _field('Biography / Career Statement', _bioController, maxLines: 3),
-                const SizedBox(height: 12),
-                Text(
-                  'Social & Portfolio Links',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : AppColors.primaryNavy,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _field('LinkedIn Profile URL', _linkedInController),
-                _field('GitHub Profile URL', _githubController),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _saving ? null : () => _save(user),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: _saving
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
                       ? const SizedBox(
                           width: 20,
                           height: 20,

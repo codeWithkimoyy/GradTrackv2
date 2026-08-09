@@ -94,74 +94,10 @@ class DashboardShell extends ConsumerWidget {
           body: SafeArea(child: child),
           extendBody: true,
           bottomNavigationBar: SafeArea(
-<<<<<<< HEAD
             minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
             child: _PremiumBottomNavigation(
               selectedIndex: currentIndex,
               onSelected: navigate,
-=======
-            minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.cardDark.withValues(alpha: .92)
-                        : Colors.white.withValues(alpha: .92),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1A0F172A),
-                        blurRadius: 24,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: NavigationBar(
-                    height: 68,
-                    backgroundColor: Colors.transparent,
-                    indicatorColor: AppColors.primaryBlue.withValues(alpha: .20),
-                    selectedIndex: currentIndex,
-                    animationDuration: const Duration(milliseconds: 320),
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.onlyShowSelected,
-                    onDestinationSelected: navigate,
-                    destinations: [
-                      NavigationDestination(
-                        icon: Icon(Icons.dashboard_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.dashboard_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Home',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.groups_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.groups_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Alumni',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.work_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.work_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Employment',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.description_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.description_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Documents',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.person_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.person_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Profile',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
             ),
           ),
         );
