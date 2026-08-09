@@ -113,6 +113,21 @@ final Map<String, ContentCollection> contentCollections = {
 ContentCollection? lookupCollection(String key) =>
     contentCollections[key];
 
+/// Live Riverpod snapshot of a collection's docs. Guests and unknown roles
+/// are limited to `visibility == 'public'` records, staff see everything.
+final collectionContentsProvider = StreamProvider.autoDispose
+    .family<QuerySnapshot<Map<String, dynamic>>, ContentCollection>(
+        (ref, content) {
+  final role = ref.watch(currentUserRoleProvider);
+  final publicOnly = role == null || role.name == 'guest';
+  Query<Map<String, dynamic>> query =
+      FirebaseFirestore.instance.collection(content.collection);
+  if (publicOnly) {
+    query = query.where('visibility', isEqualTo: 'public');
+  }
+  return query.snapshots();
+});
+
 /// Live, role-aware list + CRUD screen for a Firestore collection.
 /// Staff (admin/coordinator) can add, edit and delete records; alumni and
 /// guests can only browse. Guests only ever see public records.
@@ -179,16 +194,45 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
     }
   }
 
+  Widget _buildListError(Object error) {
+    final isPermission = error.toString().toLowerCase().contains('permission');
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isPermission ? Icons.lock_outline : Icons.cloud_off_rounded,
+              size: 56,
+              color: isPermission ? AppColors.error : AppColors.warning,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isPermission
+                  ? 'You do not have permission to view this content.'
+                  : 'This content could not be loaded right now.',
+              textAlign: TextAlign.center,
+            ),
+            if (!isPermission) ...[
+              const SizedBox(height: 10),
+              TextButton.icon(
+                onPressed: () =>
+                    ref.invalidate(collectionContentsProvider(widget.content)),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isStaff = ref.watch(isStaffProvider);
     final publicOnly = _publicOnly;
-
-    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
-        .collection(widget.content.collection);
-    if (publicOnly) {
-      query = query.where('visibility', isEqualTo: 'public');
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -209,33 +253,11 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
               label: const Text('Add'),
             )
           : null,
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: query.snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.lock_outline,
-                        size: 56, color: AppColors.error),
-                    const SizedBox(height: 12),
-                    Text(
-                      'You do not have permission to view this content.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final docs = snapshot.data!.docs;
+      body: ref.watch(collectionContentsProvider(widget.content)).when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => _buildListError(e),
+        data: (snapshot) {
+          final docs = snapshot.docs;
           final filtered = _query.isEmpty
               ? docs
               : docs.where((d) {

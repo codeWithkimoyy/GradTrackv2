@@ -10,9 +10,15 @@ monorepo containing the Flutter client and Node.js API.
 gradtrack/
 |- frontend/   Flutter application for Android, web, and Windows
 |- backend/    Node.js API and Firebase deployment configuration
+|- docs/       Architecture documentation (see RBAC map below)
 |- README.md
 `- .gitignore
 ```
+
+## Architecture documentation
+
+- [`docs/rbac-architecture.md`](docs/rbac-architecture.md) — role model, route
+  access matrix, Firestore rules map, and UI enforcement points.
 
 ## Frontend
 

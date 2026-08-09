@@ -10,6 +10,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'config/app_theme.dart';
 import 'config/firebase_options.dart';
 import 'constants/app_constants.dart';
+import 'providers/execution_trace_provider.dart';
 import 'providers/theme_provider.dart';
 import 'routes/app_router.dart';
 
@@ -37,7 +38,10 @@ Future<void> main() async {
     };
   }
 
-  runApp(const ProviderScope(child: GradTrackApp()));
+  runApp(ProviderScope(
+    observers: [ExecutionTraceObserver()],
+    child: const GradTrackApp(),
+  ));
 }
 
 class GradTrackApp extends ConsumerWidget {

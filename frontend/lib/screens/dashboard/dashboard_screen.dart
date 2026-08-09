@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/execution_trace_provider.dart';
 import '../../providers/notification_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
@@ -15,6 +16,7 @@ import '../../widgets/dashboard_stat_card.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/profile_menu.dart';
 import '../../widgets/empty_state_widget.dart';
+import '../../widgets/execution_trace_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 
 class DashboardShell extends ConsumerWidget {
@@ -30,7 +32,15 @@ class DashboardShell extends ConsumerWidget {
     final selected = _selectedIndex(location, items);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    void navigate(int index) => context.go(items[index].path);
+    void navigate(int index) {
+      final path = items[index].path;
+      ref.read(traceRecorderProvider).record(
+            '[Nav] ${items[index].label}',
+            TracePhase.call,
+            detail: path,
+          );
+      context.go(path);
+    }
 
     if (items.isEmpty) {
       return Scaffold(
@@ -297,6 +307,11 @@ Widget _withFloatingThemeToggle(BuildContext context, Widget child) {
   return Stack(
     children: [
       child,
+      const Positioned(
+        top: 8,
+        left: 14,
+        child: ExecutionTraceButton(floating: true),
+      ),
       const Positioned(
         top: 8,
         right: 14,
@@ -704,6 +719,10 @@ class _DesktopTopBar extends ConsumerWidget {
             ],
           ),
           const Spacer(),
+
+          // Execution Trace
+          const ExecutionTraceButton(),
+          const SizedBox(width: 6),
 
           // Theme Toggle
           const ThemeToggleButton(),

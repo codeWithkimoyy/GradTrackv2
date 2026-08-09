@@ -6,6 +6,29 @@ import '../../constants/app_constants.dart';
 import '../../providers/auth_providers.dart';
 import '../../utils/app_snack_bar.dart';
 
+/// Live snapshot of published surveys (newest first).
+final surveysProvider = StreamProvider.autoDispose<
+    QuerySnapshot<Map<String, dynamic>>>((ref) {
+  return FirebaseFirestore.instance
+      .collection(FirestoreCollections.surveys)
+      .orderBy('createdAt', descending: true)
+      .snapshots();
+});
+
+/// Maps surveyId -> the signed-in user's saved response document.
+final mySurveyResponsesProvider = FutureProvider.autoDispose<
+    Map<String, DocumentSnapshot<Map<String, dynamic>>>>((ref) async {
+  final userUid = ref.watch(currentUserProfileProvider).valueOrNull?.uid;
+  if (userUid == null) return {};
+  final snap = await FirebaseFirestore.instance
+      .collection(FirestoreCollections.surveyResponses)
+      .where('userId', isEqualTo: userUid)
+      .get();
+  return {
+    for (final d in snap.docs) (d.data()['surveyId'] as String? ?? ''): d,
+  };
+});
+
 /// Alumni tracer survey center: browse published surveys, answer them and
 /// review previously submitted answers. Responses are stored under the
 /// signed-in user's id only.
@@ -25,39 +48,24 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
           body: Center(child: CircularProgressIndicator()));
     }
 
-    final surveys = FirebaseFirestore.instance
-        .collection(FirestoreCollections.surveys)
-        .orderBy('createdAt', descending: true)
-        .snapshots();
-    final myResponses = FirebaseFirestore.instance
-        .collection(FirestoreCollections.surveyResponses)
-        .where('userId', isEqualTo: user.uid)
-        .get()
-        .then((snap) => {
-              for (final d in snap.docs)
-                (d.data()['surveyId'] as String? ?? ''): d
-            });
+    final surveysAsync = ref.watch(surveysProvider);
+    final responsesAsync = ref.watch(mySurveyResponsesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tracer Surveys')),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: surveys,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(
-                    'Surveys are unavailable right now.\n\n${snapshot.error}',
-                    textAlign: TextAlign.center),
-              ),
-            );
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final docs = snapshot.data!.docs;
+      body: surveysAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(
+              'Surveys are unavailable right now.\n\n$e',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        data: (snapshot) {
+          final docs = snapshot.docs;
           if (docs.isEmpty) {
             return const Center(
               child: Padding(
@@ -80,26 +88,33 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
             );
           }
 
-          return FutureBuilder<Map<String, DocumentSnapshot<Map<String, dynamic>>>>(
-            future: myResponses,
-            builder: (context, responses) {
-              final myMap = responses.data ?? {};
-              return ListView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  Text(
-                    'Answer published surveys to help BISU track graduate outcomes. Your responses are private.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  ...docs.map((doc) => _SurveyCard(
-                        survey: doc,
-                        responseDoc: myMap[doc.id],
-                        onAnswer: () => _openSurvey(doc, myMap[doc.id]),
-                      )),
-                ],
-              );
-            },
+          return responsesAsync.when(
+            loading: () =>
+                const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(
+                  'Your responses could not be loaded right now.\n\n$e',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            data: (myMap) => ListView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                Text(
+                  'Answer published surveys to help BISU track graduate outcomes. Your responses are private.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ...docs.map((doc) => _SurveyCard(
+                      survey: doc,
+                      responseDoc: myMap[doc.id],
+                      onAnswer: () => _openSurvey(doc, myMap[doc.id]),
+                    )),
+              ],
+            ),
           );
         },
       ),
