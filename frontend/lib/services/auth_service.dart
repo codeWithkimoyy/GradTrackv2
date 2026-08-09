@@ -98,11 +98,9 @@ class AuthService {
   Future<UserCredential?> signInWithGoogle() async {
     if (!_firebaseConfigured) {
       throw StateError(
-        'Firebase is not configured. Run flutterfire configure and populate assets/.env.',
+        'Firebase credentials in assets/.env are set to demo placeholders. Please populate assets/.env with your real Firebase web configuration or run flutterfire configure.',
       );
     }
-
-    final googleSignIn = _requiredGoogleSignIn;
 
     if (kIsWeb) {
       final provider = GoogleAuthProvider();
@@ -111,6 +109,7 @@ class AuthService {
       return userCred;
     }
 
+    final googleSignIn = _requiredGoogleSignIn;
     GoogleSignInAccount? googleUser;
 
     try {
