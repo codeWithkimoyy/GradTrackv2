@@ -41,6 +41,7 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
               Container(
+                clipBehavior: Clip.antiAlias,
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -57,51 +58,79 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: Column(
+                child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.white.withValues(alpha: 0.16),
-                      backgroundImage: user.photoUrl != null
-                          ? avatarProvider(user.photoUrl)
-                          : null,
-                      child: user.photoUrl == null
-                          ? Text(
-                              user.fullName.isNotEmpty
-                                  ? user.fullName[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                  fontSize: 32,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            )
-                          : null,
+                    Positioned(
+                      right: -25,
+                      bottom: -25,
+                      child: Opacity(
+                        opacity: 0.15,
+                        child: Image.asset(
+                          'assets/images/bisu.png',
+                          width: 150,
+                          height: 150,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      user.fullName,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.white.withValues(alpha: 0.16),
+                          backgroundImage: user.photoUrl != null
+                              ? avatarProvider(user.photoUrl)
+                              : null,
+                          child: user.photoUrl == null
+                              ? Text(
+                                  user.fullName.isNotEmpty
+                                      ? user.fullName[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(
+                                      fontSize: 32,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          user.fullName,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.role.label,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(999),
                           ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.role.label,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Text(
-                        'Verified Graduate Profile',
-                        style: TextStyle(color: Colors.white, fontSize: 12),
-                      ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified_rounded,
+                                  color: AppColors.gold, size: 16),
+                              SizedBox(width: 6),
+                              Text(
+                                'Verified Graduate Profile',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -168,10 +197,18 @@ class _InfoTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
-        leading: Icon(icon, color: AppColors.primaryBlue),
+        leading: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlue.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppColors.primaryBlue, size: 20),
+        ),
         title: Text(label,
             style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-        subtitle: Text(value, style: const TextStyle(fontSize: 15)),
+        subtitle: Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
       ),
     );
   }

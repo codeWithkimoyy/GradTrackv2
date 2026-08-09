@@ -77,14 +77,14 @@ class SplashBrandContent extends StatelessWidget {
                   opacity: logoOpacity,
                   child: Column(
                     children: [
-                      Text.rich(
+                      const Text.rich(
                         TextSpan(
                           children: [
                             TextSpan(
                               text: 'Grad',
                               style: TextStyle(
                                 color: Colors.white,
-                                shadows: const [
+                                shadows: [
                                   Shadow(
                                     color: Color(0x66000000),
                                     blurRadius: 18,
@@ -96,7 +96,7 @@ class SplashBrandContent extends StatelessWidget {
                               text: 'Track',
                               style: TextStyle(
                                 color: Color(0xFFFFC83D),
-                                shadows: const [
+                                shadows: [
                                   Shadow(
                                     color: Color(0x66000000),
                                     blurRadius: 18,
@@ -107,7 +107,7 @@ class SplashBrandContent extends StatelessWidget {
                           ],
                         ),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 40,
                           height: 1,
                           fontWeight: FontWeight.w800,

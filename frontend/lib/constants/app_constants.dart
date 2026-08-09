@@ -5,16 +5,25 @@ class AppColors {
   AppColors._();
 
   static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color primaryBlueDark = Color(0xFF0B1F3A);
   static const Color secondaryBlue = Color(0xFF60A5FA);
+  static const Color accentBlue = Color(0xFF2563EB);
   static const Color gold = Color(0xFFF4B400);
   static const Color goldLight = Color(0xFFFFD166);
   static const Color surfaceLight = Color(0xFFF7F9FC);
-  static const Color surfaceDark = Color(0xFF121417);
+  static const Color surfaceDark = Color(0xFF0B172A);
+  static const Color cardDark = Color(0xFF13233D);
 
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF2563EB);
+
+  // Squircle icon background colors
+  static const Color iconBgBlue = Color(0xFFEEF4FF);
+  static const Color iconBgGold = Color(0xFFFFF8E6);
+  static const Color iconBgGreen = Color(0xFFECFDF5);
+  static const Color iconBgRed = Color(0xFFFEF2F2);
 }
 
 class AppRadius {

@@ -201,7 +201,7 @@ class AuthService {
   /// Maps FirebaseAuthException codes to friendly, user-facing messages.
   static String friendlyError(Object error) {
     if (error is StateError &&
-        error.message?.contains('Firebase is not configured') == true) {
+        error.message.contains('Firebase is not configured')) {
       return 'Firebase is not configured yet. Add the real project values to assets/.env or run flutterfire configure.';
     }
 

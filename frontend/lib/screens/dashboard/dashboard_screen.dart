@@ -685,84 +685,101 @@ class _DashboardBody extends ConsumerWidget {
                   _AnimatedEntrance(
                     delayMs: 120,
                     child: Container(
+                      clipBehavior: Clip.antiAlias,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Color(0xFF2856B7),
-                            Color(0xFF5B9CF0),
+                            Color(0xFF1E3A8A),
+                            Color(0xFF3B82F6),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                AppColors.primaryBlue.withValues(alpha: 0.22),
+                            color: AppColors.primaryBlue.withValues(alpha: 0.28),
                             blurRadius: 24,
                             offset: const Offset(0, 12),
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Stack(
                         children: [
-                          const Text(
-                            'Profile Completion',
-                            style: TextStyle(
-                              color: Color(0xFFD9E6FF),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
+                          Positioned(
+                            right: -20,
+                            bottom: -20,
+                            child: Opacity(
+                              opacity: 0.12,
+                              child: Image.asset(
+                                'assets/images/bisu.png',
+                                width: 140,
+                                height: 140,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '${completion.round()}%',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              const Spacer(),
-                              TextButton(
-                                onPressed: () =>
-                                    context.push(AppRoutes.editProfile),
-                                style: TextButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.18),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(22),
-                                  ),
+                              const Text(
+                                'Profile Completion',
+                                style: TextStyle(
+                                  color: Color(0xFFD9E6FF),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                child: const Text('Complete Now'),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Text(
+                                    '${completion.round()}%',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const Spacer(),
+                                  TextButton(
+                                    onPressed: () =>
+                                        context.push(AppRoutes.editProfile),
+                                    style: TextButton.styleFrom(
+                                      backgroundColor:
+                                          Colors.white.withValues(alpha: 0.22),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 10,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(22),
+                                      ),
+                                    ),
+                                    child: const Text('Complete Now'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0.0, end: completion / 100),
+                                  duration: const Duration(milliseconds: 700),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, value, _) {
+                                    return LinearProgressIndicator(
+                                      value: value,
+                                      minHeight: 10,
+                                      backgroundColor: Colors.white24,
+                                      valueColor: const AlwaysStoppedAnimation(
+                                          AppColors.gold),
+                                    );
+                                  },
+                                ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: completion / 100),
-                              duration: const Duration(milliseconds: 700),
-                              curve: Curves.easeOutCubic,
-                              builder: (context, value, _) {
-                                return LinearProgressIndicator(
-                                  value: value,
-                                  minHeight: 10,
-                                  backgroundColor: Colors.white24,
-                                  valueColor: const AlwaysStoppedAnimation(
-                                      AppColors.gold),
-                                );
-                              },
-                            ),
                           ),
                         ],
                       ),
@@ -888,9 +905,14 @@ class _DashboardBody extends ConsumerWidget {
                 delayMs: 580 + i * 90,
                 child: Card(
                   child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: AppColors.gold,
-                      child: Icon(Icons.campaign_outlined, color: Colors.white),
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.campaign_rounded, color: AppColors.gold),
                     ),
                     title: Text('Announcement ${i + 1}'),
                     subtitle: const Text('No announcements yet'),

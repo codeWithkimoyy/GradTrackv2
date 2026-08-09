@@ -9,6 +9,7 @@ import '../../routes/app_router.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../widgets/glass_auth_scaffold.dart';
+import '../../widgets/google_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -209,7 +210,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onTap: _loading ? null : _signInWithGoogle,
                   child: OutlinedButton.icon(
                     onPressed: _loading ? null : _signInWithGoogle,
-                    icon: const Icon(Icons.g_mobiledata, size: 30),
+                    icon: const GoogleLogo(size: 22),
                     label: const Text('Continue with Google'),
                     style: OutlinedButton.styleFrom(
                       fixedSize: const Size.fromHeight(56),
