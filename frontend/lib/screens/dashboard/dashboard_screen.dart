@@ -16,8 +16,6 @@ import '../../widgets/dashboard_stat_card.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/profile_menu.dart';
 import '../../widgets/empty_state_widget.dart';
-import '../../widgets/execution_trace_button.dart';
-import '../../widgets/theme_toggle_button.dart';
 
 class DashboardShell extends ConsumerWidget {
   final Widget child;
@@ -46,7 +44,7 @@ class DashboardShell extends ConsumerWidget {
       return Scaffold(
         backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         body: SafeArea(
-          child: _withFloatingThemeToggle(context, child),
+          child: child,
         ),
       );
     }
@@ -87,7 +85,7 @@ class DashboardShell extends ConsumerWidget {
         return Scaffold(
           backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
           body: SafeArea(
-            child: _withFloatingThemeToggle(context, child),
+            child: child,
           ),
           extendBody: true,
           bottomNavigationBar: SafeArea(
@@ -302,24 +300,6 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
             Icons.person_outline_rounded, Icons.person_rounded, 'Profile', AppRoutes.adminProfile),
       ],
     };
-
-Widget _withFloatingThemeToggle(BuildContext context, Widget child) {
-  return Stack(
-    children: [
-      child,
-      const Positioned(
-        top: 8,
-        left: 14,
-        child: ExecutionTraceButton(floating: true),
-      ),
-      const Positioned(
-        top: 8,
-        right: 14,
-        child: ThemeToggleButton(floating: true),
-      ),
-    ],
-  );
-}
 
 int _selectedIndex(String location, List<_ShellNavItem> items) {
   final index = items.lastIndexWhere((item) => location.startsWith(item.path));
@@ -719,14 +699,6 @@ class _DesktopTopBar extends ConsumerWidget {
             ],
           ),
           const Spacer(),
-
-          // Execution Trace
-          const ExecutionTraceButton(),
-          const SizedBox(width: 6),
-
-          // Theme Toggle
-          const ThemeToggleButton(),
-          const SizedBox(width: 14),
 
           // Notification Bell
           if (user != null) NotificationBell(userId: user.uid),

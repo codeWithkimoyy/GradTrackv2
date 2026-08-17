@@ -355,17 +355,30 @@ class _FixedOnboardingLayout extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: compact ? 20 : 28),
-                  SizedBox(
-                    height: isWelcome
-                        ? (compact ? 112 : 132)
-                        : (compact ? 210 : 242),
-                    child: _MorphingFeatureGrid(
-                      features: page.features,
-                      pageIndex: pageIndex,
+                  Flexible(
+                    flex: 5,
+                    fit: FlexFit.loose,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: compact ? 20 : 28,
+                        bottom: compact ? 10 : 14,
+                      ),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: isWelcome
+                                ? (compact ? 112 : 132)
+                                : (compact ? 210 : 242),
+                          ),
+                          child: _MorphingFeatureGrid(
+                            features: page.features,
+                            pageIndex: pageIndex,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(height: compact ? 10 : 14),
                   SizedBox(
                     height: 48,
                     child: Row(
@@ -377,9 +390,11 @@ class _FixedOnboardingLayout extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 18),
-                        _NextButton(
-                          isLast: pageIndex == _pages.length - 1,
-                          onPressed: onNext,
+                        Flexible(
+                          child: _NextButton(
+                            isLast: pageIndex == _pages.length - 1,
+                            onPressed: onNext,
+                          ),
                         ),
                       ],
                     ),
@@ -529,17 +544,20 @@ class _FeatureCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 43,
-                height: 43,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: .11),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x402563EB), blurRadius: 12),
-                  ],
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  width: 43,
+                  height: 43,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: .11),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x402563EB), blurRadius: 12),
+                    ],
+                  ),
+                  child: Icon(feature.icon, color: Colors.white, size: 27),
                 ),
-                child: Icon(feature.icon, color: Colors.white, size: 27),
               ),
               const SizedBox(height: 8),
               Expanded(
@@ -623,18 +641,21 @@ class _NextButton extends StatelessWidget {
         shadowColor: _accentGold.withValues(alpha: .32),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(27)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isLast) ...[
-            const Text(
-              'Get started',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(width: 8),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLast) ...[
+              const Text(
+                'Get started',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(width: 8),
+            ],
+            const Icon(Icons.arrow_forward_rounded, size: 22),
           ],
-          const Icon(Icons.arrow_forward_rounded, size: 22),
-        ],
+        ),
       ),
     );
   }

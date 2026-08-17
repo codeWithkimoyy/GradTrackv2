@@ -8,6 +8,8 @@ import '../../models/user_model.dart';
 import '../../providers/role_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../widgets/execution_trace_button.dart';
+import '../../widgets/theme_toggle_button.dart';
 
 enum ContentFieldType { text, longText, date, choice }
 
@@ -27,6 +29,7 @@ class ContentCollection {
   final IconData icon;
   final List<ContentField> fields;
   final bool guestPublicOnly;
+  final bool canAdd;
 
   const ContentCollection({
     required this.collection,
@@ -34,6 +37,7 @@ class ContentCollection {
     required this.icon,
     required this.fields,
     this.guestPublicOnly = true,
+    this.canAdd = true,
   });
 }
 
@@ -96,6 +100,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: FirestoreCollections.auditLogs,
     title: 'Audit Logs',
     icon: Icons.history_rounded,
+    canAdd: false,
     fields: const [
       ContentField('title', 'Activity'),
       ContentField('description', 'Details', type: ContentFieldType.longText),
@@ -241,12 +246,17 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
       appBar: AppBar(
         title: Text(widget.content.title),
         actions: [
-          if (!publicOnly)
+          if (!publicOnly && widget.content.canAdd)
             IconButton(
               tooltip: 'Add ${widget.content.title}',
               icon: const Icon(Icons.add_rounded),
               onPressed: () => _openEditor(),
             ),
+          if (!widget.content.canAdd) ...[
+            const ExecutionTraceButton(),
+            const SizedBox(width: 4),
+            const ThemeToggleButton(),
+          ],
         ],
       ),
       floatingActionButton: isStaff && !publicOnly
