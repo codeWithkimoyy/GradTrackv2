@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/notification_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/role_providers.dart';
+import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
 
 enum ContentFieldType { text, longText, date, choice }
@@ -420,17 +423,18 @@ class _RecordCard extends StatelessWidget {
   }
 }
 
-class _ContentEditorDialog extends StatefulWidget {
+class _ContentEditorDialog extends ConsumerStatefulWidget {
   final ContentCollection content;
   final DocumentSnapshot<Map<String, dynamic>>? existing;
 
   const _ContentEditorDialog({required this.content, this.existing});
 
   @override
-  State<_ContentEditorDialog> createState() => _ContentEditorDialogState();
+  ConsumerState<_ContentEditorDialog> createState() =>
+      _ContentEditorDialogState();
 }
 
-class _ContentEditorDialogState extends State<_ContentEditorDialog> {
+class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
   late final Map<String, TextEditingController> _controllers;
   late final Map<String, String> _choices;
 
@@ -517,6 +521,17 @@ class _ContentEditorDialogState extends State<_ContentEditorDialog> {
         await FirebaseFirestore.instance
             .collection(widget.content.collection)
             .add(data);
+        if (widget.content.collection == FirestoreCollections.announcements) {
+          try {
+            await _notifyAlumniOfAnnouncement(data);
+          } catch (e) {
+            if (mounted) {
+              showAppSnackBar(context,
+                  'Announcement saved, but notifying alumni failed: $e',
+                  backgroundColor: AppColors.warning);
+            }
+          }
+        }
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -525,6 +540,44 @@ class _ContentEditorDialogState extends State<_ContentEditorDialog> {
             backgroundColor: AppColors.error);
       }
     }
+  }
+
+  /// Creates an in-app notification for every alumni user so they see the
+  /// new announcement in their notification bell.
+  Future<void> _notifyAlumniOfAnnouncement(
+      Map<String, dynamic> announcementData) async {
+    final firestore = FirebaseFirestore.instance;
+    final alumni = await firestore
+        .collection(FirestoreCollections.users)
+        .where('role', isEqualTo: UserRole.alumni.name)
+        .get();
+
+    if (alumni.docs.isEmpty) return;
+
+    final batch = firestore.batch();
+    final now = DateTime.now();
+    for (final doc in alumni.docs) {
+      if (doc.data()['disabled'] == true) continue;
+      final notification = AppNotification(
+        id: '',
+        userId: doc.id,
+        type: NotificationType.announcement,
+        title: 'New announcement: ${announcementData['title']}',
+        description: (announcementData['description'] as String? ?? '')
+            .trim()
+            .isEmpty
+            ? 'A new announcement has been posted.'
+            : announcementData['description'] as String,
+        priority: NotificationPriority.medium,
+        createdAt: now,
+        link: AppRoutes.collectionData('announcements'),
+      );
+      batch.set(
+        firestore.collection(FirestoreCollections.notifications).doc(),
+        notification.toMap(),
+      );
+    }
+    await batch.commit();
   }
 
   @override
