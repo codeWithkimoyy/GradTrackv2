@@ -83,14 +83,25 @@ String dashboardForRole(UserRole role) => switch (role) {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
+<<<<<<< Updated upstream
+=======
+  final userRole = ref.watch(currentUserRoleProvider);
+
+>>>>>>> Stashed changes
   return GoRouter(
     initialLocation: AppRoutes.splash,
     redirect: (context, state) {
       final location = state.matchedLocation;
       final loggedIn = authState.value != null;
+<<<<<<< Updated upstream
       final profile = ref.read(currentUserProfileProvider).valueOrNull;
       final role = profile?.role;
       const authRoutes = {
+=======
+      final loc = state.matchedLocation;
+
+      final authRoutes = {
+>>>>>>> Stashed changes
         AppRoutes.splash,
         AppRoutes.onboarding,
         AppRoutes.login,
