@@ -8,6 +8,8 @@ import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/avatar_utils.dart';
 import '../../widgets/empty_state_widget.dart';
+import '../../widgets/execution_trace_button.dart';
+import '../../widgets/theme_toggle_button.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -40,6 +42,8 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
         actions: [
+          const ExecutionTraceButton(),
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppColors.primaryBlue),
             onPressed: () => context.push(AppRoutes.editProfile),
@@ -77,24 +81,9 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ],
                 ),
-                child: Stack(
+                child: Column(
                   children: [
-                    Positioned(
-                      right: -25,
-                      bottom: -25,
-                      child: Opacity(
-                        opacity: isDark ? 0.08 : 0.05,
-                        child: Image.asset(
-                          'assets/images/bisu.png',
-                          width: 160,
-                          height: 160,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        CircleAvatar(
+                    CircleAvatar(
                           radius: 48,
                           backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
                           backgroundImage: user.photoUrl != null
@@ -159,12 +148,10 @@ class ProfileScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                      ],
+],
                     ),
-                  ],
-                ),
-              ),
-const SizedBox(height: AppSpacing.lg),
+                  ),
+                const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
                 onPressed: () => context.push(AppRoutes.editProfile),
                 icon: const Icon(Icons.edit_outlined, size: 18),

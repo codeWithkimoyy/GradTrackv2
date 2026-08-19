@@ -8,8 +8,6 @@ import '../../models/user_model.dart';
 import '../../providers/role_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
-import '../../widgets/execution_trace_button.dart';
-import '../../widgets/theme_toggle_button.dart';
 
 enum ContentFieldType { text, longText, date, choice }
 
@@ -252,11 +250,6 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
               icon: const Icon(Icons.add_rounded),
               onPressed: () => _openEditor(),
             ),
-          if (!widget.content.canAdd) ...[
-            const ExecutionTraceButton(),
-            const SizedBox(width: 4),
-            const ThemeToggleButton(),
-          ],
         ],
       ),
       floatingActionButton: isStaff && !publicOnly
