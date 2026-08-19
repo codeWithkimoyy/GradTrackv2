@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,7 +46,6 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
       final uploaded = await ref.read(storageServiceProvider).uploadResume(
             userId: user.uid,
             fileName: picked.name,
-            file: (!kIsWeb && picked.path != null) ? File(picked.path!) : null,
             bytes: picked.bytes,
             onProgress: (p) => setState(() => _progress = p),
           );

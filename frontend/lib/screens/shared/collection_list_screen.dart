@@ -554,7 +554,7 @@ class _ContentEditorDialogState extends State<_ContentEditorDialog> {
                 )
               else if (f.type == ContentFieldType.choice)
                 DropdownButtonFormField<String>(
-                  initialValue: _choices[f.name],
+                  value: _choices[f.name],
                   decoration: InputDecoration(labelText: f.label),
                   items: [
                     for (final option in f.options)

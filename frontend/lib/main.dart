@@ -30,7 +30,7 @@ Future<void> main() async {
     );
   }
 
-  if (!kDebugMode && firebaseInitialized) {
+  if (!kDebugMode && firebaseInitialized && !kIsWeb) {
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

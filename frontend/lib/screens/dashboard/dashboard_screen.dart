@@ -706,7 +706,7 @@ class _DesktopTopBar extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'Main Campus',
+                      'Bilar Campus',
                       style: GoogleFonts.poppins(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w600,
@@ -1610,7 +1610,7 @@ class _DashboardBody extends ConsumerWidget {
             date: '2 hours ago',
             category: 'Event',
             categoryColor: AppColors.goldDark,
-            description: 'All graduates are invited to join the annual homecoming assembly at the BISU Main Campus Gymnasium.',
+            description: 'All graduates are invited to join the annual homecoming assembly at the BISU Bilar Campus Gymnasium.',
           ),
           const SizedBox(height: 10),
           const _AnnouncementCard(
