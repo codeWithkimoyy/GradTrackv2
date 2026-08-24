@@ -13,4 +13,17 @@ Write-Host " 2. Firebase Console -> Auth -> Authorized domains (localhost)" -For
 Write-Host "==================================================" -ForegroundColor Cyan
 
 Set-Location -LiteralPath $ScriptDir
-flutter run -d chrome --web-port=$Port
+$flutterCmd = Get-Command flutter -ErrorAction SilentlyContinue
+if ($null -ne $flutterCmd) {
+    & flutter run -d chrome --web-port=$Port
+    exit $LASTEXITCODE
+}
+
+$fallbackFlutter = Join-Path $env:USERPROFILE "flutter\flutter\bin\flutter.bat"
+if (Test-Path $fallbackFlutter) {
+    & $fallbackFlutter run -d chrome --web-port=$Port
+    exit $LASTEXITCODE
+}
+
+Write-Error "Flutter command not found. Install Flutter or add it to PATH. Expected fallback: $fallbackFlutter"
+exit 1

@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/execution_trace_provider.dart';
 import '../../providers/notification_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
@@ -20,41 +21,32 @@ class DashboardShell extends ConsumerWidget {
   final Widget child;
   const DashboardShell({super.key, required this.child});
 
-  int _selectedIndex(String location) {
-    if (location.startsWith(AppRoutes.dashboardProfile) ||
-        location.startsWith(AppRoutes.profile)) {
-      return 4;
-    }
-    if (location.startsWith(AppRoutes.dashboardDocuments)) return 3;
-    if (location.startsWith(AppRoutes.dashboardJobs)) return 2;
-    if (location.startsWith(AppRoutes.dashboardAlumni)) return 1;
-    return 0;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(currentUserProfileProvider).valueOrNull;
+    final role = profile?.role ?? UserRole.guest;
+    final items = _navItemsForRole(role);
     final location = GoRouterState.of(context).matchedLocation;
-    final currentIndex = _selectedIndex(location);
+    final selected = _selectedIndex(location, items);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     void navigate(int index) {
-      switch (index) {
-        case 0:
-          context.go(AppRoutes.dashboard);
-          break;
-        case 1:
-          context.go(AppRoutes.dashboardAlumni);
-          break;
-        case 2:
-          context.go(AppRoutes.dashboardJobs);
-          break;
-        case 3:
-          context.go(AppRoutes.dashboardDocuments);
-          break;
-        case 4:
-          context.go(AppRoutes.dashboardProfile);
-          break;
-      }
+      final path = items[index].path;
+      ref.read(traceRecorderProvider).record(
+            '[Nav] ${items[index].label}',
+            TracePhase.call,
+            detail: path,
+          );
+      context.go(path);
+    }
+
+    if (items.isEmpty) {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        body: SafeArea(
+          child: child,
+        ),
+      );
     }
 
     return LayoutBuilder(
@@ -67,7 +59,8 @@ class DashboardShell extends ConsumerWidget {
               child: Row(
                 children: [
                   _DesktopSidebar(
-                    selectedIndex: currentIndex,
+                    items: items,
+                    selectedIndex: selected,
                     onSelected: navigate,
                   ),
                   Expanded(
@@ -91,14 +84,17 @@ class DashboardShell extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          body: SafeArea(child: child),
+          body: SafeArea(
+            child: child,
+          ),
           extendBody: true,
           bottomNavigationBar: SafeArea(
-<<<<<<< HEAD
             minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
             child: _PremiumBottomNavigation(
-              selectedIndex: currentIndex,
+              items: items,
+              selectedIndex: selected,
               onSelected: navigate,
+<<<<<<< HEAD
 =======
             minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: ClipRRect(
@@ -202,6 +198,8 @@ class DashboardShell extends ConsumerWidget {
                 ),
               ),
 >>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
+=======
+>>>>>>> d6fd597806fb636fd48c99119840e7edf706bb27
             ),
           ),
         );
@@ -212,32 +210,14 @@ class DashboardShell extends ConsumerWidget {
 
 class _PremiumBottomNavigation extends StatelessWidget {
   const _PremiumBottomNavigation({
+    required this.items,
     required this.selectedIndex,
     required this.onSelected,
   });
 
+  final List<_ShellNavItem> items;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-
-  static const _items = [
-    _BottomNavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
-    _BottomNavItem(Icons.groups_outlined, Icons.groups_rounded, 'Alumni'),
-    _BottomNavItem(
-      Icons.work_outline_rounded,
-      Icons.work_rounded,
-      'Employment',
-    ),
-    _BottomNavItem(
-      Icons.description_outlined,
-      Icons.description_rounded,
-      'Documents',
-    ),
-    _BottomNavItem(
-      Icons.person_outline_rounded,
-      Icons.person_rounded,
-      'Profile',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -277,8 +257,8 @@ class _PremiumBottomNavigation extends StatelessWidget {
               ),
             ),
             child: Row(
-              children: List.generate(_items.length, (index) {
-                final item = _items[index];
+              children: List.generate(items.length, (index) {
+                final item = items[index];
                 final selected = selectedIndex == index;
                 return Expanded(
                   child: Semantics(
@@ -378,30 +358,70 @@ class _PremiumBottomNavigation extends StatelessWidget {
   }
 }
 
-class _BottomNavItem {
-  const _BottomNavItem(this.icon, this.activeIcon, this.label);
+class _ShellNavItem {
+  const _ShellNavItem(this.icon, this.activeIcon, this.label, this.path);
 
   final IconData icon;
   final IconData activeIcon;
   final String label;
+  final String path;
+}
+
+List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
+      UserRole.guest => const [],
+      UserRole.alumni => const [
+        _ShellNavItem(
+            Icons.home_outlined, Icons.home_rounded, 'Home', AppRoutes.alumniDashboard),
+        _ShellNavItem(
+            Icons.fact_check_outlined, Icons.fact_check_rounded, 'Survey', AppRoutes.alumniSurvey),
+        _ShellNavItem(
+            Icons.work_outline_rounded, Icons.work_rounded, 'Jobs', AppRoutes.alumniJobs),
+        _ShellNavItem(
+            Icons.notifications_none_rounded, Icons.notifications_rounded, 'Notifications', AppRoutes.alumniNotifications),
+        _ShellNavItem(
+            Icons.person_outline_rounded, Icons.person_rounded, 'Profile', AppRoutes.alumniProfile),
+      ],
+      UserRole.coordinator => const [
+        _ShellNavItem(
+            Icons.analytics_outlined, Icons.analytics_rounded, 'Overview', AppRoutes.coordinatorDashboard),
+        _ShellNavItem(
+            Icons.groups_outlined, Icons.groups_rounded, 'Alumni', AppRoutes.coordinatorAlumni),
+        _ShellNavItem(
+            Icons.fact_check_outlined, Icons.fact_check_rounded, 'Surveys', AppRoutes.coordinatorSurveys),
+        _ShellNavItem(
+            Icons.assessment_outlined, Icons.assessment_rounded, 'Reports', AppRoutes.coordinatorReports),
+        _ShellNavItem(
+            Icons.event_outlined, Icons.event_rounded, 'Events', AppRoutes.coordinatorEvents),
+      ],
+      UserRole.admin => const [
+        _ShellNavItem(
+            Icons.shield_outlined, Icons.shield_rounded, 'Overview', AppRoutes.adminDashboard),
+        _ShellNavItem(
+            Icons.people_outline_rounded, Icons.people_rounded, 'Users', AppRoutes.adminUsers),
+        _ShellNavItem(
+            Icons.analytics_outlined, Icons.analytics_rounded, 'Analytics', AppRoutes.adminAnalytics),
+        _ShellNavItem(
+            Icons.history_rounded, Icons.history_rounded, 'Audit Logs', AppRoutes.adminAuditLogs),
+        _ShellNavItem(
+            Icons.person_outline_rounded, Icons.person_rounded, 'Profile', AppRoutes.adminProfile),
+      ],
+    };
+
+int _selectedIndex(String location, List<_ShellNavItem> items) {
+  final index = items.lastIndexWhere((item) => location.startsWith(item.path));
+  return index < 0 ? 0 : index;
 }
 
 class _DesktopSidebar extends StatelessWidget {
   const _DesktopSidebar({
+    required this.items,
     required this.selectedIndex,
     required this.onSelected,
   });
 
+  final List<_ShellNavItem> items;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-
-  static const _items = [
-    (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Overview'),
-    (Icons.groups_outlined, Icons.groups_rounded, 'Alumni Directory'),
-    (Icons.work_outline_rounded, Icons.work_rounded, 'Employment Tracker'),
-    (Icons.description_outlined, Icons.description_rounded, 'Documents Vault'),
-    (Icons.person_outline_rounded, Icons.person_rounded, 'Graduate Profile'),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -515,15 +535,15 @@ class _DesktopSidebar extends StatelessWidget {
           // Navigation List
           Expanded(
             child: ListView.separated(
-              itemCount: _items.length,
+              itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: 4),
               itemBuilder: (context, index) {
-                final item = _items[index];
+                final item = items[index];
                 final selected = selectedIndex == index;
 
                 return _SidebarMenuItem(
-                  icon: selected ? item.$2 : item.$1,
-                  label: item.$3,
+                  icon: selected ? item.activeIcon : item.icon,
+                  label: item.label,
                   selected: selected,
                   onTap: () => onSelected(index),
                 );
@@ -1687,12 +1707,16 @@ class _DashboardBody extends ConsumerWidget {
             category: 'Event',
 <<<<<<< Updated upstream
             categoryColor: AppColors.goldDark,
+<<<<<<< HEAD
             description: 'All graduates are invited to join the annual homecoming assembly at the BISU Main Campus Gymnasium.',
 =======
             categoryColor: AppColors.gold,
             description:
                 'All graduates are invited to join the annual homecoming assembly at the BISU Bilar Campus Gymnasium.',
 >>>>>>> Stashed changes
+=======
+            description: 'All graduates are invited to join the annual homecoming assembly at the BISU Bilar Campus Gymnasium.',
+>>>>>>> d6fd597806fb636fd48c99119840e7edf706bb27
           ),
           const SizedBox(height: 10),
           const _AnnouncementCard(

@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/notification_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/role_providers.dart';
+import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
 
 enum ContentFieldType { text, longText, date, choice }
@@ -24,6 +27,7 @@ class ContentCollection {
   final IconData icon;
   final List<ContentField> fields;
   final bool guestPublicOnly;
+  final bool canAdd;
 
   const ContentCollection({
     required this.collection,
@@ -31,6 +35,7 @@ class ContentCollection {
     required this.icon,
     required this.fields,
     this.guestPublicOnly = true,
+    this.canAdd = true,
   });
 }
 
@@ -93,6 +98,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: FirestoreCollections.auditLogs,
     title: 'Audit Logs',
     icon: Icons.history_rounded,
+    canAdd: false,
     fields: const [
       ContentField('title', 'Activity'),
       ContentField('description', 'Details', type: ContentFieldType.longText),
@@ -112,6 +118,21 @@ final Map<String, ContentCollection> contentCollections = {
 /// Resolves a `/staff/data/:collection` route segment to its definition.
 ContentCollection? lookupCollection(String key) =>
     contentCollections[key];
+
+/// Live Riverpod snapshot of a collection's docs. Guests and unknown roles
+/// are limited to `visibility == 'public'` records, staff see everything.
+final collectionContentsProvider = StreamProvider.autoDispose
+    .family<QuerySnapshot<Map<String, dynamic>>, ContentCollection>(
+        (ref, content) {
+  final role = ref.watch(currentUserRoleProvider);
+  final publicOnly = role == null || role.name == 'guest';
+  Query<Map<String, dynamic>> query =
+      FirebaseFirestore.instance.collection(content.collection);
+  if (publicOnly) {
+    query = query.where('visibility', isEqualTo: 'public');
+  }
+  return query.snapshots();
+});
 
 /// Live, role-aware list + CRUD screen for a Firestore collection.
 /// Staff (admin/coordinator) can add, edit and delete records; alumni and
@@ -179,22 +200,51 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
     }
   }
 
+  Widget _buildListError(Object error) {
+    final isPermission = error.toString().toLowerCase().contains('permission');
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isPermission ? Icons.lock_outline : Icons.cloud_off_rounded,
+              size: 56,
+              color: isPermission ? AppColors.error : AppColors.warning,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isPermission
+                  ? 'You do not have permission to view this content.'
+                  : 'This content could not be loaded right now.',
+              textAlign: TextAlign.center,
+            ),
+            if (!isPermission) ...[
+              const SizedBox(height: 10),
+              TextButton.icon(
+                onPressed: () =>
+                    ref.invalidate(collectionContentsProvider(widget.content)),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isStaff = ref.watch(isStaffProvider);
     final publicOnly = _publicOnly;
 
-    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
-        .collection(widget.content.collection);
-    if (publicOnly) {
-      query = query.where('visibility', isEqualTo: 'public');
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.content.title),
         actions: [
-          if (!publicOnly)
+          if (!publicOnly && widget.content.canAdd)
             IconButton(
               tooltip: 'Add ${widget.content.title}',
               icon: const Icon(Icons.add_rounded),
@@ -209,33 +259,11 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
               label: const Text('Add'),
             )
           : null,
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: query.snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.lock_outline,
-                        size: 56, color: AppColors.error),
-                    const SizedBox(height: 12),
-                    Text(
-                      'You do not have permission to view this content.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final docs = snapshot.data!.docs;
+      body: ref.watch(collectionContentsProvider(widget.content)).when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => _buildListError(e),
+        data: (snapshot) {
+          final docs = snapshot.docs;
           final filtered = _query.isEmpty
               ? docs
               : docs.where((d) {
@@ -398,17 +426,18 @@ class _RecordCard extends StatelessWidget {
   }
 }
 
-class _ContentEditorDialog extends StatefulWidget {
+class _ContentEditorDialog extends ConsumerStatefulWidget {
   final ContentCollection content;
   final DocumentSnapshot<Map<String, dynamic>>? existing;
 
   const _ContentEditorDialog({required this.content, this.existing});
 
   @override
-  State<_ContentEditorDialog> createState() => _ContentEditorDialogState();
+  ConsumerState<_ContentEditorDialog> createState() =>
+      _ContentEditorDialogState();
 }
 
-class _ContentEditorDialogState extends State<_ContentEditorDialog> {
+class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
   late final Map<String, TextEditingController> _controllers;
   late final Map<String, String> _choices;
 
@@ -495,6 +524,17 @@ class _ContentEditorDialogState extends State<_ContentEditorDialog> {
         await FirebaseFirestore.instance
             .collection(widget.content.collection)
             .add(data);
+        if (widget.content.collection == FirestoreCollections.announcements) {
+          try {
+            await _notifyAlumniOfAnnouncement(data);
+          } catch (e) {
+            if (mounted) {
+              showAppSnackBar(context,
+                  'Announcement saved, but notifying alumni failed: $e',
+                  backgroundColor: AppColors.warning);
+            }
+          }
+        }
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -503,6 +543,44 @@ class _ContentEditorDialogState extends State<_ContentEditorDialog> {
             backgroundColor: AppColors.error);
       }
     }
+  }
+
+  /// Creates an in-app notification for every alumni user so they see the
+  /// new announcement in their notification bell.
+  Future<void> _notifyAlumniOfAnnouncement(
+      Map<String, dynamic> announcementData) async {
+    final firestore = FirebaseFirestore.instance;
+    final alumni = await firestore
+        .collection(FirestoreCollections.users)
+        .where('role', isEqualTo: UserRole.alumni.name)
+        .get();
+
+    if (alumni.docs.isEmpty) return;
+
+    final batch = firestore.batch();
+    final now = DateTime.now();
+    for (final doc in alumni.docs) {
+      if (doc.data()['disabled'] == true) continue;
+      final notification = AppNotification(
+        id: '',
+        userId: doc.id,
+        type: NotificationType.announcement,
+        title: 'New announcement: ${announcementData['title']}',
+        description: (announcementData['description'] as String? ?? '')
+            .trim()
+            .isEmpty
+            ? 'A new announcement has been posted.'
+            : announcementData['description'] as String,
+        priority: NotificationPriority.medium,
+        createdAt: now,
+        link: AppRoutes.collectionData('announcements'),
+      );
+      batch.set(
+        firestore.collection(FirestoreCollections.notifications).doc(),
+        notification.toMap(),
+      );
+    }
+    await batch.commit();
   }
 
   @override
@@ -532,7 +610,7 @@ class _ContentEditorDialogState extends State<_ContentEditorDialog> {
                 )
               else if (f.type == ContentFieldType.choice)
                 DropdownButtonFormField<String>(
-                  initialValue: _choices[f.name],
+                  value: _choices[f.name],
                   decoration: InputDecoration(labelText: f.label),
                   items: [
                     for (final option in f.options)
