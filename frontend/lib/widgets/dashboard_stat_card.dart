@@ -54,10 +54,10 @@ class DashboardStatCard extends StatelessWidget {
                 ),
               ]
             : [
-                BoxShadow(
-                  color: const Color(0x0C0F172A),
+                const BoxShadow(
+                  color: Color(0x0C0F172A),
                   blurRadius: 16,
-                  offset: const Offset(0, 4),
+                  offset: Offset(0, 4),
                 ),
               ],
       ),

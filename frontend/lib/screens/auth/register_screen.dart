@@ -109,7 +109,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<int>(
-              value: _graduationYear,
+              initialValue: _graduationYear,
               dropdownColor: const Color(0xFF0A3978),
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(

@@ -367,14 +367,21 @@ class _AnswerSurveyPageState extends State<_AnswerSurveyPage> {
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 10),
                       if (type == 'choice' && options.isNotEmpty)
-                        ...options.map((option) => RadioListTile<String>(
-                              title: Text(option),
-                              value: option,
-                              groupValue: _choiceValues[id],
-                              onChanged: (v) => setState(
-                                  () => _choiceValues[id] = v ?? ''),
-                              dense: true,
-                            ))
+                        RadioGroup<String>(
+                          groupValue: _choiceValues[id],
+                          onChanged: (v) =>
+                              setState(() => _choiceValues[id] = v ?? ''),
+                          child: Column(
+                            children: [
+                              for (final option in options)
+                                RadioListTile<String>(
+                                  title: Text(option),
+                                  value: option,
+                                  dense: true,
+                                ),
+                            ],
+                          ),
+                        )
                       else if (type == 'choice')
                         TextFormField(
                           decoration: const InputDecoration(

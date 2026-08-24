@@ -6,15 +6,21 @@ import '../../utils/app_snack_bar.dart';
 
 /// Public information screen for guests: about BISU Bilar Campus and
 /// contact details. Contains no private data.
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
-  Future<void> _mail(BuildContext context, String address) async {
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  Future<void> _mail(String address) async {
     final uri = Uri(scheme: 'mailto', path: address);
     try {
       final ok = await launchUrl(uri);
       if (!ok) throw Exception('launch failed');
     } catch (_) {
+      if (!mounted) return;
       showAppSnackBar(context, 'No mail app is available on this device.',
           backgroundColor: AppColors.warning);
     }
@@ -73,7 +79,7 @@ class AboutScreen extends StatelessWidget {
                   title: const Text('Email the Alumni Office'),
                   subtitle:
                       const Text('gradtrack@bisu.edu.ph'),
-                  onTap: () => _mail(context, 'gradtrack@bisu.edu.ph'),
+                  onTap: () => _mail('gradtrack@bisu.edu.ph'),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -81,7 +87,7 @@ class AboutScreen extends StatelessWidget {
                       const Icon(Icons.school_outlined, color: AppColors.primaryBlue),
                   title: const Text('BISU Bilar Campus'),
                   subtitle: const Text('Bilar, Bohol, Philippines'),
-                  onTap: () => _mail(context, 'gradtrack@bisu.edu.ph'),
+                  onTap: () => _mail('gradtrack@bisu.edu.ph'),
                 ),
               ],
             ),

@@ -326,7 +326,7 @@ class _AlumniDashboardRoute extends ConsumerWidget {
           ? const Center(child: CircularProgressIndicator())
           : AlumniDashboard(user: user),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => Center(
+      error: (_, __) => const Center(
         child: Text('Your profile is temporarily unavailable.'),
       ),
     );

@@ -336,7 +336,7 @@ class _FixedOnboardingLayout extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: compact ? 14 : 18),
+                  SizedBox(height: compact ? 30 : 50),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
                     child: Text(
@@ -346,9 +346,10 @@ class _FixedOnboardingLayout extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: .92),
-                        fontSize: compact ? 12 : 13.5,
+                        fontSize: compact ? 13.5 : 15.5,
                         height: 1.5,
                         fontWeight: FontWeight.w500,
+                        letterSpacing: .1,
                         shadows: const [
                           Shadow(color: Color(0x55000000), blurRadius: 8),
                         ],
@@ -559,7 +560,7 @@ class _FeatureCard extends StatelessWidget {
                   child: Icon(feature.icon, color: Colors.white, size: 27),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 380),
@@ -571,9 +572,10 @@ class _FeatureCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: darkLabel ? _deepNavy : Colors.white,
-                      fontSize: 10,
-                      height: 1.2,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 11.5,
+                      height: 1.25,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: .1,
                     ),
                   ),
                 ),

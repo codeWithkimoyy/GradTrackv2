@@ -21,10 +21,10 @@ class GuestDashboard extends ConsumerWidget {
       icon: Icons.explore_outlined,
       accent: AppColors.secondaryBlue,
       children: [
-        DashboardSectionCard(
+        const DashboardSectionCard(
           title: 'About GradTrack',
           icon: Icons.school_outlined,
-          child: const Text(
+          child: Text(
             'A secure graduate tracking system connecting Bohol Island State University alumni with career, survey, and community opportunities.',
           ),
         ),

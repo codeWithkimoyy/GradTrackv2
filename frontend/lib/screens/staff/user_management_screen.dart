@@ -525,7 +525,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<UserRole>(
-              value: _role,
+              initialValue: _role,
               decoration: const InputDecoration(labelText: 'Role'),
               items: [
                 for (final role in UserRole.values)
@@ -640,7 +640,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
                     const InputDecoration(labelText: 'Graduation year')),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _status,
+              initialValue: _status,
               decoration: const InputDecoration(labelText: 'Employment status'),
               items: [
                 for (final s in EmploymentStatus.values)
@@ -651,7 +651,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
             if (widget.adminRoleEditing) ...[
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _role,
+                initialValue: _role,
                 decoration: const InputDecoration(labelText: 'Role'),
                 items: [
                   for (final role in UserRole.values)
