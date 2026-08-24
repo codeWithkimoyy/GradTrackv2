@@ -77,7 +77,7 @@ class AnalyticsScreen extends ConsumerWidget {
               child: BarChart(
                 BarChartData(
                   maxY: _maxY([for (final i in items) i.$2]),
-                  gridData: FlGridData(show: false),
+                  gridData: const FlGridData(show: false),
                   borderData: FlBorderData(show: false),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(),

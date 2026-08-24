@@ -14,7 +14,6 @@ class ExecutionTraceButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final count = ref.watch(executionTraceProvider).length;
 
     Widget button(double iconSize) => IconButton(

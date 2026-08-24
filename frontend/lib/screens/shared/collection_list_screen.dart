@@ -1,4 +1,4 @@
-﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -46,7 +46,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: FirestoreCollections.announcements,
     title: 'Announcements',
     icon: Icons.campaign_outlined,
-    fields: const [
+    fields: [
       ContentField('title', 'Title'),
       ContentField('description', 'Description', type: ContentFieldType.longText),
       ContentField('visibility', 'Visibility', type: ContentFieldType.choice, options: ['public', 'private']),
@@ -56,7 +56,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: FirestoreCollections.events,
     title: 'Events',
     icon: Icons.event_outlined,
-    fields: const [
+    fields: [
       ContentField('title', 'Title'),
       ContentField('description', 'Description', type: ContentFieldType.longText),
       ContentField('date', 'Date', type: ContentFieldType.date),
@@ -68,7 +68,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: FirestoreCollections.jobs,
     title: 'Job Opportunities',
     icon: Icons.business_center_outlined,
-    fields: const [
+    fields: [
       ContentField('title', 'Position'),
       ContentField('company', 'Company'),
       ContentField('description', 'Description', type: ContentFieldType.longText),
@@ -79,7 +79,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: FirestoreCollections.surveys,
     title: 'Surveys',
     icon: Icons.fact_check_outlined,
-    fields: const [
+    fields: [
       ContentField('title', 'Title'),
       ContentField('description', 'Description', type: ContentFieldType.longText),
       ContentField('visibility', 'Visibility', type: ContentFieldType.choice, options: ['public', 'private']),
@@ -89,7 +89,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: 'reports',
     title: 'Reports',
     icon: Icons.assessment_outlined,
-    fields: const [
+    fields: [
       ContentField('title', 'Title'),
       ContentField('description', 'Description', type: ContentFieldType.longText),
     ],
@@ -99,7 +99,7 @@ final Map<String, ContentCollection> contentCollections = {
     title: 'Audit Logs',
     icon: Icons.history_rounded,
     canAdd: false,
-    fields: const [
+    fields: [
       ContentField('title', 'Activity'),
       ContentField('description', 'Details', type: ContentFieldType.longText),
     ],
@@ -108,7 +108,7 @@ final Map<String, ContentCollection> contentCollections = {
     collection: 'system_settings',
     title: 'System Settings',
     icon: Icons.settings_outlined,
-    fields: const [
+    fields: [
       ContentField('name', 'Name'),
       ContentField('value', 'Value'),
     ],
@@ -610,7 +610,7 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
                 )
               else if (f.type == ContentFieldType.choice)
                 DropdownButtonFormField<String>(
-                  value: _choices[f.name],
+                  initialValue: _choices[f.name],
                   decoration: InputDecoration(labelText: f.label),
                   items: [
                     for (final option in f.options)

@@ -156,7 +156,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
               ),
               child: SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                activeColor: AppColors.primaryBlue,
+                activeThumbColor: AppColors.primaryBlue,
                 title: Text(
                   'This is my current employment',
                   style: GoogleFonts.poppins(
@@ -174,7 +174,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
             _text('Job Title / Position', _positionController, required: true),
             _text('Industry Sector', _industryController, required: true),
             DropdownButtonFormField<String>(
-              value: _employmentType,
+              initialValue: _employmentType,
               dropdownColor: isDark ? AppColors.cardDark : Colors.white,
               style: GoogleFonts.poppins(
                 color: isDark ? Colors.white : AppColors.primaryNavy,
@@ -189,7 +189,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _salaryRange,
+              initialValue: _salaryRange,
               dropdownColor: isDark ? AppColors.cardDark : Colors.white,
               style: GoogleFonts.poppins(
                 color: isDark ? Colors.white : AppColors.primaryNavy,
