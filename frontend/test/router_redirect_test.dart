@@ -23,6 +23,7 @@ void main() {
           loggedIn: loggedIn,
           role: UserRole.admin,
           disabled: false,
+          approved: true,
         );
         expect(result, isNull,
             reason: 'admin should be allowed to reach $path');
@@ -38,6 +39,7 @@ void main() {
             loggedIn: loggedIn,
             role: UserRole.admin,
             disabled: false,
+            approved: true,
           ),
           isNull,
           reason: '$path must not redirect to the dashboard',
@@ -54,6 +56,7 @@ void main() {
         loggedIn: false,
         role: null,
         disabled: false,
+        approved: true,
       );
       expect(result, AppRoutes.login);
     });
@@ -65,6 +68,7 @@ void main() {
         loggedIn: loggedIn,
         role: UserRole.coordinator,
         disabled: false,
+        approved: true,
       );
       expect(result, AppRoutes.coordinatorDashboard);
     });

@@ -31,6 +31,7 @@ class UserManagementScreen extends ConsumerStatefulWidget {
 class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   String _query = '';
   String? _roleFilter;
+  bool _pendingOnly = false;
 
   CollectionReference<Map<String, dynamic>> get _users =>
       FirebaseFirestore.instance.collection(FirestoreCollections.users);
@@ -147,6 +148,39 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     }
   }
 
+  Future<void> _toggleApproved(
+      DocumentSnapshot<Map<String, dynamic>> doc) async {
+    final data = doc.data() ?? {};
+    final newValue = data['approved'] != true;
+    final uid = doc.id;
+    try {
+      await _users.doc(uid).update({'approved': newValue});
+      final service = ref.read(notificationServiceProvider);
+      await service.createNotification(AppNotification(
+        id: '',
+        userId: uid,
+        type: NotificationType.system,
+        title: newValue ? 'Account approved' : 'Account approval revoked',
+        description: newValue
+            ? 'Your account has been approved. You can now explore the app.'
+            : 'Your account approval was revoked by an administrator.',
+        priority: NotificationPriority.medium,
+        createdAt: DateTime.now(),
+      ));
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(context, 'Update failed: $e',
+            backgroundColor: AppColors.error);
+      }
+      return;
+    }
+    if (mounted) {
+      showAppSnackBar(context,
+          newValue ? 'User approved.' : 'Approval revoked.',
+          backgroundColor: AppColors.success);
+    }
+  }
+
   Future<void> _toggleDisabled(
       DocumentSnapshot<Map<String, dynamic>> doc) async {
     final data = doc.data() ?? {};
@@ -239,7 +273,6 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       if (isAdmin) 'admin': stats?.admins ?? 0,
       if (isAdmin) 'guest': stats?.guests ?? 0,
     };
-
     return Scaffold(
       appBar: AppBar(title: const Text('User Management')),
       floatingActionButton: isAdmin
@@ -269,7 +302,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           final all = snapshot.data!.docs;
           final filtered = all.where((doc) {
             final data = doc.data();
-            if (_roleFilter != null && data['role'] != _roleFilter) {
+            if (_pendingOnly && data['approved'] == true) {
+              return false;
+            }
+            if (_roleFilter != null &&
+                _roleFilter != 'all' &&
+                data['role'] != _roleFilter) {
               return false;
             }
             if (_query.isNotEmpty) {
@@ -302,15 +340,31 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
+                    if (isAdmin) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: const Text('Pending approval'),
+                          selected: _pendingOnly,
+                          onSelected: (v) => setState(() {
+                            _pendingOnly = v;
+                            if (v) _roleFilter = null;
+                          }),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
                     for (final entry in chips.entries)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
                           label: Text(
                               '${entry.key[0].toUpperCase()}${entry.key.substring(1)} (${entry.value})'),
-                          selected: _roleFilter == entry.key,
-                          onSelected: (_) =>
-                              setState(() => _roleFilter = entry.key),
+                          selected: _roleFilter == entry.key && !_pendingOnly,
+                          onSelected: (_) => setState(() {
+                            _roleFilter = entry.key;
+                            _pendingOnly = false;
+                          }),
                         ),
                       ),
                   ],
@@ -328,6 +382,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                     onVerify: widget.canVerify
                         ? () => _toggleVerified(doc)
                         : null,
+                    onToggleApproved:
+                        isAdmin ? () => _toggleApproved(doc) : null,
                     onToggleDisabled:
                         isAdmin ? () => _toggleDisabled(doc) : null,
                     onDelete: isAdmin ? () => _deleteUser(doc) : null,
@@ -346,6 +402,7 @@ class _UserCard extends StatelessWidget {
   final bool canVerify;
   final VoidCallback onEdit;
   final VoidCallback? onVerify;
+  final VoidCallback? onToggleApproved;
   final VoidCallback? onToggleDisabled;
   final VoidCallback? onDelete;
 
@@ -355,6 +412,7 @@ class _UserCard extends StatelessWidget {
     required this.canVerify,
     required this.onEdit,
     this.onVerify,
+    this.onToggleApproved,
     this.onToggleDisabled,
     this.onDelete,
   });
@@ -372,6 +430,7 @@ class _UserCard extends StatelessWidget {
     final role = data['role']?.toString() ?? 'guest';
     final verified = data['isVerified'] == true;
     final disabled = data['disabled'] == true;
+    final approved = data['approved'] == true;
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -392,6 +451,16 @@ class _UserCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
+            if (!approved) ...[
+              const SizedBox(width: 6),
+              const Chip(
+                label: Text('Pending', style: TextStyle(fontSize: 10)),
+                visualDensity: VisualDensity.compact,
+                backgroundColor: AppColors.warning,
+                labelStyle: TextStyle(color: Colors.black87),
+                padding: EdgeInsets.symmetric(horizontal: 4),
+              ),
+            ],
             if (disabled) ...[
               const SizedBox(width: 6),
               const Chip(
@@ -414,6 +483,17 @@ class _UserCard extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (onToggleApproved != null)
+              IconButton(
+                tooltip: approved
+                    ? 'Revoke approval'
+                    : 'Approve user',
+                color: approved ? AppColors.success : AppColors.warning,
+                icon: Icon(approved
+                    ? Icons.check_circle_rounded
+                    : Icons.pending_actions_rounded),
+                onPressed: onToggleApproved,
+              ),
             if (onVerify != null)
               IconButton(
                 tooltip: verified ? 'Revoke verification' : 'Verify alumni',

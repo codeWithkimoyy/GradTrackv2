@@ -16,6 +16,7 @@ import '../screens/analytics/analytics_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/onboarding_screen.dart';
+import '../screens/auth/pending_approval_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const dashboardProfile = '/dashboard/profile';
   static const about = '/about';
   static const accountDisabled = '/account-disabled';
+  static const pendingApproval = '/pending-approval';
 
   static const guestDashboard = '/guest/dashboard';
   static const alumniDashboard = '/alumni/dashboard';
@@ -83,114 +85,10 @@ String dashboardForRole(UserRole role) => switch (role) {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
-<<<<<<< Updated upstream
-=======
-  final userRole = ref.watch(currentUserRoleProvider);
-
->>>>>>> Stashed changes
   return GoRouter(
     initialLocation: AppRoutes.splash,
     redirect: (context, state) {
       final location = state.matchedLocation;
-<<<<<<< HEAD
-      final loggedIn = authState.value != null;
-<<<<<<< Updated upstream
-      final profile = ref.read(currentUserProfileProvider).valueOrNull;
-      final role = profile?.role;
-      const authRoutes = {
-=======
-      final loc = state.matchedLocation;
-
-      final authRoutes = {
->>>>>>> Stashed changes
-        AppRoutes.splash,
-        AppRoutes.onboarding,
-        AppRoutes.login,
-        AppRoutes.register,
-        AppRoutes.forgotPassword,
-      };
-      if (authState.isLoading) {
-        return location == AppRoutes.splash ? null : AppRoutes.splash;
-      }
-      if (!loggedIn) return authRoutes.contains(location) ? null : AppRoutes.login;
-      if (role == null) return location == AppRoutes.splash ? null : AppRoutes.splash;
-
-      if (profile?.disabled == true) {
-        return location == AppRoutes.accountDisabled
-            ? null
-            : AppRoutes.accountDisabled;
-      }
-
-      final home = dashboardForRole(role);
-      final legacy = <String, String>{
-        AppRoutes.dashboard: home,
-        AppRoutes.dashboardAlumni: role == UserRole.alumni ? AppRoutes.alumniDashboard : home,
-        AppRoutes.dashboardJobs: role == UserRole.alumni ? AppRoutes.alumniJobs : home,
-        AppRoutes.dashboardDocuments: role == UserRole.alumni ? AppRoutes.alumniDocuments : home,
-        AppRoutes.dashboardProfile: role == UserRole.alumni ? AppRoutes.alumniProfile : home,
-        AppRoutes.adminUsers: home,
-        AppRoutes.adminAuditLogs: home,
-      };
-      if (legacy.containsKey(location)) return legacy[location];
-      if (authRoutes.contains(location)) return home;
-      if (location == AppRoutes.accountDisabled) return home;
-
-      final collectionKey = location.startsWith(AppRoutes.staffData)
-          ? location
-              .substring(AppRoutes.staffData.length + 1)
-              .split('?')
-              .first
-          : null;
-      final collectionExists = collectionKey != null &&
-          lookupCollection(collectionKey) != null;
-
-      final allowed = <UserRole, Set<String>>{
-        UserRole.guest: {
-          AppRoutes.guestDashboard,
-          AppRoutes.about,
-          if (collectionExists) location,
-        },
-        UserRole.alumni: {
-          AppRoutes.alumniDashboard,
-          AppRoutes.alumniSurvey,
-          AppRoutes.alumniJobs,
-          AppRoutes.alumniNotifications,
-          AppRoutes.alumniProfile,
-          AppRoutes.alumniDocuments,
-          AppRoutes.profile,
-          AppRoutes.editProfile,
-          AppRoutes.employment,
-          AppRoutes.addEmployment,
-          AppRoutes.resume,
-          AppRoutes.certificates,
-          if (collectionExists) location,
-        },
-        UserRole.coordinator: {
-          AppRoutes.coordinatorDashboard,
-          AppRoutes.coordinatorAnalytics,
-          AppRoutes.adminAnalytics,
-          AppRoutes.staffUsers,
-          AppRoutes.adminUsers,
-          AppRoutes.coordinatorAlumni,
-          AppRoutes.coordinatorSurveys,
-          AppRoutes.coordinatorReports,
-          AppRoutes.coordinatorEvents,
-          if (collectionExists) location,
-        },
-        UserRole.admin: {
-          AppRoutes.adminDashboard,
-          AppRoutes.adminAnalytics,
-          AppRoutes.adminUsers,
-          AppRoutes.adminAuditLogs,
-          AppRoutes.adminProfile,
-          AppRoutes.editProfile,
-          AppRoutes.staffUsers,
-          if (collectionExists) location,
-        },
-      }[role]!;
-      final canAccess = allowed.any((path) => location == path || location.startsWith('$path/'));
-      return canAccess ? null : home;
-=======
       final profile = ref.read(currentUserProfileProvider).valueOrNull;
       return resolveRedirect(
         location: location,
@@ -198,8 +96,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         loggedIn: authState.value != null,
         role: profile?.role,
         disabled: profile?.disabled == true,
+        approved: profile?.approved ?? true,
       );
->>>>>>> d6fd597806fb636fd48c99119840e7edf706bb27
     },
     routes: [
       GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashScreen()),
@@ -211,6 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.accountDisabled,
         builder: (_, __) => const AccountDisabledScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pendingApproval,
+        builder: (_, __) => const PendingApprovalScreen(),
       ),
       ShellRoute(
         builder: (_, __, child) => DashboardShell(child: child),
@@ -271,6 +173,7 @@ String? resolveRedirect({
   required bool loggedIn,
   required UserRole? role,
   required bool disabled,
+  required bool approved,
 }) {
   const authRoutes = {
     AppRoutes.splash,
@@ -290,6 +193,12 @@ String? resolveRedirect({
     return location == AppRoutes.accountDisabled
         ? null
         : AppRoutes.accountDisabled;
+  }
+
+  if (!approved && role != UserRole.admin) {
+    return location == AppRoutes.pendingApproval
+        ? null
+        : AppRoutes.pendingApproval;
   }
 
   final home = dashboardForRole(role);
@@ -314,11 +223,12 @@ String? resolveRedirect({
       collectionKey != null && lookupCollection(collectionKey) != null;
 
   final allowed = <UserRole, Set<String>>{
-    UserRole.guest: {
-      AppRoutes.guestDashboard,
-      AppRoutes.about,
-      if (collectionExists) location,
-    },
+      UserRole.guest: {
+        AppRoutes.guestDashboard,
+        AppRoutes.about,
+        AppRoutes.pendingApproval,
+        if (collectionExists) location,
+      },
     UserRole.alumni: {
       AppRoutes.alumniDashboard,
       AppRoutes.alumniSurvey,
@@ -331,9 +241,10 @@ String? resolveRedirect({
       AppRoutes.employment,
       AppRoutes.addEmployment,
       AppRoutes.resume,
-      AppRoutes.certificates,
-      if (collectionExists) location,
-    },
+        AppRoutes.certificates,
+        AppRoutes.pendingApproval,
+        if (collectionExists) location,
+      },
     UserRole.coordinator: {
       AppRoutes.coordinatorDashboard,
       AppRoutes.coordinatorAnalytics,
@@ -343,9 +254,10 @@ String? resolveRedirect({
       AppRoutes.coordinatorAlumni,
       AppRoutes.coordinatorSurveys,
       AppRoutes.coordinatorReports,
-      AppRoutes.coordinatorEvents,
-      if (collectionExists) location,
-    },
+        AppRoutes.coordinatorEvents,
+        AppRoutes.pendingApproval,
+        if (collectionExists) location,
+      },
     UserRole.admin: {
       AppRoutes.adminDashboard,
       AppRoutes.adminAnalytics,
@@ -353,9 +265,10 @@ String? resolveRedirect({
       AppRoutes.adminAuditLogs,
       AppRoutes.adminProfile,
       AppRoutes.editProfile,
-      AppRoutes.staffUsers,
-      if (collectionExists) location,
-    },
+        AppRoutes.staffUsers,
+        AppRoutes.pendingApproval,
+        if (collectionExists) location,
+      },
   }[role]!;
   final canAccess =
       allowed.any((path) => location == path || location.startsWith('$path/'));

@@ -1,11 +1,11 @@
 {
-    "name": "gradtracker",
-    "short_name": "gradtracker",
+    "name": "GradTrack - Graduate Tracking System",
+    "short_name": "GradTrack",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0B2D57",
-    "theme_color": "#0B2D57",
-    "description": "GradTrack - Graduate Tracking and Alumni Management System",
+    "background_color": "#031A48",
+    "theme_color": "#031A48",
+    "description": "GradTrack - Official Graduate Tracking and Alumni Management System of BISU Bilar Campus.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

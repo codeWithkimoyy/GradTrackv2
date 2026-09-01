@@ -94,112 +94,6 @@ class DashboardShell extends ConsumerWidget {
               items: items,
               selectedIndex: selected,
               onSelected: navigate,
-<<<<<<< HEAD
-=======
-            minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.cardDark.withValues(alpha: .92)
-                        : Colors.white.withValues(alpha: .92),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1A0F172A),
-                        blurRadius: 24,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: NavigationBar(
-                    height: 68,
-                    backgroundColor: Colors.transparent,
-<<<<<<< Updated upstream
-                    indicatorColor: AppColors.primaryBlue.withValues(alpha: .20),
-=======
-                    indicatorColor:
-                        AppColors.primaryBlue.withValues(alpha: .35),
->>>>>>> Stashed changes
-                    selectedIndex: currentIndex,
-                    animationDuration: const Duration(milliseconds: 320),
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.onlyShowSelected,
-                    onDestinationSelected: navigate,
-                    destinations: [
-                      NavigationDestination(
-<<<<<<< Updated upstream
-                        icon: Icon(Icons.dashboard_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.dashboard_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Home',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.groups_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.groups_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Alumni',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.work_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.work_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Employment',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.description_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.description_rounded, color: AppColors.primaryBlue, size: 26),
-                        label: 'Documents',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.person_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        selectedIcon: const Icon(Icons.person_rounded, color: AppColors.primaryBlue, size: 26),
-=======
-                        icon: Icon(Icons.dashboard_outlined,
-                            color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.dashboard_rounded,
-                            color: Colors.white, size: 26),
-                        label: 'Home',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.groups_outlined,
-                            color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.groups_rounded,
-                            color: Colors.white, size: 26),
-                        label: 'Alumni',
-                      ),
-                      NavigationDestination(
-                        icon:
-                            Icon(Icons.work_outline, color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.work_rounded,
-                            color: Colors.white, size: 26),
-                        label: 'Employment',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.description_outlined,
-                            color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.description_rounded,
-                            color: Colors.white, size: 26),
-                        label: 'Documents',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.person_outline,
-                            color: Color(0xFF94A3B8)),
-                        selectedIcon: Icon(Icons.person_rounded,
-                            color: Colors.white, size: 26),
->>>>>>> Stashed changes
-                        label: 'Profile',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
->>>>>>> b1bbfec387bd4e6e82becde798ee556e53b5eba0
-=======
->>>>>>> d6fd597806fb636fd48c99119840e7edf706bb27
             ),
           ),
         );
@@ -661,13 +555,7 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
     if (widget.selected) {
       backgroundColor = AppColors.primaryBlue;
     } else {
-<<<<<<< Updated upstream
-      backgroundColor = _isHovered
-          ? (isDark ? AppColors.cardDark : AppColors.surfaceLightAlt)
-          : Colors.transparent;
-=======
       backgroundColor = _isHovered ? AppColors.cardDark : Colors.transparent;
->>>>>>> Stashed changes
     }
 
     final textColor = widget.selected
@@ -1705,32 +1593,17 @@ class _DashboardBody extends ConsumerWidget {
             title: 'BISU Grand Alumni Homecoming 2026 Registration Open',
             date: '2 hours ago',
             category: 'Event',
-<<<<<<< Updated upstream
-            categoryColor: AppColors.goldDark,
-<<<<<<< HEAD
-            description: 'All graduates are invited to join the annual homecoming assembly at the BISU Main Campus Gymnasium.',
-=======
-            categoryColor: AppColors.gold,
-            description:
-                'All graduates are invited to join the annual homecoming assembly at the BISU Bilar Campus Gymnasium.',
->>>>>>> Stashed changes
-=======
+            categoryColor: AppColors.primaryBlue,
             description: 'All graduates are invited to join the annual homecoming assembly at the BISU Bilar Campus Gymnasium.',
->>>>>>> d6fd597806fb636fd48c99119840e7edf706bb27
           ),
           const SizedBox(height: 10),
           const _AnnouncementCard(
             title: 'Annual Graduate Tracer Survey Submission Deadline',
             date: '1 day ago',
             category: 'Survey',
-<<<<<<< Updated upstream
-            categoryColor: AppColors.teal,
-            description: 'Please submit your career updates before the end of the month for CHED national reporting.',
-=======
             categoryColor: AppColors.tealLight,
             description:
                 'Please submit your career updates before the end of the month for CHED national reporting.',
->>>>>>> Stashed changes
           ),
         ],
       ),
@@ -1770,20 +1643,12 @@ class _DashboardBody extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 14),
-<<<<<<< Updated upstream
           _infoRow(context, 'Student No.', user.studentNumber ?? 'N/A'),
           _infoRow(context, 'Course', user.course ?? 'BS Computer Science'),
-          _infoRow(context, 'Graduation Year', user.graduationYear?.toString() ?? '2024'),
+          _infoRow(context, 
+              'Graduation Year', user.graduationYear?.toString() ?? '2024'),
           _infoRow(context, 'Phone', user.phoneNumber ?? 'Not provided'),
           _infoRow(context, 'Status', user.employmentStatus.label),
-=======
-          _infoRow('Student No.', user.studentNumber ?? 'N/A'),
-          _infoRow('Course', user.course ?? 'BS Computer Science'),
-          _infoRow(
-              'Graduation Year', user.graduationYear?.toString() ?? '2024'),
-          _infoRow('Phone', user.phoneNumber ?? 'Not provided'),
-          _infoRow('Status', user.employmentStatus.label),
->>>>>>> Stashed changes
           const Divider(height: 24),
           SizedBox(
             width: double.infinity,
@@ -2074,35 +1939,19 @@ class _DocumentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         Text(
           'Documents Vault',
           style: GoogleFonts.poppins(
-<<<<<<< Updated upstream
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : AppColors.primaryNavy,
-          ),
-=======
               fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
->>>>>>> Stashed changes
         ),
         const SizedBox(height: 4),
         Text(
           'Store and manage your verified resume and professional certificates.',
-<<<<<<< Updated upstream
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-          ),
-=======
           style:
               GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
->>>>>>> Stashed changes
         ),
         const SizedBox(height: 24),
         _DocumentOptionCard(
@@ -2194,13 +2043,7 @@ class _DocumentOptionCard extends StatelessWidget {
           Text(
             subtitle,
             style: GoogleFonts.poppins(
-<<<<<<< Updated upstream
-              fontSize: 12.5,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-            ),
-=======
                 fontSize: 12.5, color: const Color(0xFF94A3B8)),
->>>>>>> Stashed changes
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -2231,27 +2074,13 @@ class _JobsTab extends StatelessWidget {
         Text(
           'Employment & Career Records',
           style: GoogleFonts.poppins(
-<<<<<<< Updated upstream
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : AppColors.primaryNavy,
-          ),
-=======
               fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
->>>>>>> Stashed changes
         ),
         const SizedBox(height: 4),
         Text(
           'Log your employment history, promotions, and work setup to update tracer metrics.',
-<<<<<<< Updated upstream
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-          ),
-=======
           style:
               GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
->>>>>>> Stashed changes
         ),
         const SizedBox(height: 24),
         Container(
@@ -2278,16 +2107,9 @@ class _JobsTab extends StatelessWidget {
               Text(
                 'Work Tracker Status',
                 style: GoogleFonts.poppins(
-<<<<<<< Updated upstream
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : AppColors.primaryNavy,
-                ),
-=======
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
->>>>>>> Stashed changes
               ),
               const SizedBox(height: 8),
               Row(
@@ -2295,13 +2117,7 @@ class _JobsTab extends StatelessWidget {
                   Text(
                     'Current Status: ',
                     style: GoogleFonts.poppins(
-<<<<<<< Updated upstream
-                      fontSize: 13,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
-=======
                         fontSize: 13, color: const Color(0xFF94A3B8)),
->>>>>>> Stashed changes
                   ),
                   Text(
                     user.employmentStatus.label,
@@ -2343,27 +2159,13 @@ class _AlumniTab extends StatelessWidget {
         Text(
           'Alumni Community',
           style: GoogleFonts.poppins(
-<<<<<<< Updated upstream
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : AppColors.primaryNavy,
-          ),
-=======
               fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
->>>>>>> Stashed changes
         ),
         const SizedBox(height: 4),
         Text(
           'Connect with fellow BISU graduates and access alumni network resources.',
-<<<<<<< Updated upstream
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-          ),
-=======
           style:
               GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
->>>>>>> Stashed changes
         ),
         const SizedBox(height: 24),
         Container(
@@ -2390,29 +2192,16 @@ class _AlumniTab extends StatelessWidget {
               Text(
                 'Your Registered Alumni Credentials',
                 style: GoogleFonts.poppins(
-<<<<<<< Updated upstream
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : AppColors.primaryNavy,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _itemLine(context, 'Full Name', user.fullName),
-              _itemLine(context, 'Course Program', user.course ?? 'BS Computer Science'),
-              _itemLine(context, 'Graduation Batch', user.graduationYear?.toString() ?? '2024'),
-              _itemLine(context, 'Status', user.employmentStatus.label),
-=======
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
               const SizedBox(height: 12),
-              _itemLine('Full Name', user.fullName),
-              _itemLine('Course Program', user.course ?? 'BS Computer Science'),
-              _itemLine('Graduation Batch',
+              _itemLine(context, 'Full Name', user.fullName),
+              _itemLine(context, 'Course Program', user.course ?? 'BS Computer Science'),
+              _itemLine(context, 'Graduation Batch',
                   user.graduationYear?.toString() ?? '2024'),
-              _itemLine('Status', user.employmentStatus.label),
->>>>>>> Stashed changes
+              _itemLine(context, 'Status', user.employmentStatus.label),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.push(AppRoutes.editProfile),
@@ -2426,30 +2215,11 @@ class _AlumniTab extends StatelessWidget {
   }
 
   Widget _itemLine(BuildContext context, String k, String v) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-<<<<<<< Updated upstream
-          Text(
-            k,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-            ),
-          ),
-          Text(
-            v,
-            style: GoogleFonts.poppins(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : AppColors.primaryNavy,
-            ),
-          ),
-=======
           Text(k,
               style: GoogleFonts.poppins(
                   fontSize: 12, color: const Color(0xFF94A3B8))),
@@ -2458,7 +2228,6 @@ class _AlumniTab extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: Colors.white)),
->>>>>>> Stashed changes
         ],
       ),
     );

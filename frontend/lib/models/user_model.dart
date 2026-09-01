@@ -90,6 +90,7 @@ class UserModel {
   final bool isVerified;
   final bool emailVerified;
   final bool disabled;
+  final bool approved;
   final double profileCompletion;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -112,10 +113,11 @@ class UserModel {
     this.biography,
     this.socialLinks = const SocialLinks(),
     this.employmentStatus = EmploymentStatus.unemployed,
-    this.isVerified = false,
-    this.emailVerified = false,
-    this.disabled = false,
-    this.profileCompletion = 0.0,
+        this.isVerified = false,
+        this.emailVerified = false,
+        this.disabled = false,
+        this.approved = true,
+        this.profileCompletion = 0.0,
     required this.createdAt,
     this.updatedAt,
   });
@@ -143,6 +145,7 @@ class UserModel {
       isVerified: map['isVerified'] ?? false,
       emailVerified: map['emailVerified'] ?? false,
       disabled: map['disabled'] ?? false,
+      approved: map['approved'] ?? true,
       profileCompletion: (map['profileCompletion'] ?? 0.0).toDouble(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
@@ -172,6 +175,7 @@ class UserModel {
         'isVerified': isVerified,
         'emailVerified': emailVerified,
         'disabled': disabled,
+        'approved': approved,
         'profileCompletion': profileCompletion,
         'createdAt': Timestamp.fromDate(createdAt),
         'updatedAt': Timestamp.now(),
@@ -199,6 +203,7 @@ class UserModel {
     EmploymentStatus? employmentStatus,
     bool? isVerified,
     bool? emailVerified,
+    bool? approved,
     double? profileCompletion,
   }) {
     return UserModel(
@@ -221,6 +226,7 @@ class UserModel {
       employmentStatus: employmentStatus ?? this.employmentStatus,
       isVerified: isVerified ?? this.isVerified,
       emailVerified: emailVerified ?? this.emailVerified,
+      approved: approved ?? this.approved,
       profileCompletion: profileCompletion ?? this.profileCompletion,
       createdAt: createdAt,
       updatedAt: DateTime.now(),

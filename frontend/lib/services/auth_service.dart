@@ -88,6 +88,7 @@ class AuthService {
       role: UserRole.alumni,
       graduationYear: graduationYear,
       course: course,
+      approved: false,
       createdAt: DateTime.now(),
     );
 
@@ -142,6 +143,7 @@ class AuthService {
       role: UserRole.alumni,
       photoUrl: user.photoURL,
       emailVerified: user.emailVerified,
+      approved: false,
       createdAt: DateTime.now(),
     );
     await _userRepository.saveUser(profile);
@@ -160,6 +162,7 @@ class AuthService {
         role: UserRole.alumni,
         photoUrl: user.photoURL,
         emailVerified: user.emailVerified,
+        approved: false,
         createdAt: DateTime.now(),
       );
       await _userRepository.saveUser(profile);
