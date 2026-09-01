@@ -177,12 +177,12 @@ class _PremiumBottomNavigation extends StatelessWidget {
                             constraints: const BoxConstraints(minHeight: 58),
                             decoration: BoxDecoration(
                               gradient: selected
-                                  ? const LinearGradient(
+                                  ? LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Color(0xFF3978F6),
-                                        Color(0xFF1E40AF),
+                                        item.color,
+                                        _darken(item.color),
                                       ],
                                     )
                                   : null,
@@ -190,7 +190,7 @@ class _PremiumBottomNavigation extends StatelessWidget {
                               boxShadow: selected
                                   ? [
                                       BoxShadow(
-                                        color: AppColors.primaryBlue
+                                        color: item.color
                                             .withValues(alpha: .32),
                                         blurRadius: 14,
                                         offset: const Offset(0, 6),
@@ -201,16 +201,52 @@ class _PremiumBottomNavigation extends StatelessWidget {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                AnimatedScale(
-                                  scale: selected ? 1 : .90,
-                                  duration: const Duration(milliseconds: 250),
-                                  curve: Curves.easeInOutCubic,
-                                  child: Icon(
-                                    selected ? item.activeIcon : item.icon,
-                                    size: selected ? 28 : 24,
-                                    color:
-                                        selected ? Colors.white : inactiveColor,
-                                  ),
+                                Stack(
+                                  clipBehavior: Clip.none,
+                                  alignment: Alignment.center,
+                                  children: [
+                                    AnimatedScale(
+                                      scale: selected ? 1 : .90,
+                                      duration:
+                                          const Duration(milliseconds: 250),
+                                      curve: Curves.easeInOutCubic,
+                                      child: Icon(
+                                        selected
+                                            ? item.activeIcon
+                                            : item.icon,
+                                        size: selected ? 28 : 24,
+                                        color: selected
+                                            ? Colors.white
+                                            : inactiveColor,
+                                      ),
+                                    ),
+                                    if (selected && item.sticker.isNotEmpty)
+                                      Positioned(
+                                        right: -10,
+                                        top: -11,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? const Color(0xFF171B24)
+                                                : Colors.white,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withValues(alpha: .18),
+                                                blurRadius: 4,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Text(
+                                            item.sticker,
+                                            style: const TextStyle(
+                                                fontSize: 10),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 const SizedBox(height: 3),
                                 AnimatedDefaultTextStyle(
@@ -253,53 +289,79 @@ class _PremiumBottomNavigation extends StatelessWidget {
 }
 
 class _ShellNavItem {
-  const _ShellNavItem(this.icon, this.activeIcon, this.label, this.path);
+  const _ShellNavItem(this.icon, this.activeIcon, this.label, this.path,
+      this.color, {this.sticker = ''});
 
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final String path;
+  final Color color;
+
+  /// Optional emoji "sticker" shown above the selected nav item.
+  final String sticker;
 }
 
 List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
       UserRole.guest => const [],
       UserRole.alumni => const [
+        _ShellNavItem(Icons.home_outlined, Icons.home_rounded, 'Home',
+            AppRoutes.alumniDashboard, Color(0xFF2563EB),
+            sticker: '\u{1F3E0}'),
+        _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
+            'Survey', AppRoutes.alumniSurvey, Color(0xFF0D9488),
+            sticker: '\u{1F4C3}'),
+        _ShellNavItem(Icons.work_outline_rounded, Icons.work_rounded, 'Jobs',
+            AppRoutes.alumniJobs, Color(0xFFD97706), sticker: '\u{1F4BC}'),
         _ShellNavItem(
-            Icons.home_outlined, Icons.home_rounded, 'Home', AppRoutes.alumniDashboard),
-        _ShellNavItem(
-            Icons.fact_check_outlined, Icons.fact_check_rounded, 'Survey', AppRoutes.alumniSurvey),
-        _ShellNavItem(
-            Icons.work_outline_rounded, Icons.work_rounded, 'Jobs', AppRoutes.alumniJobs),
-        _ShellNavItem(
-            Icons.notifications_none_rounded, Icons.notifications_rounded, 'Notifications', AppRoutes.alumniNotifications),
-        _ShellNavItem(
-            Icons.person_outline_rounded, Icons.person_rounded, 'Profile', AppRoutes.alumniProfile),
+            Icons.notifications_none_rounded,
+            Icons.notifications_rounded,
+            'Notifications',
+            AppRoutes.alumniNotifications,
+            Color(0xFFA855F7),
+            sticker: '\u{1F514}'),
+        _ShellNavItem(Icons.person_outline_rounded, Icons.person_rounded,
+            'Profile', AppRoutes.alumniProfile, Color(0xFF06B6D4),
+            sticker: '\u{1F464}'),
       ],
       UserRole.coordinator => const [
-        _ShellNavItem(
-            Icons.analytics_outlined, Icons.analytics_rounded, 'Overview', AppRoutes.coordinatorDashboard),
-        _ShellNavItem(
-            Icons.groups_outlined, Icons.groups_rounded, 'Alumni', AppRoutes.coordinatorAlumni),
-        _ShellNavItem(
-            Icons.fact_check_outlined, Icons.fact_check_rounded, 'Surveys', AppRoutes.coordinatorSurveys),
-        _ShellNavItem(
-            Icons.assessment_outlined, Icons.assessment_rounded, 'Reports', AppRoutes.coordinatorReports),
-        _ShellNavItem(
-            Icons.event_outlined, Icons.event_rounded, 'Events', AppRoutes.coordinatorEvents),
+        _ShellNavItem(Icons.analytics_outlined, Icons.analytics_rounded,
+            'Overview', AppRoutes.coordinatorDashboard, Color(0xFF2563EB),
+            sticker: '\u{1F4CA}'),
+        _ShellNavItem(Icons.groups_outlined, Icons.groups_rounded, 'Alumni',
+            AppRoutes.coordinatorAlumni, Color(0xFF0D9488),
+            sticker: '\u{1F393}'),
+        _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
+            'Surveys', AppRoutes.coordinatorSurveys, Color(0xFFD97706),
+            sticker: '\u{1F4CB}'),
+        _ShellNavItem(Icons.assessment_outlined, Icons.assessment_rounded,
+            'Reports', AppRoutes.coordinatorReports, Color(0xFFA855F7),
+            sticker: '\u{1F4C8}'),
+        _ShellNavItem(Icons.event_outlined, Icons.event_rounded, 'Events',
+            AppRoutes.coordinatorEvents, Color(0xFF06B6D4),
+            sticker: '\u{1F5D3}\u{FE0F}'),
       ],
       UserRole.admin => const [
-        _ShellNavItem(
-            Icons.shield_outlined, Icons.shield_rounded, 'Overview', AppRoutes.adminDashboard),
-        _ShellNavItem(
-            Icons.people_outline_rounded, Icons.people_rounded, 'Users', AppRoutes.adminUsers),
-        _ShellNavItem(
-            Icons.analytics_outlined, Icons.analytics_rounded, 'Analytics', AppRoutes.adminAnalytics),
-        _ShellNavItem(
-            Icons.history_rounded, Icons.history_rounded, 'Audit Logs', AppRoutes.adminAuditLogs),
-        _ShellNavItem(
-            Icons.person_outline_rounded, Icons.person_rounded, 'Profile', AppRoutes.adminProfile),
+        _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Overview',
+            AppRoutes.adminDashboard, Color(0xFF2563EB),
+            sticker: '\u{1F6E1}\u{FE0F}'),
+        _ShellNavItem(Icons.people_outline_rounded, Icons.people_rounded,
+            'Users', AppRoutes.adminUsers, Color(0xFF0D9488),
+            sticker: '\u{1F465}'),
+        _ShellNavItem(Icons.analytics_outlined, Icons.analytics_rounded,
+            'Analytics', AppRoutes.adminAnalytics, Color(0xFFD97706),
+            sticker: '\u{1F4CA}'),
+        _ShellNavItem(Icons.history_rounded, Icons.history_rounded,
+            'Audit Logs', AppRoutes.adminAuditLogs, Color(0xFFA855F7),
+            sticker: '\u{1F4DC}'),
+        _ShellNavItem(Icons.person_outline_rounded, Icons.person_rounded,
+            'Profile', AppRoutes.adminProfile, Color(0xFF06B6D4),
+            sticker: '\u{1F464}'),
       ],
     };
+
+Color _darken(Color color, [double amount = 0.3]) =>
+    Color.lerp(color, Colors.black, amount)!;
 
 int _selectedIndex(String location, List<_ShellNavItem> items) {
   final index = items.lastIndexWhere((item) => location.startsWith(item.path));
@@ -439,6 +501,7 @@ class _DesktopSidebar extends StatelessWidget {
                   icon: selected ? item.activeIcon : item.icon,
                   label: item.label,
                   selected: selected,
+                  activeColor: item.color,
                   onTap: () => onSelected(index),
                 );
               },
@@ -531,12 +594,14 @@ class _SidebarMenuItem extends StatefulWidget {
   final IconData icon;
   final String label;
   final bool selected;
+  final Color activeColor;
   final VoidCallback onTap;
 
   const _SidebarMenuItem({
     required this.icon,
     required this.label,
     required this.selected,
+    required this.activeColor,
     required this.onTap,
   });
 
@@ -553,7 +618,7 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 
     Color backgroundColor;
     if (widget.selected) {
-      backgroundColor = AppColors.primaryBlue;
+      backgroundColor = widget.activeColor;
     } else {
       backgroundColor = _isHovered ? AppColors.cardDark : Colors.transparent;
     }
@@ -566,7 +631,9 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 
     final iconColor = widget.selected
         ? Colors.white
-        : (_isHovered ? AppColors.primaryBlue : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)));
+        : (_isHovered
+            ? widget.activeColor
+            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)));
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -582,7 +649,7 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: widget.selected
-                  ? AppColors.primaryBlue
+                  ? widget.activeColor
                   : (_isHovered
                       ? (isDark ? AppColors.borderDark : AppColors.borderLight)
                       : Colors.transparent),
@@ -590,7 +657,7 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
             boxShadow: widget.selected
                 ? [
                     BoxShadow(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.30),
+                      color: widget.activeColor.withValues(alpha: 0.30),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),

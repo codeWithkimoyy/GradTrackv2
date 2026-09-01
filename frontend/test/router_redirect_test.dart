@@ -22,7 +22,6 @@ void main() {
           authLoading: notLoading,
           loggedIn: loggedIn,
           role: UserRole.admin,
-          disabled: false,
           approved: true,
         );
         expect(result, isNull,
@@ -38,7 +37,6 @@ void main() {
             authLoading: notLoading,
             loggedIn: loggedIn,
             role: UserRole.admin,
-            disabled: false,
             approved: true,
           ),
           isNull,
@@ -55,7 +53,6 @@ void main() {
         authLoading: notLoading,
         loggedIn: false,
         role: null,
-        disabled: false,
         approved: true,
       );
       expect(result, AppRoutes.login);
@@ -67,7 +64,6 @@ void main() {
         authLoading: notLoading,
         loggedIn: loggedIn,
         role: UserRole.coordinator,
-        disabled: false,
         approved: true,
       );
       expect(result, AppRoutes.coordinatorDashboard);

@@ -3,16 +3,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
+import '../../utils/app_snack_bar.dart';
 
 /// Shown to signed-in users whose account has not yet been approved by an
 /// administrator/coordinator. They cannot reach any app content until approved.
+/// Watches the live profile so it automatically grants access the moment the
+/// account is approved.
 class PendingApprovalScreen extends ConsumerWidget {
   const PendingApprovalScreen({super.key});
 
+  void _openAccount(BuildContext context, WidgetRef ref, UserModel profile) {
+    if (profile.approved) {
+      final home = dashboardForRole(profile.role);
+      showAppSnackBar(
+        context,
+        'Your account has been approved. Welcome to GradTrack!',
+        backgroundColor: AppColors.success,
+      );
+      context.go(home);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profileAsync = ref.watch(currentUserProfileProvider);
+    final profile = profileAsync.valueOrNull;
+
+    if (profile != null && profile.approved) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) _openAccount(context, ref, profile);
+      });
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -40,7 +65,14 @@ class PendingApprovalScreen extends ConsumerWidget {
                   style: GoogleFonts.poppins(color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 24),
-                FilledButton.icon(
+                if (profile != null)
+                  FilledButton.icon(
+                    onPressed: () => _openAccount(context, ref, profile),
+                    icon: const Icon(Icons.verified_user_rounded),
+                    label: const Text('Check Approval Status'),
+                  ),
+                const SizedBox(height: 10),
+                TextButton.icon(
                   onPressed: () async {
                     await ref.read(authServiceProvider).signOut();
                     if (context.mounted) context.go(AppRoutes.login);

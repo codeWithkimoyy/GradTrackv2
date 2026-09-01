@@ -4,7 +4,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isNotDisabled(uid) {
-      return !get(/databases/$(database)/documents/users/$(uid)).data.disabled;
+      let data = get(/databases/$(database)/documents/users/$(uid)).data;
+      return !('disabled' in data) || !data.disabled;
     }
 
     function isSignedIn() {

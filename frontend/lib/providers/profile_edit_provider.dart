@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import 'auth_providers.dart';
@@ -67,9 +68,38 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
       profileCompletion: UserModel.computeCompletion(updated),
     );
 
+    // Write only the fields the alumni is allowed to self-edit. Firestore
+    // rules reject any alumni update that includes 'role' or 'disabled',
+    // so a full-document merge would be denied and the edit silently lost.
+    final changes = <String, dynamic>{
+      'fullName': finalUser.fullName,
+      'photoUrl': finalUser.photoUrl,
+      'studentNumber': finalUser.studentNumber,
+      'phoneNumber': finalUser.phoneNumber,
+      'currentAddress': finalUser.currentAddress,
+      'permanentAddress': finalUser.permanentAddress,
+      'biography': finalUser.biography,
+      'socialLinks': finalUser.socialLinks.toMap(),
+      'graduationYear': finalUser.graduationYear,
+      'course': finalUser.course,
+      'employmentStatus': finalUser.employmentStatus.name,
+      'profileCompletion': finalUser.profileCompletion,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
     try {
-      await _ref.read(userRepositoryProvider).saveUser(finalUser);
+      try {
+        await _ref
+            .read(userRepositoryProvider)
+            .updateUser(finalUser.uid, changes);
+      } catch (_) {
+        // Doc may not exist yet (first-time profile) — fall back to a
+        // full merge write, which is allowed for self-created docs.
+        await _ref.read(userRepositoryProvider).saveUser(finalUser);
+      }
     } catch (_) {
+      // Offline / rules-blocked: keep the edit in local state so the UI
+      // stays consistent for this session.
       _ref.read(localProfileProvider.notifier).state = finalUser;
     }
 

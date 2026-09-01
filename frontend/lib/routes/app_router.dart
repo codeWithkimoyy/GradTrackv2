@@ -7,7 +7,6 @@ import '../dashboards/alumni_dashboard.dart';
 import '../dashboards/coordinator_dashboard.dart';
 import '../dashboards/guest_dashboard.dart';
 import '../models/user_model.dart';
-import '../constants/app_constants.dart';
 import '../providers/auth_providers.dart';
 import '../screens/about/about_screen.dart';
 import '../screens/alumni/notifications_screen.dart';
@@ -42,7 +41,6 @@ class AppRoutes {
   static const dashboardDocuments = '/dashboard/documents';
   static const dashboardProfile = '/dashboard/profile';
   static const about = '/about';
-  static const accountDisabled = '/account-disabled';
   static const pendingApproval = '/pending-approval';
 
   static const guestDashboard = '/guest/dashboard';
@@ -95,7 +93,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         authLoading: authState.isLoading,
         loggedIn: authState.value != null,
         role: profile?.role,
-        disabled: profile?.disabled == true,
         approved: profile?.approved ?? true,
       );
     },
@@ -106,10 +103,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterScreen()),
       GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(path: AppRoutes.about, builder: (_, __) => const AboutScreen()),
-      GoRoute(
-        path: AppRoutes.accountDisabled,
-        builder: (_, __) => const AccountDisabledScreen(),
-      ),
       GoRoute(
         path: AppRoutes.pendingApproval,
         builder: (_, __) => const PendingApprovalScreen(),
@@ -172,7 +165,6 @@ String? resolveRedirect({
   required bool authLoading,
   required bool loggedIn,
   required UserRole? role,
-  required bool disabled,
   required bool approved,
 }) {
   const authRoutes = {
@@ -188,12 +180,6 @@ String? resolveRedirect({
   }
   if (!loggedIn) return authRoutes.contains(location) ? null : AppRoutes.login;
   if (role == null) return location == AppRoutes.splash ? null : AppRoutes.splash;
-
-  if (disabled) {
-    return location == AppRoutes.accountDisabled
-        ? null
-        : AppRoutes.accountDisabled;
-  }
 
   if (!approved && role != UserRole.admin) {
     return location == AppRoutes.pendingApproval
@@ -211,7 +197,6 @@ String? resolveRedirect({
   };
   if (legacy.containsKey(location)) return legacy[location];
   if (authRoutes.contains(location)) return home;
-  if (location == AppRoutes.accountDisabled) return home;
 
   final collectionKey = location.startsWith(AppRoutes.staffData)
       ? location
@@ -273,53 +258,6 @@ String? resolveRedirect({
   final canAccess =
       allowed.any((path) => location == path || location.startsWith('$path/'));
   return canAccess ? null : home;
-}
-
-class AccountDisabledScreen extends ConsumerWidget {
-  const AccountDisabledScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.lock_clock_outlined,
-                    size: 72, color: AppColors.error),
-                const SizedBox(height: 18),
-                Text(
-                  'Account disabled',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Your account has been disabled by an administrator. '
-                  'Please contact the GradTrack office for assistance.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: () async {
-                    await ref.read(authServiceProvider).signOut();
-                    if (context.mounted) context.go(AppRoutes.login);
-                  },
-                  icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Sign Out'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _NotFoundScreen extends StatelessWidget {

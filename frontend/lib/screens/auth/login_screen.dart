@@ -405,7 +405,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 16),
               _GradientButton(
-                loading: _loading,
                 onPressed: _loading ? null : _submit,
                 label: 'Sign In',
               ),
@@ -416,7 +415,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed:
                       _loading ? null : () => context.push(AppRoutes.register),
                   style: OutlinedButton.styleFrom(
-                    fixedSize: const Size.fromHeight(46),
+                    fixedSize: const Size.fromHeight(50),
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.white.withValues(alpha: 0.06),
                     overlayColor: Colors.white.withValues(alpha: 0.15),
@@ -699,19 +698,15 @@ class _AccountActionsRow extends StatelessWidget {
 
 class _GradientButton extends StatelessWidget {
   const _GradientButton({
-    required this.loading,
     required this.onPressed,
     required this.label,
   });
 
-  final bool loading;
   final VoidCallback? onPressed;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-
     return _PressableScale(
       onTap: onPressed,
       child: Material(
@@ -720,30 +715,16 @@ class _GradientButton extends StatelessWidget {
         child: Ink(
           height: 50,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: enabled
-                  ? const [
-                      Color(0xFF19C2FF),
-                      Color(0xFF2D7DFF),
-                      Color(0xFF4C5DFF),
-                    ]
-                  : const [
-                      Color(0xFF93A4C7),
-                      Color(0xFF93A4C7),
-                    ],
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF19C2FF),
+                Color(0xFF2D7DFF),
+                Color(0xFF4C5DFF),
+              ],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             borderRadius: BorderRadius.circular(25),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF19C2FF).withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : null,
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(25),
@@ -752,44 +733,35 @@ class _GradientButton extends StatelessWidget {
             onTap: onPressed,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: loading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
+              child: Row(
+                children: [
+                  const SizedBox(width: 36),
+                  Expanded(
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    )
-                  : Row(
-                      children: [
-                        const SizedBox(width: 36),
-                        Expanded(
-                          child: Text(
-                            label,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            color: Color(0xFF2457F5),
-                            size: 16,
-                          ),
-                        ),
-                      ],
                     ),
+                  ),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Color(0xFF2457F5),
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

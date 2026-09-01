@@ -154,7 +154,10 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final newValue = data['approved'] != true;
     final uid = doc.id;
     try {
-      await _users.doc(uid).update({'approved': newValue});
+      await _users.doc(uid).update({
+        'approved': newValue,
+        if (newValue) 'disabled': false,
+      });
       final service = ref.read(notificationServiceProvider);
       await service.createNotification(AppNotification(
         id: '',
@@ -181,45 +184,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     }
   }
 
-  Future<void> _toggleDisabled(
-      DocumentSnapshot<Map<String, dynamic>> doc) async {
-    final data = doc.data() ?? {};
-    final newValue = data['disabled'] != true;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(newValue ? 'Disable account?' : 'Enable account?'),
-        content: Text(newValue
-            ? 'The user will be blocked from accessing their account.'
-            : 'The user will regain access to their account.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: newValue ? AppColors.error : AppColors.success),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(newValue ? 'Disable' : 'Enable'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || confirmed != true) return;
-    try {
-      await _users.doc(doc.id).update({'disabled': newValue});
-      if (mounted) {
-        showAppSnackBar(context,
-            newValue ? 'Account disabled.' : 'Account enabled.',
-            backgroundColor: AppColors.success);
-      }
-    } catch (e) {
-      if (mounted) {
-        showAppSnackBar(context, 'Update failed: $e',
-            backgroundColor: AppColors.error);
-      }
-    }
-  }
+
 
   Future<void> _deleteUser(DocumentSnapshot<Map<String, dynamic>> doc) async {
     final confirmed = await showDialog<bool>(
@@ -384,8 +349,6 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                         : null,
                     onToggleApproved:
                         isAdmin ? () => _toggleApproved(doc) : null,
-                    onToggleDisabled:
-                        isAdmin ? () => _toggleDisabled(doc) : null,
                     onDelete: isAdmin ? () => _deleteUser(doc) : null,
                   )),
             ],
@@ -403,7 +366,6 @@ class _UserCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback? onVerify;
   final VoidCallback? onToggleApproved;
-  final VoidCallback? onToggleDisabled;
   final VoidCallback? onDelete;
 
   const _UserCard({
@@ -413,7 +375,6 @@ class _UserCard extends StatelessWidget {
     required this.onEdit,
     this.onVerify,
     this.onToggleApproved,
-    this.onToggleDisabled,
     this.onDelete,
   });
 
@@ -429,7 +390,6 @@ class _UserCard extends StatelessWidget {
     final name = data['fullName']?.toString() ?? 'Unknown';
     final role = data['role']?.toString() ?? 'guest';
     final verified = data['isVerified'] == true;
-    final disabled = data['disabled'] == true;
     final approved = data['approved'] == true;
 
     return Card(
@@ -458,16 +418,6 @@ class _UserCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 backgroundColor: AppColors.warning,
                 labelStyle: TextStyle(color: Colors.black87),
-                padding: EdgeInsets.symmetric(horizontal: 4),
-              ),
-            ],
-            if (disabled) ...[
-              const SizedBox(width: 6),
-              const Chip(
-                label: Text('Disabled', style: TextStyle(fontSize: 10)),
-                visualDensity: VisualDensity.compact,
-                backgroundColor: AppColors.error,
-                labelStyle: TextStyle(color: Colors.white),
                 padding: EdgeInsets.symmetric(horizontal: 4),
               ),
             ],
@@ -511,18 +461,11 @@ class _UserCard extends StatelessWidget {
             PopupMenuButton<String>(
               onSelected: (value) {
                 switch (value) {
-                  case 'disable':
-                    onToggleDisabled?.call();
                   case 'delete':
                     onDelete?.call();
                 }
               },
               itemBuilder: (context) => [
-                if (onToggleDisabled != null)
-                  PopupMenuItem(
-                    value: 'disable',
-                    child: Text(disabled ? 'Enable' : 'Disable'),
-                  ),
                 if (onDelete != null)
                   const PopupMenuItem(
                     value: 'delete',
@@ -646,7 +589,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
   late String _role;
   late String _status;
   late bool _verified;
-  late bool _disabled;
+  late bool _approved;
 
   @override
   void initState() {
@@ -659,7 +602,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     _role = data['role']?.toString() ?? 'alumni';
     _status = data['employmentStatus']?.toString() ?? 'unemployed';
     _verified = data['isVerified'] == true;
-    _disabled = data['disabled'] == true;
+    _approved = data['approved'] == true;
   }
 
   @override
@@ -684,7 +627,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
       changes['role'] = _role;
     }
     if (widget.adminRoleEditing) {
-      changes['disabled'] = _disabled;
+      changes['approved'] = _approved;
     }
     try {
       await widget.doc.reference.update(changes);
@@ -749,9 +692,9 @@ class _EditUserDialogState extends State<_EditUserDialog> {
             ),
             if (widget.adminRoleEditing)
               SwitchListTile(
-                title: const Text('Account disabled'),
-                value: _disabled,
-                onChanged: (v) => setState(() => _disabled = v),
+                title: const Text('Account approved'),
+                value: _approved,
+                onChanged: (v) => setState(() => _approved = v),
               ),
           ],
         ),
