@@ -116,26 +116,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final maxCardHeight = constraints.maxHeight * 0.82;
                 final cardWidth =
-                    (constraints.maxWidth * 0.88).clamp(0.0, 460.0);
+                    (constraints.maxWidth * 0.90).clamp(0.0, 480.0);
 
-                return Column(
-                  children: [
-                    const Expanded(child: SizedBox.shrink()),
-                    FractionallySizedBox(
-                      widthFactor: 0.88,
-                      child: FadeTransition(
-                        opacity: _fade,
-                        child: _buildGlassCard(
-                          cardWidth: cardWidth,
-                          maxHeight: maxCardHeight,
-                          years: years,
-                        ),
+                return Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                    physics: const ClampingScrollPhysics(),
+                    child: FadeTransition(
+                      opacity: _fade,
+                      child: _buildGlassCard(
+                        cardWidth: cardWidth,
+                        maxHeight: double.infinity,
+                        years: years,
                       ),
                     ),
-                    const Expanded(child: SizedBox.shrink()),
-                  ],
+                  ),
                 );
               },
             ),
@@ -153,7 +149,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     final cardContentWidth = cardWidth - 48;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight),
+      constraints: maxHeight.isFinite
+          ? BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight)
+          : BoxConstraints(maxWidth: cardWidth),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
@@ -200,12 +198,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 ),
                 Form(
                   key: _formKey,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      width: cardContentWidth,
-                      child: Column(
+                  child: SizedBox(
+                    width: cardContentWidth,
+                    child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -423,7 +418,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

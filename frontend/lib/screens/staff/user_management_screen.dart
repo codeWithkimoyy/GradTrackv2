@@ -336,27 +336,192 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Text('${filtered.length} users',
-                  style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: AppSpacing.xs),
-              ...filtered.map((doc) => _UserCard(
-                    doc: doc,
-                    isAdmin: isAdmin,
-                    canVerify: widget.canVerify,
-                    onEdit: () => _editUser(doc),
-                    onVerify: widget.canVerify
-                        ? () => _toggleVerified(doc)
-                        : null,
-                    onToggleApproved:
-                        isAdmin ? () => _toggleApproved(doc) : null,
-                    onDelete: isAdmin ? () => _deleteUser(doc) : null,
-                  )),
+              if (MediaQuery.sizeOf(context).width >= 900 && filtered.isNotEmpty)
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: PaginatedDataTable(
+                    header: Text('${filtered.length} Users Registered'),
+                    rowsPerPage: (filtered.length < 10) ? filtered.length : 10,
+                    columns: const [
+                      DataColumn(label: Text('Name')),
+                      DataColumn(label: Text('Email')),
+                      DataColumn(label: Text('Role')),
+                      DataColumn(label: Text('Course / Batch')),
+                      DataColumn(label: Text('Verification')),
+                      DataColumn(label: Text('Actions')),
+                    ],
+                    source: _UserDataTableSource(
+                      docs: filtered,
+                      isAdmin: isAdmin,
+                      canVerify: widget.canVerify,
+                      onEdit: _editUser,
+                      onVerify: _toggleVerified,
+                      onToggleApproved: _toggleApproved,
+                      onDelete: _deleteUser,
+                    ),
+                  ),
+                )
+              else ...[
+                Text('${filtered.length} users',
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: AppSpacing.xs),
+                ...filtered.map((doc) => _UserCard(
+                      doc: doc,
+                      isAdmin: isAdmin,
+                      canVerify: widget.canVerify,
+                      onEdit: () => _editUser(doc),
+                      onVerify: widget.canVerify
+                          ? () => _toggleVerified(doc)
+                          : null,
+                      onToggleApproved:
+                          isAdmin ? () => _toggleApproved(doc) : null,
+                      onDelete: isAdmin ? () => _deleteUser(doc) : null,
+                    )),
+              ],
             ],
           );
         },
       ),
     );
   }
+}
+
+class _UserDataTableSource extends DataTableSource {
+  final List<DocumentSnapshot<Map<String, dynamic>>> docs;
+  final bool isAdmin;
+  final bool canVerify;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onEdit;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onVerify;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onToggleApproved;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onDelete;
+
+  _UserDataTableSource({
+    required this.docs,
+    required this.isAdmin,
+    required this.canVerify,
+    required this.onEdit,
+    required this.onVerify,
+    required this.onToggleApproved,
+    required this.onDelete,
+  });
+
+  @override
+  DataRow? getRow(int index) {
+    if (index >= docs.length) return null;
+    final doc = docs[index];
+    final data = doc.data() ?? {};
+    final name = data['fullName']?.toString() ?? 'Unknown';
+    final email = data['email']?.toString() ?? '';
+    final role = data['role']?.toString() ?? 'alumni';
+    final course = data['course']?.toString() ?? '—';
+    final year = data['graduationYear']?.toString() ?? '';
+    final verified = data['isVerified'] == true;
+    final approved = data['approved'] == true;
+
+    return DataRow.byIndex(
+      index: index,
+      cells: [
+        DataCell(Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+              child: Text(
+                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryBlue,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ],
+        )),
+        DataCell(Text(email)),
+        DataCell(Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: role == 'admin'
+                ? AppColors.error.withValues(alpha: 0.15)
+                : role == 'coordinator'
+                    ? AppColors.info.withValues(alpha: 0.15)
+                    : AppColors.teal.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            role.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: role == 'admin'
+                  ? AppColors.error
+                  : role == 'coordinator'
+                      ? AppColors.info
+                      : AppColors.teal,
+            ),
+          ),
+        )),
+        DataCell(Text(year.isNotEmpty ? '$course ($year)' : course)),
+        DataCell(Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (verified)
+              const Icon(Icons.verified_rounded, size: 16, color: AppColors.success)
+            else
+              const Icon(Icons.pending_outlined, size: 16, color: AppColors.warning),
+            const SizedBox(width: 4),
+            Text(verified ? 'Verified' : 'Pending', style: const TextStyle(fontSize: 12)),
+          ],
+        )),
+        DataCell(Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              tooltip: 'Edit',
+              onPressed: () => onEdit(doc),
+            ),
+            if (canVerify)
+              IconButton(
+                icon: Icon(
+                  verified ? Icons.verified_user : Icons.verified_user_outlined,
+                  size: 18,
+                  color: verified ? AppColors.success : null,
+                ),
+                tooltip: verified ? 'Revoke verification' : 'Verify alumni',
+                onPressed: () => onVerify(doc),
+              ),
+            if (isAdmin)
+              IconButton(
+                icon: Icon(
+                  approved ? Icons.check_circle : Icons.check_circle_outline,
+                  size: 18,
+                  color: approved ? AppColors.info : null,
+                ),
+                tooltip: approved ? 'Revoke approval' : 'Approve user',
+                onPressed: () => onToggleApproved(doc),
+              ),
+            if (isAdmin)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                tooltip: 'Delete',
+                onPressed: () => onDelete(doc),
+              ),
+          ],
+        )),
+      ],
+    );
+  }
+
+  @override
+  bool get isRowCountApproximate => false;
+  @override
+  int get rowCount => docs.length;
+  @override
+  int get selectedRowCount => 0;
 }
 
 class _UserCard extends StatelessWidget {

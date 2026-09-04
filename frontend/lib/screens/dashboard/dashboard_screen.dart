@@ -51,8 +51,10 @@ class DashboardShell extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 900;
-        if (desktop) {
+        final desktop = constraints.maxWidth >= 960;
+        final tablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+
+        if (desktop || tablet) {
           return Scaffold(
             backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             body: SafeArea(
@@ -62,6 +64,7 @@ class DashboardShell extends ConsumerWidget {
                     items: items,
                     selectedIndex: selected,
                     onSelected: navigate,
+                    isCompact: tablet,
                   ),
                   Expanded(
                     child: Column(
@@ -373,19 +376,21 @@ class _DesktopSidebar extends StatelessWidget {
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
+    this.isCompact = false,
   });
 
   final List<_ShellNavItem> items;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      width: 260,
-      padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
+      width: isCompact ? 76 : 260,
+      padding: EdgeInsets.fromLTRB(isCompact ? 8 : 18, 22, isCompact ? 8 : 18, 20),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDarkAlt : Colors.white,
         border: Border(
@@ -411,6 +416,8 @@ class _DesktopSidebar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             child: Row(
+              mainAxisAlignment:
+                  isCompact ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 Container(
                   width: 42,
@@ -428,33 +435,34 @@ class _DesktopSidebar extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Grad',
-                              style: GoogleFonts.poppins(
-                                color: isDark ? Colors.white : AppColors.primaryNavy,
+                if (!isCompact) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Grad',
+                                style: GoogleFonts.poppins(
+                                  color: isDark ? Colors.white : AppColors.primaryNavy,
+                                ),
                               ),
-                            ),
-                            const TextSpan(
-                              text: 'Track',
-                              style: TextStyle(color: AppColors.goldDark),
-                            ),
-                          ],
+                              const TextSpan(
+                                text: 'Track',
+                                style: TextStyle(color: AppColors.goldDark),
+                              ),
+                            ],
+                          ),
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                          ),
                         ),
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                        ),
-                      ),
                       const SizedBox(height: 2),
                       Text(
                         'BISU ALUMNI PORTAL',
@@ -469,24 +477,28 @@ class _DesktopSidebar extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: 28),
+        ),
+          if (!isCompact) ...[
+            const SizedBox(height: 28),
 
-          // Menu Section Label
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(
-              'NAVIGATION',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                letterSpacing: 1.4,
+            // Menu Section Label
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                'NAVIGATION',
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  letterSpacing: 1.4,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
+          ] else
+            const SizedBox(height: 18),
 
           // Navigation List
           Expanded(
@@ -503,13 +515,15 @@ class _DesktopSidebar extends StatelessWidget {
                   selected: selected,
                   activeColor: item.color,
                   onTap: () => onSelected(index),
+                  isCompact: isCompact,
                 );
               },
             ),
           ),
 
           // Integrated Secure Portal Footer Card
-          Container(
+          if (!isCompact)
+            Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: isDark ? AppColors.cardDark : AppColors.primarySoft,
@@ -596,6 +610,7 @@ class _SidebarMenuItem extends StatefulWidget {
   final bool selected;
   final Color activeColor;
   final VoidCallback onTap;
+  final bool isCompact;
 
   const _SidebarMenuItem({
     required this.icon,
@@ -603,6 +618,7 @@ class _SidebarMenuItem extends StatefulWidget {
     required this.selected,
     required this.activeColor,
     required this.onTap,
+    this.isCompact = false,
   });
 
   @override
@@ -643,7 +659,8 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: EdgeInsets.symmetric(
+              horizontal: widget.isCompact ? 10 : 14, vertical: 12),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(14),
@@ -664,32 +681,39 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
                   ]
                 : [],
           ),
-          child: Row(
-            children: [
-              Icon(widget.icon, color: iconColor, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: GoogleFonts.poppins(
-                    color: textColor,
-                    fontSize: 13,
-                    fontWeight:
-                        widget.selected ? FontWeight.w700 : FontWeight.w500,
+          child: widget.isCompact
+              ? Tooltip(
+                  message: widget.label,
+                  child: Center(
+                    child: Icon(widget.icon, color: iconColor, size: 22),
                   ),
+                )
+              : Row(
+                  children: [
+                    Icon(widget.icon, color: iconColor, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: GoogleFonts.poppins(
+                          color: textColor,
+                          fontSize: 13,
+                          fontWeight:
+                              widget.selected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (widget.selected)
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: AppColors.gold,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              if (widget.selected)
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: AppColors.gold,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );

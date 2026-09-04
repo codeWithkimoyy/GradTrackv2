@@ -9,11 +9,20 @@ final statsRepositoryProvider =
 /// Live staff-facing aggregate stats (admin + coordinator).
 /// Admins see every role; coordinators are scoped to alumni and guests.
 final staffStatsProvider =
-    StreamProvider<DashboardStats>((ref) {
+    StreamProvider.autoDispose<DashboardStats>((ref) {
   final isAdmin = ref.watch(isAdminProvider);
   return ref
       .watch(statsRepositoryProvider)
       .watchStaffStats(adminScope: isAdmin);
+});
+
+/// High-performance one-shot server aggregate query
+final aggregatedStaffStatsProvider =
+    FutureProvider.autoDispose<DashboardStats>((ref) {
+  final isAdmin = ref.watch(isAdminProvider);
+  return ref
+      .watch(statsRepositoryProvider)
+      .fetchAggregatedStaffStats(adminScope: isAdmin);
 });
 
 /// Live survey progress for a specific alumni user.

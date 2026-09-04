@@ -187,6 +187,63 @@ class StatsRepository {
     });
   }
 
+  /// High-performance server-side aggregation using Firestore count() queries.
+  /// Minimizes bandwidth and document read billing by avoiding mass document streaming.
+  Future<DashboardStats> fetchAggregatedStaffStats({bool adminScope = true}) async {
+    try {
+      final totalQuery = adminScope
+          ? _users
+          : _users.where('role', whereIn: const ['alumni', 'guest']);
+
+      final results = await Future.wait([
+        totalQuery.count().get(),
+        _users.where('role', isEqualTo: 'admin').count().get(),
+        _users.where('role', isEqualTo: 'coordinator').count().get(),
+        _users.where('role', isEqualTo: 'alumni').count().get(),
+        _users.where('role', isEqualTo: 'guest').count().get(),
+        _users
+            .where('role', isEqualTo: 'alumni')
+            .where('isVerified', isEqualTo: true)
+            .count()
+            .get(),
+        _users.where('employmentStatus', isEqualTo: 'employed').count().get(),
+        _users.where('employmentStatus', isEqualTo: 'selfEmployed').count().get(),
+        _users.where('employmentStatus', isEqualTo: 'freelance').count().get(),
+        _users.where('employmentStatus', isEqualTo: 'unemployed').count().get(),
+        _users.where('employmentStatus', isEqualTo: 'studying').count().get(),
+        _col(FirestoreCollections.surveys).count().get(),
+        _col(FirestoreCollections.surveyResponses).count().get(),
+        _col(FirestoreCollections.events).count().get(),
+        _col(FirestoreCollections.announcements).count().get(),
+      ]);
+
+      final total = results[0].count ?? 0;
+      final alumni = results[3].count ?? 0;
+      final verified = results[5].count ?? 0;
+
+      return DashboardStats(
+        totalUsers: total,
+        admins: results[1].count ?? 0,
+        coordinators: results[2].count ?? 0,
+        alumni: alumni,
+        guests: results[4].count ?? 0,
+        verifiedAlumni: verified,
+        pendingAlumni: (alumni - verified).clamp(0, alumni),
+        employed: results[6].count ?? 0,
+        selfEmployed: results[7].count ?? 0,
+        freelance: results[8].count ?? 0,
+        unemployed: results[9].count ?? 0,
+        studying: results[10].count ?? 0,
+        surveyCount: results[11].count ?? 0,
+        responseCount: results[12].count ?? 0,
+        eventCount: results[13].count ?? 0,
+        announcementCount: results[14].count ?? 0,
+      );
+    } catch (_) {
+      return DashboardStats.empty;
+    }
+  }
+
   /// Live tracer-survey progress for one alumni user.
   Stream<SurveyProgress> watchSurveyProgress(String userId) {
     final surveys = _col(FirestoreCollections.surveys).snapshots();

@@ -4,7 +4,10 @@ const helmet = require('helmet');
 
 const env = require('./config/env');
 const { hasFirebaseCredentials } = require('./config/firebase');
+const { isConnected: isMySQLConnected } = require('./config/mysql');
 const profileRouter = require('./routes/profile');
+const uploadRouter = require('./routes/upload');
+const alumniRouter = require('./routes/alumni');
 
 const app = express();
 
@@ -28,6 +31,7 @@ app.get('/health', (_request, response) => {
     status: 'ok',
     service: 'gradtrack-backend',
     firebaseConfigured: hasFirebaseCredentials,
+    mysqlConfigured: isMySQLConnected,
   });
 });
 
@@ -35,10 +39,13 @@ app.get('/api', (_request, response) => {
   response.json({
     name: 'GradTrack API',
     version: '1.0.0',
+    database: 'MySQL (Primary) + Firebase (Auth/Sync)',
   });
 });
 
 app.use('/api/profile', profileRouter);
+app.use('/api/upload', uploadRouter);
+app.use('/api/alumni', alumniRouter);
 
 app.use((_request, response) => {
   response.status(404).json({

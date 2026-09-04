@@ -81,12 +81,26 @@ String dashboardForRole(UserRole role) => switch (role) {
       UserRole.admin => AppRoutes.adminDashboard,
     };
 
+class _RouterListenable extends ChangeNotifier {
+  _RouterListenable(Ref ref) {
+    ref.listen(authStateProvider, (_, __) => notifyListeners());
+    ref.listen(currentUserProfileProvider, (_, __) => notifyListeners());
+  }
+}
+
+final routerListenableProvider = Provider<_RouterListenable>((ref) {
+  return _RouterListenable(ref);
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final listenable = ref.watch(routerListenableProvider);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: listenable,
     redirect: (context, state) {
       final location = state.matchedLocation;
+      final authState = ref.read(authStateProvider);
       final profile = ref.read(currentUserProfileProvider).valueOrNull;
       return resolveRedirect(
         location: location,
