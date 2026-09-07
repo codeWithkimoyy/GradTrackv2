@@ -43,7 +43,11 @@ class AuthService {
       _googleSignIn = googleSignIn ??
           GoogleSignIn(
             scopes: ['email'],
-            clientId: kIsWeb ? dotenv.env['GOOGLE_SIGN_IN_CLIENT_ID'] : null,
+            clientId: kIsWeb
+                ? (dotenv.env['GOOGLE_SIGN_IN_CLIENT_ID']?.isNotEmpty == true
+                    ? dotenv.env['GOOGLE_SIGN_IN_CLIENT_ID']
+                    : '124464777845-ntu8fbijglogi6rlu4b36m31b2mat1hr.apps.googleusercontent.com')
+                : null,
           );
     }
   }
