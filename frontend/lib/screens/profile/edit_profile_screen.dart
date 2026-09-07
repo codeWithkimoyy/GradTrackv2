@@ -143,7 +143,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               message: 'Your profile could not be loaded.',
             );
           }
-          _hydrate(user);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _hydrate(user);
+          });
 
           final isGuest = user.role == UserRole.guest;
 

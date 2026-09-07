@@ -196,7 +196,7 @@ Legend: `R` read · `C` create · `U` update · `D` delete · `–` denied.
 | `notifications` | – | owner: R C U D | R C U D | R C U D |
 | `reports` | – | – | R C | R C; D; U always denied |
 | `activity_logs` | – | – | C | R; C |
-| `audit_logs` | – | – | – | R C (write-only, no U/D) |
+| `audit_logs` | – | – | C | R C (write-only, no U/D) |
 | `system_settings` | – | – | – | R C U D |
 | `conversations` | – | participant: R C U D | participant: R C U D | participant: R C U D |
 | `messages` | – | any signed-in: R; own: C (U/D always denied) | same | same |

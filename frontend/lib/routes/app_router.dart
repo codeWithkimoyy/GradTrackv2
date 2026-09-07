@@ -26,6 +26,7 @@ import '../screens/employment/employment_history_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shared/collection_list_screen.dart';
+import '../screens/staff/audit_log_screen.dart';
 import '../screens/staff/user_management_screen.dart';
 
 class AppRoutes {
@@ -121,6 +122,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '${AppRoutes.staffData}/:key',
             builder: (context, state) {
               final key = state.pathParameters['key'] ?? '';
+              if (key == 'audit_logs') {
+                return const AuditLogScreen();
+              }
               final content = lookupCollection(key);
               if (content == null) {
                 return const _NotFoundScreen();
@@ -144,7 +148,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: AppRoutes.adminDashboard, builder: (_, __) => const AdminDashboard()),
           GoRoute(path: AppRoutes.adminAnalytics, builder: (_, __) => const AnalyticsScreen(adminMode: true)),
           GoRoute(path: AppRoutes.adminUsers, builder: (_, __) => const UserManagementScreen()),
-          GoRoute(path: AppRoutes.adminAuditLogs, builder: (_, __) => CollectionListScreen(content: lookupCollection('audit_logs')!)),
+          GoRoute(path: AppRoutes.adminAuditLogs, builder: (_, __) => const AuditLogScreen()),
           GoRoute(path: AppRoutes.adminProfile, builder: (_, __) => const ProfileScreen()),
         ],
       ),

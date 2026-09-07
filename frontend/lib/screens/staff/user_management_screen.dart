@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import '../../constants/app_constants.dart';
 import '../../models/notification_model.dart';
 import '../../models/user_model.dart';
+import '../../providers/audit_log_providers.dart';
 import '../../providers/notification_providers.dart';
 import '../../providers/role_providers.dart';
 import '../../providers/stats_providers.dart';
@@ -79,6 +80,15 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         showAppSnackBar(context, 'User created successfully.',
             backgroundColor: AppColors.success);
       }
+      await logAudit(
+        ref,
+        action: 'create',
+        title: 'User created',
+        description:
+            'Created ${result.fullName} (${result.email}) as ${result.role.label}.',
+        targetId: localId,
+        targetType: 'user',
+      );
     } catch (e) {
       if (mounted) {
         showAppSnackBar(context, 'Could not create user: $e',
@@ -113,6 +123,17 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       showAppSnackBar(context, 'User updated.',
           backgroundColor: AppColors.success);
     }
+    if (result == true) {
+      await logAudit(
+        ref,
+        action: 'update',
+        title: 'User profile edited',
+        description:
+            'Edited the profile of ${(doc.data()?['fullName']?.toString() ?? 'a user')} (${doc.data()?['email']?.toString() ?? doc.id}).',
+        targetId: doc.id,
+        targetType: 'user',
+      );
+    }
   }
 
   Future<void> _toggleVerified(
@@ -146,6 +167,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           context, newValue ? 'Alumni verified.' : 'Verification revoked.',
           backgroundColor: AppColors.success);
     }
+    await logAudit(
+      ref,
+      action: 'update',
+      title: newValue ? 'Alumni verified' : 'Verification revoked',
+      description: '${data['fullName']?.toString() ?? uid} ($uid) was ${newValue ? 'marked as a verified graduate' : 'unmarked (verification revoked)'}.',
+      targetId: uid,
+      targetType: 'user',
+    );
   }
 
   Future<void> _toggleApproved(
@@ -182,6 +211,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           newValue ? 'User approved.' : 'Approval revoked.',
           backgroundColor: AppColors.success);
     }
+    await logAudit(
+      ref,
+      action: 'update',
+      title: newValue ? 'Account approved' : 'Account approval revoked',
+      description: '${data['fullName']?.toString() ?? uid} ($uid) ${newValue ? 'was approved' : 'had approval revoked'}.',
+      targetId: uid,
+      targetType: 'user',
+    );
   }
 
 
@@ -206,12 +243,21 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       ),
     );
     if (!mounted || confirmed != true) return;
+    final data = doc.data() ?? {};
     try {
       await _users.doc(doc.id).delete();
       if (mounted) {
         showAppSnackBar(context, 'User deleted.',
             backgroundColor: AppColors.success);
       }
+      await logAudit(
+        ref,
+        action: 'delete',
+        title: 'User deleted',
+        description: 'Deleted user ${data['fullName']?.toString() ?? doc.id} (${data['email']?.toString() ?? ''}).',
+        targetId: doc.id,
+        targetType: 'user',
+      );
     } catch (e) {
       if (mounted) {
         showAppSnackBar(context, 'Delete failed: $e',

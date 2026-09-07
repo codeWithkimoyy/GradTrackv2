@@ -5,9 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_constants.dart';
 import '../../models/notification_model.dart';
 import '../../models/user_model.dart';
+import '../../providers/audit_log_providers.dart';
 import '../../providers/role_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
+import '../staff/survey_editor_screen.dart';
+import '../staff/survey_responses_screen.dart';
 
 enum ContentFieldType { text, longText, date, choice }
 
@@ -156,6 +159,29 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
   }
 
   Future<void> _openEditor([DocumentSnapshot<Map<String, dynamic>>? doc]) async {
+    if (widget.content.collection == FirestoreCollections.surveys) {
+      final saved = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => SurveyEditorScreen(existing: doc)),
+      );
+      if (saved == true && mounted) {
+        showAppSnackBar(context, 'Survey saved successfully.',
+            backgroundColor: AppColors.success);
+      }
+      if (saved == true) {
+        await logAudit(
+          ref,
+          action: doc == null ? 'create' : 'update',
+          title: doc == null ? 'Survey created' : 'Survey updated',
+          description:
+              '${doc == null ? 'Created' : 'Updated'} the ${widget.content.title} "${_recordTitle(doc)}".',
+          targetId: doc?.id,
+          targetType: widget.content.title.toLowerCase(),
+        );
+      }
+      return;
+    }
+
     final canEdit = await showDialog<bool>(
       context: context,
       builder: (_) => _ContentEditorDialog(
@@ -164,6 +190,29 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
       ),
     );
     if (!mounted || canEdit == null || !canEdit) return;
+    await logAudit(
+      ref,
+      action: doc == null ? 'create' : 'update',
+      title: doc == null
+          ? '${widget.content.title} created'
+          : '${widget.content.title} updated',
+      description: '${doc == null ? 'Created' : 'Updated'} a ${widget.content.title.toLowerCase()} record "${_recordTitle(doc)}".',
+      targetId: doc?.id,
+      targetType: widget.content.title.toLowerCase(),
+    );
+  }
+
+  String _recordTitle(DocumentSnapshot<Map<String, dynamic>>? doc) {
+    if (doc == null) return '(new)';
+    final title = doc.data()?['title']?.toString();
+    return title != null && title.isNotEmpty ? title : doc.id;
+  }
+
+  void _openResponses(DocumentSnapshot<Map<String, dynamic>> doc) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => SurveyResponsesScreen(survey: doc)),
+    );
   }
 
   Future<void> _delete(DocumentSnapshot<Map<String, dynamic>> doc) async {
@@ -186,12 +235,22 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
       ),
     );
     if (!mounted || confirmed != true) return;
+    final title = _recordTitle(doc);
     try {
       await doc.reference.delete();
       if (mounted) {
         showAppSnackBar(context, 'Deleted successfully.',
             backgroundColor: AppColors.success);
       }
+      await logAudit(
+        ref,
+        action: 'delete',
+        title: '${widget.content.title} deleted',
+        description:
+            'Deleted ${widget.content.title.toLowerCase()} record "$title".',
+        targetId: doc.id,
+        targetType: widget.content.title.toLowerCase(),
+      );
     } catch (e) {
       if (mounted) {
         showAppSnackBar(context, 'Delete failed: $e',
@@ -325,6 +384,13 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
               ...filtered.map((doc) => _RecordCard(
                     doc: doc,
                     icon: widget.content.icon,
+                    onResponses:
+                        widget.content.collection ==
+                                FirestoreCollections.surveys &&
+                            isStaff &&
+                            !publicOnly
+                            ? () => _openResponses(doc)
+                            : null,
                     onEdit: isStaff && !publicOnly
                         ? () => _openEditor(doc)
                         : null,
@@ -343,12 +409,14 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
 class _RecordCard extends StatelessWidget {
   final DocumentSnapshot<Map<String, dynamic>> doc;
   final IconData icon;
+  final VoidCallback? onResponses;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const _RecordCard({
     required this.doc,
     required this.icon,
+    this.onResponses,
     this.onEdit,
     this.onDelete,
   });
@@ -401,11 +469,17 @@ class _RecordCard extends StatelessWidget {
                     ),
                 ],
               ),
-        trailing: (onEdit == null && onDelete == null)
+        trailing: (onResponses == null && onEdit == null && onDelete == null)
             ? null
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (onResponses != null)
+                    IconButton(
+                      tooltip: 'View Responses',
+                      icon: const Icon(Icons.poll_outlined),
+                      onPressed: onResponses,
+                    ),
                   if (onEdit != null)
                     IconButton(
                       tooltip: 'Edit',
