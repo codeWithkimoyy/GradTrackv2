@@ -71,7 +71,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final sharedPrefs = results[1] as SharedPreferences;
     final onboardingSeen = sharedPrefs.getBool(_onboardingSeenKey) ?? false;
 
-    final authUser = await ref.read(authStateProvider.future);
+    final authUser = await ref.read(authStateProvider.future).timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => null,
+    );
 
     if (!mounted) return;
     if (authUser != null) {
