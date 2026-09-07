@@ -179,16 +179,7 @@ class _PremiumBottomNavigation extends StatelessWidget {
                             curve: Curves.easeInOutCubic,
                             constraints: const BoxConstraints(minHeight: 58),
                             decoration: BoxDecoration(
-                              gradient: selected
-                                  ? LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        item.color,
-                                        _darken(item.color),
-                                      ],
-                                    )
-                                  : null,
+                              color: selected ? item.color : null,
                               borderRadius: BorderRadius.circular(22),
                               boxShadow: selected
                                   ? [

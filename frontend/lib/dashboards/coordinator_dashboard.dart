@@ -127,11 +127,7 @@ class _EmploymentBarChart extends StatelessWidget {
                     Container(
                       height: (item.$2 / denominator) * 88,
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [AppColors.primaryBlue, AppColors.secondaryBlue],
-                        ),
+                        color: AppColors.primaryBlue,
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(8)),
                       ),

@@ -63,17 +63,7 @@ class _GlassAuthScaffoldState extends State<GlassAuthScaffold>
           ),
           const DecoratedBox(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0, .28, .58, 1],
-                colors: [
-                  Color(0x18031A48),
-                  Color(0x6B073B87),
-                  Color(0xE5073B87),
-                  Color(0xFF031A48),
-                ],
-              ),
+              color: Color(0xD9031A48),
             ),
           ),
           AnimatedBuilder(
@@ -118,20 +108,10 @@ class _GlassAuthScaffoldState extends State<GlassAuthScaffold>
                                     ),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(30),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Colors.white.withValues(alpha: .19),
-                                          const Color(0xFF0A4B9F)
-                                              .withValues(alpha: .24),
-                                          const Color(0xFF031A48)
-                                              .withValues(alpha: .42),
-                                        ],
-                                      ),
+                                      color: const Color(0xDD0A2B5E),
                                       border: Border.all(
                                         color:
-                                            Colors.white.withValues(alpha: .52),
+                                            Colors.white.withValues(alpha: .45),
                                       ),
                                       boxShadow: const [
                                         BoxShadow(
