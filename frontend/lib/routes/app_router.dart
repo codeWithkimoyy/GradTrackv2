@@ -210,6 +210,9 @@ String? resolveRedirect({
   }
 
   final home = dashboardForRole(role);
+  if (approved && location == AppRoutes.pendingApproval) {
+    return home;
+  }
   final legacy = <String, String>{
     AppRoutes.dashboard: home,
     AppRoutes.dashboardAlumni: role == UserRole.alumni ? AppRoutes.alumniDashboard : home,
@@ -248,10 +251,9 @@ String? resolveRedirect({
       AppRoutes.employment,
       AppRoutes.addEmployment,
       AppRoutes.resume,
-        AppRoutes.certificates,
-        AppRoutes.pendingApproval,
-        if (collectionExists) location,
-      },
+      AppRoutes.certificates,
+      if (collectionExists) location,
+    },
     UserRole.coordinator: {
       AppRoutes.coordinatorDashboard,
       AppRoutes.coordinatorAnalytics,
@@ -261,10 +263,9 @@ String? resolveRedirect({
       AppRoutes.coordinatorAlumni,
       AppRoutes.coordinatorSurveys,
       AppRoutes.coordinatorReports,
-        AppRoutes.coordinatorEvents,
-        AppRoutes.pendingApproval,
-        if (collectionExists) location,
-      },
+      AppRoutes.coordinatorEvents,
+      if (collectionExists) location,
+    },
     UserRole.admin: {
       AppRoutes.adminDashboard,
       AppRoutes.adminAnalytics,
@@ -272,10 +273,9 @@ String? resolveRedirect({
       AppRoutes.adminAuditLogs,
       AppRoutes.adminProfile,
       AppRoutes.editProfile,
-        AppRoutes.staffUsers,
-        AppRoutes.pendingApproval,
-        if (collectionExists) location,
-      },
+      AppRoutes.staffUsers,
+      if (collectionExists) location,
+    },
   }[role]!;
   final canAccess =
       allowed.any((path) => location == path || location.startsWith('$path/'));

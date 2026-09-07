@@ -68,5 +68,27 @@ void main() {
       );
       expect(result, AppRoutes.coordinatorDashboard);
     });
+
+    test('approved alumni on pending-approval is automatically redirected to alumni dashboard', () {
+      final result = resolveRedirect(
+        location: AppRoutes.pendingApproval,
+        authLoading: notLoading,
+        loggedIn: loggedIn,
+        role: UserRole.alumni,
+        approved: true,
+      );
+      expect(result, AppRoutes.alumniDashboard);
+    });
+
+    test('unapproved alumni attempting to access alumni dashboard is redirected to pending-approval', () {
+      final result = resolveRedirect(
+        location: AppRoutes.alumniDashboard,
+        authLoading: notLoading,
+        loggedIn: loggedIn,
+        role: UserRole.alumni,
+        approved: false,
+      );
+      expect(result, AppRoutes.pendingApproval);
+    });
   });
 }
