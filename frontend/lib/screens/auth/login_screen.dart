@@ -107,17 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const DecoratedBox(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0, .28, .58, 1],
-                colors: [
-                  Color(0x66000000),
-                  Color(0x33000000),
-                  Color(0xCC003DA8),
-                  Color(0xFF003DA8),
-                ],
-              ),
+              color: Color(0xDE003DA8),
             ),
           ),
           SafeArea(
@@ -276,9 +266,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: 20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30),
-              color: Colors.white.withValues(alpha: 0.12),
+              color: const Color(0xDD0A2B5E),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
+                color: Colors.white.withValues(alpha: 0.40),
                 width: 1.5,
               ),
               boxShadow: [
@@ -299,15 +289,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     height: 1.5,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0),
-                          Colors.white.withValues(alpha: 0.55),
-                          Colors.white.withValues(alpha: 0),
-                        ],
-                      ),
+                      color: Colors.white.withValues(alpha: 0.35),
                     ),
                   ),
                 ),
@@ -403,7 +385,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onForgotPassword: () => context.push(AppRoutes.forgotPassword),
               ),
               const SizedBox(height: 16),
-              _GradientButton(
+              _PrimaryButton(
+                loading: _loading,
                 onPressed: _loading ? null : _submit,
                 label: 'Sign In',
               ),
@@ -416,10 +399,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: OutlinedButton.styleFrom(
                     fixedSize: const Size.fromHeight(50),
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.06),
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
                     overlayColor: Colors.white.withValues(alpha: 0.15),
-                    side: BorderSide(
-                      color: const Color(0xFF5DDCFF).withValues(alpha: 0.9),
+                    side: const BorderSide(
+                      color: Color(0xFF5DDCFF),
                       width: 1.3,
                     ),
                     shape: RoundedRectangleBorder(
@@ -461,9 +444,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: OutlinedButton.styleFrom(
                     fixedSize: const Size.fromHeight(48),
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.22),
-                    side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.30)),
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    side: const BorderSide(
+                      color: Color(0xFF5DDCFF),
+                      width: 1.2,
+                    ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     textStyle: GoogleFonts.poppins(
@@ -519,7 +504,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       suffixIcon: suffixWidget,
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.10),
+      fillColor: Colors.white.withValues(alpha: 0.12),
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       isDense: true,
@@ -637,45 +622,48 @@ class _AccountActionsRow extends StatelessWidget {
         InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () => onRememberChanged(!rememberMe),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: Checkbox(
-                  value: rememberMe,
-                  activeColor: _LoginScreenState._accentBlue,
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  side: const BorderSide(
-                    color: _LoginScreenState._borderColor,
-                    width: 1.4,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Checkbox(
+                    value: rememberMe,
+                    activeColor: _LoginScreenState._accentBlue,
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    side: const BorderSide(
+                      color: _LoginScreenState._borderColor,
+                      width: 1.4,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    onChanged: (v) => onRememberChanged(v ?? true),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Remember Me',
+                  style: GoogleFonts.poppins(
+                    color: _LoginScreenState._primaryText,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
-                  onChanged: (v) => onRememberChanged(v ?? true),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Remember Me',
-                style: GoogleFonts.poppins(
-                  color: _LoginScreenState._primaryText,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         TextButton(
           onPressed: onForgotPassword,
           style: TextButton.styleFrom(
-            minimumSize: Size.zero,
-            padding: EdgeInsets.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            minimumSize: const Size(0, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+            tapTargetSize: MaterialTapTargetSize.padded,
             foregroundColor: _LoginScreenState._accentBlue,
             textStyle: GoogleFonts.poppins(
               fontSize: 12,
@@ -689,17 +677,21 @@ class _AccountActionsRow extends StatelessWidget {
   }
 }
 
-class _GradientButton extends StatelessWidget {
-  const _GradientButton({
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({
     required this.onPressed,
     required this.label,
+    this.loading = false,
   });
 
   final VoidCallback? onPressed;
   final String label;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+
     return _PressableScale(
       onTap: onPressed,
       child: Material(
@@ -708,15 +700,9 @@ class _GradientButton extends StatelessWidget {
         child: Ink(
           height: 50,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF19C2FF),
-                Color(0xFF2D7DFF),
-                Color(0xFF4C5DFF),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+            color: enabled
+                ? AppColors.primaryBlue
+                : const Color(0xFF64748B),
             borderRadius: BorderRadius.circular(25),
           ),
           child: InkWell(
@@ -726,35 +712,46 @@ class _GradientButton extends StatelessWidget {
             onTap: onPressed,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  const SizedBox(width: 36),
-                  Expanded(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+              child: loading
+                  ? const Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
                       ),
+                    )
+                  : Row(
+                      children: [
+                        const SizedBox(width: 36),
+                        Expanded(
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Color(0xFF2457F5),
+                            size: 16,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Color(0xFF2457F5),
-                      size: 16,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),
