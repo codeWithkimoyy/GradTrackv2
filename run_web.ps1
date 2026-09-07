@@ -1,6 +1,7 @@
 # GradTrack - Launch Flutter Web with Fixed Port for Google Sign-In
 param (
-    [int]$Port = 3000
+    [int]$Port = 3000,
+    [string]$Device = "web-server"
 )
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -13,5 +14,9 @@ Write-Host " 1. Google Cloud Console -> Authorized JavaScript origins" -Foregrou
 Write-Host " 2. Firebase Console -> Auth -> Authorized domains (localhost)" -ForegroundColor Yellow
 Write-Host "==================================================" -ForegroundColor Cyan
 
+if ($Device -eq "web-server") {
+    Start-Process "chrome.exe" "http://localhost:$Port" -ErrorAction SilentlyContinue
+}
+
 Set-Location -LiteralPath $FrontendDir
-flutter run -d chrome --web-port=$Port
+flutter run -d $Device --web-port=$Port
