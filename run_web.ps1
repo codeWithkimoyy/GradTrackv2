@@ -15,7 +15,20 @@ Write-Host " 2. Firebase Console -> Auth -> Authorized domains (localhost)" -For
 Write-Host "==================================================" -ForegroundColor Cyan
 
 if ($Device -eq "web-server") {
-    Start-Process "chrome.exe" "http://localhost:$Port" -ErrorAction SilentlyContinue
+    Start-Job -ScriptBlock {
+        param($p)
+        $url = "http://localhost:$p/main.dart.js"
+        for ($i = 0; $i -lt 45; $i++) {
+            Start-Sleep -Seconds 2
+            try {
+                $res = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                if ($res.StatusCode -eq 200 -and $res.Headers['Content-Type'] -like "*javascript*") {
+                    break
+                }
+            } catch {}
+        }
+        Start-Process "chrome.exe" "http://localhost:$p" -ErrorAction SilentlyContinue
+    } -ArgumentList $Port | Out-Null
 }
 
 Set-Location -LiteralPath $FrontendDir
