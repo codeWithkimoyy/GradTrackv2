@@ -67,9 +67,6 @@ class AdminDashboard extends ConsumerWidget {
                   () => context.go(AppRoutes.adminAnalytics)),
               DashboardAction('Audit Logs', Icons.history_rounded,
                   () => context.go(AppRoutes.collectionData('audit_logs'))),
-              DashboardAction('Settings', Icons.settings_outlined,
-                  () =>
-                      context.go(AppRoutes.collectionData('system_settings'))),
             ],
           ),
         ),

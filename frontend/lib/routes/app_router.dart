@@ -27,6 +27,7 @@ import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shared/collection_list_screen.dart';
 import '../screens/staff/audit_log_screen.dart';
+import '../screens/staff/reports_screen.dart';
 import '../screens/staff/user_management_screen.dart';
 
 class AppRoutes {
@@ -82,12 +83,26 @@ String dashboardForRole(UserRole role) => switch (role) {
       UserRole.admin => AppRoutes.adminDashboard,
     };
 
+class _RouterListenable extends ChangeNotifier {
+  _RouterListenable(Ref ref) {
+    ref.listen(authStateProvider, (_, __) => notifyListeners());
+    ref.listen(currentUserProfileProvider, (_, __) => notifyListeners());
+  }
+}
+
+final routerListenableProvider = Provider<_RouterListenable>((ref) {
+  return _RouterListenable(ref);
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final listenable = ref.watch(routerListenableProvider);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: listenable,
     redirect: (context, state) {
       final location = state.matchedLocation;
+      final authState = ref.read(authStateProvider);
       final profile = ref.read(currentUserProfileProvider).valueOrNull;
       return resolveRedirect(
         location: location,
@@ -125,6 +140,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               if (key == 'audit_logs') {
                 return const AuditLogScreen();
               }
+              if (key == 'reports') {
+                return const ReportsScreen();
+              }
               final content = lookupCollection(key);
               if (content == null) {
                 return const _NotFoundScreen();
@@ -142,7 +160,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: AppRoutes.coordinatorDashboard, builder: (_, __) => const CoordinatorDashboard()),
           GoRoute(path: AppRoutes.coordinatorAlumni, builder: (_, __) => const UserManagementScreen(roleFilter: 'alumni')),
           GoRoute(path: AppRoutes.coordinatorSurveys, builder: (_, __) => CollectionListScreen(content: lookupCollection('surveys')!)),
-          GoRoute(path: AppRoutes.coordinatorReports, builder: (_, __) => CollectionListScreen(content: lookupCollection('reports')!)),
+          GoRoute(path: AppRoutes.coordinatorReports, builder: (_, __) => const ReportsScreen()),
           GoRoute(path: AppRoutes.coordinatorEvents, builder: (_, __) => CollectionListScreen(content: lookupCollection('events')!)),
           GoRoute(path: AppRoutes.coordinatorAnalytics, builder: (_, __) => const AnalyticsScreen()),
           GoRoute(path: AppRoutes.adminDashboard, builder: (_, __) => const AdminDashboard()),

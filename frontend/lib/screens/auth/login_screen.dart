@@ -137,28 +137,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildMobileLayout(BoxConstraints constraints) {
     final isCompact = constraints.maxWidth < 370;
-    final maxCardHeight = constraints.maxHeight * 0.82;
-    final cardWidth = (constraints.maxWidth * 0.88).clamp(0.0, 460.0);
+    final cardWidth = (constraints.maxWidth * 0.90).clamp(0.0, 440.0);
 
-    return Column(
-      children: [
-        const Expanded(child: SizedBox.shrink()),
-        FractionallySizedBox(
-          widthFactor: 0.88,
-          child: _buildGlassCard(
-            cardWidth: cardWidth,
-            maxHeight: maxCardHeight,
-            isCompact: isCompact,
-          ),
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        physics: const ClampingScrollPhysics(),
+        child: _buildGlassCard(
+          cardWidth: cardWidth,
+          maxHeight: double.infinity,
+          isCompact: isCompact,
         ),
-        const Expanded(child: SizedBox.shrink()),
-      ],
+      ),
     );
   }
 
   Widget _buildWideLayout(BoxConstraints constraints) {
     final isCompact = constraints.maxWidth < 1000;
-    final maxCardHeight = constraints.maxHeight * 0.86;
     final cardWidth = (constraints.maxWidth * 0.38).clamp(380.0, 440.0);
 
     return Row(
@@ -168,11 +163,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         Expanded(
           child: Center(
-            child: _buildGlassCard(
-              cardWidth: cardWidth,
-              maxHeight: maxCardHeight,
-              isCompact: isCompact,
-              showLogoInForm: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              physics: const ClampingScrollPhysics(),
+              child: _buildGlassCard(
+                cardWidth: cardWidth,
+                maxHeight: double.infinity,
+                isCompact: isCompact,
+                showLogoInForm: false,
+              ),
             ),
           ),
         ),
@@ -261,17 +260,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required bool isCompact,
     bool showLogoInForm = true,
   }) {
-    final cardContentWidth = cardWidth - 48;
+    final paddingH = isCompact ? 16.0 : 24.0;
+    final cardContentWidth = cardWidth - (paddingH * 2);
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight),
+      constraints: maxHeight.isFinite
+          ? BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight)
+          : BoxConstraints(maxWidth: cardWidth),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+            padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: 20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30),
               color: Colors.white.withValues(alpha: 0.12),
@@ -331,15 +333,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }) {
     return Form(
       key: _formKey,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.topCenter,
-        child: SizedBox(
-          width: cardContentWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      child: SizedBox(
+        width: cardContentWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
               const SizedBox(height: 18),
               if (showLogoInForm) _AuthLogo(),
               if (showLogoInForm) const SizedBox(height: 12),
@@ -481,8 +480,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _glassField(Widget field) {
@@ -630,53 +628,48 @@ class _AccountActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
       children: [
-        Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => onRememberChanged(!rememberMe),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: Checkbox(
-                    value: rememberMe,
-                    activeColor: _LoginScreenState._accentBlue,
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    side: const BorderSide(
-                      color: _LoginScreenState._borderColor,
-                      width: 1.4,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    onChanged: (v) => onRememberChanged(v ?? true),
+        InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => onRememberChanged(!rememberMe),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: Checkbox(
+                  value: rememberMe,
+                  activeColor: _LoginScreenState._accentBlue,
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  side: const BorderSide(
+                    color: _LoginScreenState._borderColor,
+                    width: 1.4,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    'Remember Me',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: _LoginScreenState._primaryText,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
                   ),
+                  onChanged: (v) => onRememberChanged(v ?? true),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Remember Me',
+                style: GoogleFonts.poppins(
+                  color: _LoginScreenState._primaryText,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 8),
         TextButton(
           onPressed: onForgotPassword,
           style: TextButton.styleFrom(
@@ -685,7 +678,7 @@ class _AccountActionsRow extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             foregroundColor: _LoginScreenState._accentBlue,
             textStyle: GoogleFonts.poppins(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),

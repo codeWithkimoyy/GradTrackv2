@@ -17,7 +17,15 @@ import 'routes/app_router.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: 'assets/.env');
+  try {
+    await dotenv.load(fileName: 'assets/.env');
+  } catch (_) {
+    try {
+      await dotenv.load(fileName: 'assets/.env.example');
+    } catch (_) {
+      // Gracefully continue even if .env is missing
+    }
+  }
   final firebaseInitialized = DefaultFirebaseOptions.isConfigured
       ? await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
