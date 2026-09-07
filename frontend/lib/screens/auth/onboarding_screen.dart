@@ -197,28 +197,17 @@ class _CrossfadeBackground extends StatelessWidget {
               curve: Curves.easeInOutCubic,
               builder: (context, scale, child) => Transform.scale(
                 scale: scale,
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: child,
               ),
-              child: pageIndex == 0
-                  ? Image.asset(
-                      page.image,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      filterQuality: FilterQuality.high,
-                    )
-                  : Align(
-                      alignment: Alignment.topCenter,
-                      child: FractionallySizedBox(
-                        widthFactor: 1,
-                        heightFactor: .58,
-                        child: Image.asset(
-                          page.image,
-                          fit: BoxFit.fill,
-                          filterQuality: FilterQuality.high,
-                        ),
-                      ),
-                    ),
+              child: SizedBox.expand(
+                child: Image.asset(
+                  page.image,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                ),
+              ),
             ),
           ),
         ),
