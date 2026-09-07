@@ -390,32 +390,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: _loading ? null : _submit,
                 label: 'Sign In',
               ),
-              const SizedBox(height: 10),
-              _PressableScale(
-                onTap: _loading ? null : () => context.push(AppRoutes.register),
-                child: OutlinedButton(
-                  onPressed:
-                      _loading ? null : () => context.push(AppRoutes.register),
-                  style: OutlinedButton.styleFrom(
-                    fixedSize: const Size.fromHeight(50),
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.08),
-                    overlayColor: Colors.white.withValues(alpha: 0.15),
-                    side: const BorderSide(
-                      color: Color(0xFF5DDCFF),
-                      width: 1.3,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(23),
-                    ),
-                    textStyle: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  child: const Text('Create Account'),
-                ),
-              ),
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -459,6 +433,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withValues(alpha: 0.78),
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: _loading ? null : () => context.push(AppRoutes.register),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        child: Text(
+                          'Create Account',
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFFFFC21A),
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                            decorationColor: const Color(0xFFFFC21A),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),

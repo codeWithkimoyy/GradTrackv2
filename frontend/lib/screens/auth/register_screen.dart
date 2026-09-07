@@ -367,32 +367,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                             onPressed: _loading ? null : _submit,
                             label: 'Create Account',
                           ),
-                          const SizedBox(height: 10),
-                          _PressableScale(
-                            onTap: _loading ? null : _goBackToLogin,
-                            child: OutlinedButton(
-                              onPressed:
-                                  _loading ? null : _goBackToLogin,
-                              style: OutlinedButton.styleFrom(
-                                fixedSize: const Size.fromHeight(50),
-                                foregroundColor: Colors.white,
-                                backgroundColor:
-                                    Colors.white.withValues(alpha: 0.08),
-                                overlayColor:
-                                    Colors.white.withValues(alpha: 0.15),
-                                side: const BorderSide(
-                                  color: Color(0xFF5DDCFF),
-                                  width: 1.3,
+                          const SizedBox(height: 18),
+                          Center(
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  'Already have an account? ',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white.withValues(alpha: 0.78),
+                                    fontSize: 13.5,
+                                  ),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(23),
+                                InkWell(
+                                  onTap: _loading ? null : _goBackToLogin,
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 6),
+                                    child: Text(
+                                      'Sign In',
+                                      style: GoogleFonts.poppins(
+                                        color: const Color(0xFFFFC21A),
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor:
+                                            const Color(0xFFFFC21A),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                textStyle: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              child: const Text('Back to Login'),
+                              ],
                             ),
                           ),
                         ],
