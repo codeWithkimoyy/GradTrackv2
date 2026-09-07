@@ -183,10 +183,23 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final newValue = data['approved'] != true;
     final uid = doc.id;
     try {
-      await _users.doc(uid).update({
+      await _users.doc(uid).set({
         'approved': newValue,
-        if (newValue) 'disabled': false,
-      });
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(context, 'Update failed: $e',
+            backgroundColor: AppColors.error);
+      }
+      return;
+    }
+    if (mounted) {
+      showAppSnackBar(context,
+          newValue ? 'User approved successfully.' : 'Approval revoked.',
+          backgroundColor: AppColors.success);
+    }
+    try {
       final service = ref.read(notificationServiceProvider);
       await service.createNotification(AppNotification(
         id: '',
@@ -199,26 +212,18 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         priority: NotificationPriority.medium,
         createdAt: DateTime.now(),
       ));
-    } catch (e) {
-      if (mounted) {
-        showAppSnackBar(context, 'Update failed: $e',
-            backgroundColor: AppColors.error);
-      }
-      return;
-    }
-    if (mounted) {
-      showAppSnackBar(context,
-          newValue ? 'User approved.' : 'Approval revoked.',
-          backgroundColor: AppColors.success);
-    }
-    await logAudit(
-      ref,
-      action: 'update',
-      title: newValue ? 'Account approved' : 'Account approval revoked',
-      description: '${data['fullName']?.toString() ?? uid} ($uid) ${newValue ? 'was approved' : 'had approval revoked'}.',
-      targetId: uid,
-      targetType: 'user',
-    );
+    } catch (_) {}
+    try {
+      await logAudit(
+        ref,
+        action: 'update',
+        title: newValue ? 'Account approved' : 'Account approval revoked',
+        description:
+            '${data['fullName']?.toString() ?? uid} ($uid) ${newValue ? 'was approved' : 'had approval revoked'}.',
+        targetId: uid,
+        targetType: 'user',
+      );
+    } catch (_) {}
   }
 
 
@@ -837,9 +842,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     if (widget.adminRoleEditing) {
       changes['role'] = _role;
     }
-    if (widget.adminRoleEditing) {
-      changes['approved'] = _approved;
-    }
+    changes['approved'] = _approved;
     try {
       await widget.doc.reference.update(changes);
       if (mounted) Navigator.pop(context, true);

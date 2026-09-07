@@ -100,7 +100,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ),
           const DecoratedBox(
             decoration: BoxDecoration(
-              color: Color(0xDE003DA8),
+              color: Color(0xC7051329),
             ),
           ),
           SafeArea(
@@ -150,16 +150,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              color: const Color(0xDD0A2B5E),
+              borderRadius: BorderRadius.circular(24),
+              color: const Color(0xF207162C),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.40),
-                width: 1.5,
+                color: Colors.white.withValues(alpha: 0.16),
+                width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.20),
-                  blurRadius: 30,
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 36,
                   offset: const Offset(0, 18),
                 ),
               ],
