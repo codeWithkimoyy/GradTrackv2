@@ -27,7 +27,7 @@ class _QuestionDraft {
 }
 
 /// Staff editor for a graduate tracer survey. Besides the metadata fields it
-/// lets the coordinator/admin build the list of questions (short answer or
+/// lets the admin build the list of questions (short answer or
 /// multiple choice) that alumni answer from the "Tracer Surveys" screen.
 class SurveyEditorScreen extends StatefulWidget {
   final DocumentSnapshot<Map<String, dynamic>>? existing;

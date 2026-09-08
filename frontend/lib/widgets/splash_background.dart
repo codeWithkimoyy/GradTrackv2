@@ -50,32 +50,7 @@ class _SplashBackgroundState extends State<SplashBackground>
           ),
         ),
         const DecoratedBox(
-          decoration: BoxDecoration(color: Color(0x30030D1D)),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0, .35, .67, 1],
-              colors: [
-                Color(0x100A66FF),
-                Color(0x350A66FF),
-                Color(0xC908376C),
-                Color(0xFF081B33),
-              ],
-            ),
-          ),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment.center,
-              radius: .92,
-              colors: [Colors.transparent, Color(0x82030B18)],
-              stops: [.48, 1],
-            ),
-          ),
+          decoration: BoxDecoration(color: Color(0xEA081B33)),
         ),
         AnimatedBuilder(
           animation: _controller,

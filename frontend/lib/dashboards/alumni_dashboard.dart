@@ -39,21 +39,60 @@ class AlumniDashboard extends ConsumerWidget {
         DashboardSectionCard(
           title: 'Graduate Profile',
           icon: Icons.person_outline_rounded,
-          child: Row(
-            children: [
-              profileAvatar(user, radius: 31),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Text(
-                  '${user.course ?? 'Program not set'}\nGraduated ${user.graduationYear ?? 'year not set'} · ${user.employmentStatus.label}',
+          action: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.verified_rounded, size: 13, color: AppColors.success),
+                SizedBox(width: 4),
+                Text(
+                  'Verified Alumni',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.success,
+                  ),
                 ),
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  profileAvatar(user, radius: 31),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Text(
+                      '${user.course ?? 'Program not set'}\nGraduated ${user.graduationYear ?? 'year not set'} · ${user.employmentStatus.label}',
+                    ),
+                  ),
+                  Text(
+                    '$completion%',
+                    style: const TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '$completion%',
-                style: const TextStyle(
-                  color: AppColors.primaryBlue,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: completion / 100,
+                  backgroundColor: AppColors.borderLight.withValues(alpha: 0.5),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryBlue),
+                  minHeight: 6,
                 ),
               ),
             ],
@@ -98,7 +137,7 @@ class AlumniDashboard extends ConsumerWidget {
                   () => context.go(AppRoutes.alumniProfile)),
               DashboardAction('Tracer Survey', Icons.fact_check_outlined,
                   () => context.go(AppRoutes.alumniSurvey)),
-              DashboardAction('Jobs', Icons.business_center_outlined,
+              DashboardAction('Employment', Icons.business_center_outlined,
                   () => context.go(AppRoutes.collectionData('jobs'))),
               DashboardAction('Events', Icons.event_outlined,
                   () => context.go(AppRoutes.collectionData('events'))),

@@ -101,7 +101,7 @@ class ProfileMenu extends ConsumerWidget {
               _HelpItem(
                 Icons.support_agent_outlined,
                 'Contact support',
-                'For further help, contact your department coordinator or '
+                'For further help, contact the GradTrack administrators or '
                     'alumni office at support@bisu.edu.ph.',
               ),
             ],

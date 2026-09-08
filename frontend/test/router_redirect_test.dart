@@ -47,7 +47,7 @@ void main() {
   });
 
   group('resolveRedirect - other roles', () {
-    test('guest is redirected home when not signed in', () {
+    test('unauthenticated user is redirected to login', () {
       final result = resolveRedirect(
         location: AppRoutes.adminDashboard,
         authLoading: notLoading,
@@ -58,15 +58,37 @@ void main() {
       expect(result, AppRoutes.login);
     });
 
-    test('coordinator cannot reach admin Audit Logs tab', () {
+    test('alumni cannot reach admin Audit Logs tab', () {
       final result = resolveRedirect(
         location: AppRoutes.adminAuditLogs,
         authLoading: notLoading,
         loggedIn: loggedIn,
-        role: UserRole.coordinator,
+        role: UserRole.alumni,
         approved: true,
       );
-      expect(result, AppRoutes.coordinatorDashboard);
+      expect(result, AppRoutes.alumniDashboard);
+    });
+
+    test('approved alumni on pending-approval is automatically redirected to alumni dashboard', () {
+      final result = resolveRedirect(
+        location: AppRoutes.pendingApproval,
+        authLoading: notLoading,
+        loggedIn: loggedIn,
+        role: UserRole.alumni,
+        approved: true,
+      );
+      expect(result, AppRoutes.alumniDashboard);
+    });
+
+    test('unapproved alumni attempting to access alumni dashboard is redirected to pending-approval', () {
+      final result = resolveRedirect(
+        location: AppRoutes.alumniDashboard,
+        authLoading: notLoading,
+        loggedIn: loggedIn,
+        role: UserRole.alumni,
+        approved: false,
+      );
+      expect(result, AppRoutes.pendingApproval);
     });
   });
 }

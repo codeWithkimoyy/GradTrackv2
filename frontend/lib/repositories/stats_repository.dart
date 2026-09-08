@@ -3,15 +3,14 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../constants/app_constants.dart';
+import '../models/user_model.dart';
 
 /// Live aggregate counts for staff dashboards, derived from real Firestore
 /// documents (users, surveys, survey responses, events, announcements).
 class DashboardStats {
   final int totalUsers;
   final int admins;
-  final int coordinators;
   final int alumni;
-  final int guests;
   final int verifiedAlumni;
   final int pendingAlumni;
   final int employed;
@@ -27,9 +26,7 @@ class DashboardStats {
   const DashboardStats({
     this.totalUsers = 0,
     this.admins = 0,
-    this.coordinators = 0,
     this.alumni = 0,
-    this.guests = 0,
     this.verifiedAlumni = 0,
     this.pendingAlumni = 0,
     this.employed = 0,
@@ -61,6 +58,14 @@ class DashboardStats {
     if (surveyCount == 0) return 0;
     return (responseCount / surveyCount) * 100;
   }
+}
+
+/// One graduation batch and its alumni headcount.
+class AlumniBatch {
+  final String academicYear;
+  final int count;
+
+  const AlumniBatch({required this.academicYear, required this.count});
 }
 
 /// How many published surveys an alumni has already answered.
@@ -128,17 +133,14 @@ class StatsRepository {
   CollectionReference<Map<String, dynamic>> _col(String name) =>
       _firestore.collection(name);
 
-  /// Live combined stats for admin/coordinator dashboards and analytics.
+  /// Live combined stats for staff dashboards and analytics.
   /// Reads the user list plus survey, response, event and announcement
-  /// collections. Admins may list every user; coordinators are scoped to
-  /// alumni and guest records by the security rules, so the equivalent
-  /// query filter is applied here too.
+  /// collections. Admins may list every user; non-admin staff are scoped to
+  /// alumni records.
   Stream<DashboardStats> watchStaffStats({bool adminScope = true}) {
     final userQuery = adminScope
         ? _users.snapshots()
-        : _users
-            .where('role', whereIn: const ['alumni', 'guest'])
-            .snapshots();
+        : _users.where('role', isEqualTo: 'alumni').snapshots();
     final users = userQuery;
     final surveys = _col(FirestoreCollections.surveys).snapshots();
     final responses = _col(FirestoreCollections.surveyResponses).snapshots();
@@ -169,9 +171,7 @@ class StatsRepository {
       return DashboardStats(
         totalUsers: userDocs.length,
         admins: countRole('admin'),
-        coordinators: countRole('coordinator'),
         alumni: alumniDocs.length,
-        guests: countRole('guest'),
         verifiedAlumni: verified,
         pendingAlumni: alumniDocs.length - verified,
         employed: countStatus('employed'),
@@ -187,20 +187,46 @@ class StatsRepository {
     });
   }
 
+  /// Live alumni list grouped by graduation batch (newest batch first,
+  /// legacy records that have neither academic year nor graduation year last).
+  Stream<List<AlumniBatch>> watchAlumniBatches() {
+    return _users.where('role', isEqualTo: 'alumni').snapshots().map((snap) {
+      final counts = <String, int>{};
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final key = graduationBatchKey(
+          academicYearGraduated: data['academicYearGraduated']?.toString(),
+          graduationYear: (data['graduationYear'] as num?)?.toInt(),
+        );
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+      final batches = [
+        for (final entry in counts.entries)
+          AlumniBatch(academicYear: entry.key, count: entry.value),
+      ]..sort((a, b) {
+          final (aYear, _) = graduationBatchInfo(a.academicYear);
+          final (bYear, _) = graduationBatchInfo(b.academicYear);
+          if (aYear != null && bYear != null) return bYear.compareTo(aYear);
+          if (aYear == null) return 1;
+          if (bYear == null) return -1;
+          return 0;
+        });
+      return batches;
+    });
+  }
+
   /// High-performance server-side aggregation using Firestore count() queries.
   /// Minimizes bandwidth and document read billing by avoiding mass document streaming.
   Future<DashboardStats> fetchAggregatedStaffStats({bool adminScope = true}) async {
     try {
       final totalQuery = adminScope
           ? _users
-          : _users.where('role', whereIn: const ['alumni', 'guest']);
+          : _users.where('role', isEqualTo: 'alumni');
 
       final results = await Future.wait([
         totalQuery.count().get(),
         _users.where('role', isEqualTo: 'admin').count().get(),
-        _users.where('role', isEqualTo: 'coordinator').count().get(),
         _users.where('role', isEqualTo: 'alumni').count().get(),
-        _users.where('role', isEqualTo: 'guest').count().get(),
         _users
             .where('role', isEqualTo: 'alumni')
             .where('isVerified', isEqualTo: true)
@@ -218,26 +244,24 @@ class StatsRepository {
       ]);
 
       final total = results[0].count ?? 0;
-      final alumni = results[3].count ?? 0;
-      final verified = results[5].count ?? 0;
+      final alumni = results[2].count ?? 0;
+      final verified = results[3].count ?? 0;
 
       return DashboardStats(
         totalUsers: total,
         admins: results[1].count ?? 0,
-        coordinators: results[2].count ?? 0,
         alumni: alumni,
-        guests: results[4].count ?? 0,
         verifiedAlumni: verified,
         pendingAlumni: (alumni - verified).clamp(0, alumni),
-        employed: results[6].count ?? 0,
-        selfEmployed: results[7].count ?? 0,
-        freelance: results[8].count ?? 0,
-        unemployed: results[9].count ?? 0,
-        studying: results[10].count ?? 0,
-        surveyCount: results[11].count ?? 0,
-        responseCount: results[12].count ?? 0,
-        eventCount: results[13].count ?? 0,
-        announcementCount: results[14].count ?? 0,
+        employed: results[4].count ?? 0,
+        selfEmployed: results[5].count ?? 0,
+        freelance: results[6].count ?? 0,
+        unemployed: results[7].count ?? 0,
+        studying: results[8].count ?? 0,
+        surveyCount: results[9].count ?? 0,
+        responseCount: results[10].count ?? 0,
+        eventCount: results[11].count ?? 0,
+        announcementCount: results[12].count ?? 0,
       );
     } catch (_) {
       return DashboardStats.empty;

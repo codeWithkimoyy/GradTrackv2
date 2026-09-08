@@ -7,13 +7,29 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 class DefaultFirebaseOptions {
-  static bool get isConfigured {
-    final apiKey = dotenv.env['FIREBASE_API_KEY'] ?? '';
-    final projectId = dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
-    return apiKey.isNotEmpty &&
-        projectId.isNotEmpty &&
-        !apiKey.contains('placeholder');
+  static const String _defaultApiKey =
+      'AIzaSyAn-JExkq3gb_20pTqk8wIMl_TNBMjjS3Q';
+  static const String _defaultAppIdWeb =
+      '1:124464777845:web:a4bbdf5cfbc636f596063c';
+  static const String _defaultAppIdAndroid =
+      '1:124464777845:android:4862cf1c9aa227dd96063c';
+  static const String _defaultProjectId = 'gradtrack-db12d';
+  static const String _defaultMessagingSenderId = '124464777845';
+  static const String _defaultAuthDomain =
+      'gradtrack-db12d.firebaseapp.com';
+  static const String _defaultStorageBucket =
+      'gradtrack-db12d.firebasestorage.app';
+  static const String _defaultMeasurementId = 'G-SCNXKV613D';
+
+  static String _env(String key, String fallback) {
+    final val = dotenv.env[key];
+    if (val != null && val.isNotEmpty && !val.contains('placeholder')) {
+      return val;
+    }
+    return fallback;
   }
+
+  static bool get isConfigured => true;
 
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -40,41 +56,48 @@ class DefaultFirebaseOptions {
   }
 
   static FirebaseOptions get web => FirebaseOptions(
-        apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
-        appId: dotenv.env['FIREBASE_APP_ID'] ?? '',
-        messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
-        projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? 'gradtrack-db12d',
-        authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN'],
-        storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'],
-        measurementId: dotenv.env['FIREBASE_MEASUREMENT_ID'],
+        apiKey: _env('FIREBASE_API_KEY', _defaultApiKey),
+        appId: _env('FIREBASE_APP_ID', _defaultAppIdWeb),
+        messagingSenderId:
+            _env('FIREBASE_MESSAGING_SENDER_ID', _defaultMessagingSenderId),
+        projectId: _env('FIREBASE_PROJECT_ID', _defaultProjectId),
+        authDomain: _env('FIREBASE_AUTH_DOMAIN', _defaultAuthDomain),
+        storageBucket:
+            _env('FIREBASE_STORAGE_BUCKET', _defaultStorageBucket),
+        measurementId:
+            _env('FIREBASE_MEASUREMENT_ID', _defaultMeasurementId),
       );
 
   static FirebaseOptions get android => FirebaseOptions(
-        apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
-        appId: dotenv.env['FIREBASE_ANDROID_APP_ID'] ??
-            dotenv.env['FIREBASE_APP_ID'] ??
-            '',
-        messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
-        projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? 'gradtrack-db12d',
-        storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'],
+        apiKey: _env('FIREBASE_API_KEY', _defaultApiKey),
+        appId: _env('FIREBASE_ANDROID_APP_ID', _defaultAppIdAndroid),
+        messagingSenderId:
+            _env('FIREBASE_MESSAGING_SENDER_ID', _defaultMessagingSenderId),
+        projectId: _env('FIREBASE_PROJECT_ID', _defaultProjectId),
+        storageBucket:
+            _env('FIREBASE_STORAGE_BUCKET', _defaultStorageBucket),
       );
 
   static FirebaseOptions get ios => FirebaseOptions(
-        apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
-        appId: dotenv.env['FIREBASE_APP_ID'] ?? '',
-        messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
-        projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? 'gradtrack-db12d',
-        storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'],
+        apiKey: _env('FIREBASE_API_KEY', _defaultApiKey),
+        appId: _env('FIREBASE_APP_ID', _defaultAppIdWeb),
+        messagingSenderId:
+            _env('FIREBASE_MESSAGING_SENDER_ID', _defaultMessagingSenderId),
+        projectId: _env('FIREBASE_PROJECT_ID', _defaultProjectId),
+        storageBucket:
+            _env('FIREBASE_STORAGE_BUCKET', _defaultStorageBucket),
         iosBundleId: 'ph.edu.bisu.gradtrack',
       );
 
   static FirebaseOptions get macos => ios;
 
   static FirebaseOptions get windows => FirebaseOptions(
-        apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
-        appId: dotenv.env['FIREBASE_APP_ID'] ?? '',
-        messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
-        projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? 'gradtrack-db12d',
-        storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'],
+        apiKey: _env('FIREBASE_API_KEY', _defaultApiKey),
+        appId: _env('FIREBASE_APP_ID', _defaultAppIdWeb),
+        messagingSenderId:
+            _env('FIREBASE_MESSAGING_SENDER_ID', _defaultMessagingSenderId),
+        projectId: _env('FIREBASE_PROJECT_ID', _defaultProjectId),
+        storageBucket:
+            _env('FIREBASE_STORAGE_BUCKET', _defaultStorageBucket),
       );
 }

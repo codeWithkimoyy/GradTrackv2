@@ -5,14 +5,18 @@ import 'package:http/http.dart' as http;
 
 class CloudinaryService {
   CloudinaryService() {
-    _cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
-    _apiKey = dotenv.env['CLOUDINARY_API_KEY'] ?? '';
-    _uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? 'gradtrack_uploads';
-    _backendBaseUrl = dotenv.env['BACKEND_API_URL'] ?? 'http://localhost:3000';
-
-    if (_cloudName.isEmpty) {
-      debugPrint('CLOUDINARY_CLOUD_NAME is not set in .env');
-    }
+    _cloudName = (dotenv.env['CLOUDINARY_CLOUD_NAME']?.isNotEmpty == true)
+        ? dotenv.env['CLOUDINARY_CLOUD_NAME']!
+        : 'cesiyg6z';
+    _apiKey = (dotenv.env['CLOUDINARY_API_KEY']?.isNotEmpty == true)
+        ? dotenv.env['CLOUDINARY_API_KEY']!
+        : '739484295666519';
+    _uploadPreset = (dotenv.env['CLOUDINARY_UPLOAD_PRESET']?.isNotEmpty == true)
+        ? dotenv.env['CLOUDINARY_UPLOAD_PRESET']!
+        : 'gradtrack_uploads';
+    _backendBaseUrl = (dotenv.env['BACKEND_API_URL']?.isNotEmpty == true)
+        ? dotenv.env['BACKEND_API_URL']!
+        : 'http://localhost:3000';
   }
 
   late final String _cloudName;

@@ -82,10 +82,22 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
       'socialLinks': finalUser.socialLinks.toMap(),
       'graduationYear': finalUser.graduationYear,
       'course': finalUser.course,
+      'academicYearGraduated': finalUser.academicYearGraduated,
       'employmentStatus': finalUser.employmentStatus.name,
       'profileCompletion': finalUser.profileCompletion,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+
+    // Keep the legacy "Graduation Year" field in sync with the graduation
+    // batch so every profile surface (Class of X, Quick Record) reflects
+    // the academic year the alumni picked. "2025-2026" -> 2026.
+    final batch = finalUser.academicYearGraduated?.trim();
+    if (batch != null && batch.isNotEmpty) {
+      final startYear = academicYearStart(batch);
+      if (startYear != null) {
+        changes['graduationYear'] = startYear + 1;
+      }
+    }
 
     try {
       try {

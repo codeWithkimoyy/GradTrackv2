@@ -34,6 +34,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _initialized = false;
   Uint8List? _selectedPhotoBytes;
   String? _selectedPhotoName;
+  String? _academicYear;
 
   void _hydrate(UserModel user) {
     if (_initialized) return;
@@ -43,10 +44,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _currentAddressController.text = user.currentAddress ?? '';
     _permanentAddressController.text = user.permanentAddress ?? '';
     _bioController.text = user.biography ?? '';
+    _academicYear = user.academicYearGraduated;
     _linkedInController.text = user.socialLinks.linkedIn ?? '';
     _githubController.text = user.socialLinks.github ?? '';
     _initialized = true;
     ref.read(profileEditControllerProvider.notifier).startEditing();
+  }
+
+  List<String> _academicYearOptions() {
+    final currentYear = DateTime.now().year;
+    final years = <String>[];
+    for (var start = currentYear + 4; start >= currentYear - 10; start--) {
+      years.add('$start-${start + 1}');
+    }
+    return years;
   }
 
   Future<void> _pickPhoto() async {
@@ -84,6 +95,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         currentAddress: _currentAddressController.text.trim(),
         permanentAddress: _permanentAddressController.text.trim(),
         biography: _bioController.text.trim(),
+        academicYearGraduated: _academicYear,
         socialLinks: SocialLinks(
           linkedIn: _linkedInController.text.trim(),
           github: _githubController.text.trim(),
@@ -146,8 +158,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) _hydrate(user);
           });
-
-          final isGuest = user.role == UserRole.guest;
 
           return Form(
             key: _formKey,
@@ -216,29 +226,68 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 24),
                 _field('Full Name', _nameController, required: true),
-if (!isGuest) ...[
-                  _field('Student Number', _studentNumberController),
-                ],
+                _field('Student Number', _studentNumberController),
                 _field('Phone Number', _phoneController,
                     keyboardType: TextInputType.phone),
-                if (!isGuest) ...[
-                  _field('Current Address', _currentAddressController),
-                  _field('Permanent Address', _permanentAddressController),
-                ],
-                _field('Biography', _bioController, maxLines: 4),
-                if (!isGuest) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Social Links',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                _field('Current Address', _currentAddressController),
+                _field('Permanent Address', _permanentAddressController),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Education',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: FormField<String>(
+                    key: ValueKey<String?>('academic-year-$_academicYear'),
+                    initialValue: _academicYear,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Please select your Academic Year Graduated.'
+                        : null,
+                    builder: (field) => InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Academic Year Graduated',
+                        errorText: field.errorText,
+                      ),
+                      isEmpty: field.value == null,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          isDense: true,
+                          value: field.value,
+                          hint: const Text('Select Academic Year'),
+                          items: [
+                            for (final year in _academicYearOptions())
+                              DropdownMenuItem(
+                                value: year,
+                                child: Text(displayAcademicYear(year)),
+                              ),
+                          ],
+                          onChanged: (v) {
+                            field.didChange(v);
+                            setState(() => _academicYear = v);
+                          },
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _field('LinkedIn URL', _linkedInController),
-                  _field('GitHub URL', _githubController),
-                ],
+                ),
+                _field('Biography', _bioController, maxLines: 4),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Social Links',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _field('LinkedIn URL', _linkedInController),
+                _field('GitHub URL', _githubController),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
                   onPressed: saving ? null : () => _save(user),

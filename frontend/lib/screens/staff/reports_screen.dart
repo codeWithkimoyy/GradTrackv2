@@ -18,7 +18,7 @@ final reportsProvider = StreamProvider.autoDispose<
       .snapshots();
 });
 
-/// Staff Reports screen. Staff (coordinator/admin) can add reports; only
+/// Staff Reports screen. Staff (admin) can add reports; only
 /// admins can delete them (reports are append-only per the Firestore rules).
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});

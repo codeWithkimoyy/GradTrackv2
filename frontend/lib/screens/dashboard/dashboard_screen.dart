@@ -24,7 +24,7 @@ class DashboardShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentUserProfileProvider).valueOrNull;
-    final role = profile?.role ?? UserRole.guest;
+    final role = profile?.role ?? UserRole.alumni;
     final items = _navItemsForRole(role);
     final location = GoRouterState.of(context).matchedLocation;
     final selected = _selectedIndex(location, items);
@@ -179,16 +179,7 @@ class _PremiumBottomNavigation extends StatelessWidget {
                             curve: Curves.easeInOutCubic,
                             constraints: const BoxConstraints(minHeight: 58),
                             decoration: BoxDecoration(
-                              gradient: selected
-                                  ? LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        item.color,
-                                        _darken(item.color),
-                                      ],
-                                    )
-                                  : null,
+                              color: selected ? item.color : null,
                               borderRadius: BorderRadius.circular(22),
                               boxShadow: selected
                                   ? [
@@ -306,7 +297,6 @@ class _ShellNavItem {
 }
 
 List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
-      UserRole.guest => const [],
       UserRole.alumni => const [
         _ShellNavItem(Icons.home_outlined, Icons.home_rounded, 'Home',
             AppRoutes.alumniDashboard, Color(0xFF2563EB),
@@ -314,8 +304,9 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
         _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
             'Survey', AppRoutes.alumniSurvey, Color(0xFF0D9488),
             sticker: '\u{1F4C3}'),
-        _ShellNavItem(Icons.work_outline_rounded, Icons.work_rounded, 'Jobs',
-            AppRoutes.alumniJobs, Color(0xFFD97706), sticker: '\u{1F4BC}'),
+        _ShellNavItem(Icons.work_outline_rounded, Icons.work_rounded,
+            'Employment', AppRoutes.alumniJobs, Color(0xFFD97706),
+            sticker: '\u{1F4BC}'),
         _ShellNavItem(
             Icons.notifications_none_rounded,
             Icons.notifications_rounded,
@@ -327,25 +318,8 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
             'Profile', AppRoutes.alumniProfile, Color(0xFF06B6D4),
             sticker: '\u{1F464}'),
       ],
-      UserRole.coordinator => const [
-        _ShellNavItem(Icons.analytics_outlined, Icons.analytics_rounded,
-            'Overview', AppRoutes.coordinatorDashboard, Color(0xFF2563EB),
-            sticker: '\u{1F4CA}'),
-        _ShellNavItem(Icons.groups_outlined, Icons.groups_rounded, 'Alumni',
-            AppRoutes.coordinatorAlumni, Color(0xFF0D9488),
-            sticker: '\u{1F393}'),
-        _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
-            'Surveys', AppRoutes.coordinatorSurveys, Color(0xFFD97706),
-            sticker: '\u{1F4CB}'),
-        _ShellNavItem(Icons.assessment_outlined, Icons.assessment_rounded,
-            'Reports', AppRoutes.coordinatorReports, Color(0xFFA855F7),
-            sticker: '\u{1F4C8}'),
-        _ShellNavItem(Icons.event_outlined, Icons.event_rounded, 'Events',
-            AppRoutes.coordinatorEvents, Color(0xFF06B6D4),
-            sticker: '\u{1F5D3}\u{FE0F}'),
-      ],
       UserRole.admin => const [
-        _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Overview',
+        _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Home',
             AppRoutes.adminDashboard, Color(0xFF2563EB),
             sticker: '\u{1F6E1}\u{FE0F}'),
         _ShellNavItem(Icons.people_outline_rounded, Icons.people_rounded,
@@ -362,9 +336,6 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
             sticker: '\u{1F464}'),
       ],
     };
-
-Color _darken(Color color, [double amount = 0.3]) =>
-    Color.lerp(color, Colors.black, amount)!;
 
 int _selectedIndex(String location, List<_ShellNavItem> items) {
   final index = items.lastIndexWhere((item) => location.startsWith(item.path));
@@ -1414,7 +1385,7 @@ class _DashboardBody extends ConsumerWidget {
                         if (user.graduationYear != null)
                           _tagBadge(
                             Icons.calendar_today_rounded,
-                            'Class of ${user.graduationYear}',
+                            'S.Y. ${user.graduationYear}',
                             AppColors.primaryBlue,
                           ),
                       ],
@@ -1731,6 +1702,8 @@ class _DashboardBody extends ConsumerWidget {
           _infoRow(context, 'Course', user.course ?? 'BS Computer Science'),
           _infoRow(context, 
               'Graduation Year', user.graduationYear?.toString() ?? '2024'),
+          _infoRow(context, 'Academic Year Graduated',
+              displayAcademicYear(user.academicYearGraduated)),
           _infoRow(context, 'Phone', user.phoneNumber ?? 'Not provided'),
           _infoRow(context, 'Status', user.employmentStatus.label),
           const Divider(height: 24),

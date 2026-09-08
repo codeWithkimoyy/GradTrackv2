@@ -3,10 +3,8 @@
  * Seed the GradTrack Firebase project (gradtrack-db12d) with one demo
  * account per role so each role dashboard can be signed into:
  *
- *   admin        -> admin@gradtrack.edu.ph        / admin123
- *   coordinator  -> coordinator@gradtrack.edu.ph  / coordinator123
- *   alumni       -> alumni@gradtrack.edu.ph       / alumni123
- *   guest        -> guest@gradtrack.edu.ph        / guest123
+ *   admin   -> admin@gradtrack.edu.ph   / admin123
+ *   alumni  -> alumni@gradtrack.edu.ph  / alumni123
  *
  * Requires a Firebase service-account key (never commit it):
  *
@@ -28,9 +26,7 @@ const PROJECT_ID = 'gradtrack-db12d';
 
 const ACCOUNTS = [
   { role: 'admin', fullName: 'System Administrator' },
-  { role: 'coordinator', fullName: 'Campus Coordinator' },
   { role: 'alumni', fullName: 'Demo Alumni' },
-  { role: 'guest', fullName: 'Guest Visitor' },
 ];
 
 function resolveKeyPath() {
@@ -82,7 +78,7 @@ async function seedAccount(auth, db, account) {
     role,
     email,
     fullName,
-    isVerified: role !== 'guest',
+    isVerified: true,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };

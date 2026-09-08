@@ -25,14 +25,7 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).scaffoldBackgroundColor,
-            accent.withValues(alpha: .055),
-          ],
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
       ),
       child: CustomScrollView(
         slivers: [
@@ -139,26 +132,31 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(21),
-        gradient: LinearGradient(
-          colors: [
-            metric.color.withValues(alpha: .17),
-            Theme.of(context).colorScheme.surface.withValues(alpha: .90),
-          ],
+        border: Border.all(
+          color: metric.color.withValues(alpha: .24),
+          width: 1.2,
         ),
-        border: Border.all(color: metric.color.withValues(alpha: .23)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x140B1F3A),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            color: Color(0x0E0B1F3A),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(metric.icon, color: metric.color, size: 25),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: metric.color.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(metric.icon, color: metric.color, size: 22),
+          ),
           const Spacer(),
           Text(
             metric.value,
@@ -207,7 +205,7 @@ class DashboardSectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: .92),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: AppColors.primaryBlue.withValues(alpha: .10),
@@ -265,18 +263,19 @@ class DashboardActionGrid extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: columns == 4 ? 1.9 : 1.65,
+            childAspectRatio: columns == 4 ? 1.6 : 1.35,
           ),
           itemBuilder: (context, index) {
             final action = actions[index];
             return Material(
-              color: Theme.of(context).colorScheme.surface,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(18),
               child: InkWell(
                 onTap: action.onTap,
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
-                  padding: const EdgeInsets.all(13),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
@@ -286,7 +285,16 @@ class DashboardActionGrid extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(action.icon, color: AppColors.primaryBlue, size: 24),
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withValues(alpha: .11),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: Icon(action.icon,
+                            color: AppColors.primaryBlue, size: 22),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         action.label,

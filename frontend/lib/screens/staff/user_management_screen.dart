@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/app_constants.dart';
@@ -21,8 +22,14 @@ import '../../utils/app_snack_bar.dart';
 class UserManagementScreen extends ConsumerStatefulWidget {
   final String? roleFilter;
   final bool canVerify;
+  final bool approvedOnly;
 
-  const UserManagementScreen({super.key, this.roleFilter, this.canVerify = true});
+  const UserManagementScreen({
+    super.key,
+    this.roleFilter,
+    this.canVerify = true,
+    this.approvedOnly = false,
+  });
 
   @override
   ConsumerState<UserManagementScreen> createState() =>
@@ -33,14 +40,51 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   String _query = '';
   String? _roleFilter;
   bool _pendingOnly = false;
+  bool _approvedOnly = false;
+  String? _batchFilter;
 
   CollectionReference<Map<String, dynamic>> get _users =>
       FirebaseFirestore.instance.collection(FirestoreCollections.users);
+
+  static String _normalizeSearch(String s) => s
+      .toLowerCase()
+      .replaceAll('\u2013', '-')
+      .replaceAll('\u2014', '-');
+
+  bool _matchesQuery(Map<String, dynamic> data) {
+    if (_query.isEmpty) return true;
+    final fields = [
+      data['fullName'],
+      data['email'],
+      data['role'],
+      data['course'],
+      data['academicYearGraduated'],
+      data['employmentStatus'],
+    ];
+    final haystack = fields
+        .whereType<String>()
+        .map(_normalizeSearch)
+        .join(' ');
+    return haystack.contains(_normalizeSearch(_query));
+  }
+
+  String _batchKey(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? {};
+    return graduationBatchKey(
+      academicYearGraduated: data['academicYearGraduated']?.toString(),
+      graduationYear: (data['graduationYear'] as num?)?.toInt(),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _roleFilter = widget.roleFilter;
+    _approvedOnly = widget.approvedOnly;
+  }
+
+  void _openEmployment(DocumentSnapshot<Map<String, dynamic>> doc) {
+    context.push('/staff/users/employment?userId=${doc.id}');
   }
 
   Future<void> _addUser() async {
@@ -150,7 +194,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         type: NotificationType.system,
         title: newValue ? 'Profile verified' : 'Verification revoked',
         description: newValue
-            ? 'Your graduate record has been verified by the coordinator.'
+            ? 'Your graduate record has been verified by an administrator.'
             : 'Your graduate record verification was revoked.',
         priority: newValue ? NotificationPriority.medium : NotificationPriority.high,
         createdAt: DateTime.now(),
@@ -183,10 +227,23 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final newValue = data['approved'] != true;
     final uid = doc.id;
     try {
-      await _users.doc(uid).update({
+      await _users.doc(uid).set({
         'approved': newValue,
-        if (newValue) 'disabled': false,
-      });
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(context, 'Update failed: $e',
+            backgroundColor: AppColors.error);
+      }
+      return;
+    }
+    if (mounted) {
+      showAppSnackBar(context,
+          newValue ? 'User approved successfully.' : 'Approval revoked.',
+          backgroundColor: AppColors.success);
+    }
+    try {
       final service = ref.read(notificationServiceProvider);
       await service.createNotification(AppNotification(
         id: '',
@@ -199,26 +256,18 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         priority: NotificationPriority.medium,
         createdAt: DateTime.now(),
       ));
-    } catch (e) {
-      if (mounted) {
-        showAppSnackBar(context, 'Update failed: $e',
-            backgroundColor: AppColors.error);
-      }
-      return;
-    }
-    if (mounted) {
-      showAppSnackBar(context,
-          newValue ? 'User approved.' : 'Approval revoked.',
-          backgroundColor: AppColors.success);
-    }
-    await logAudit(
-      ref,
-      action: 'update',
-      title: newValue ? 'Account approved' : 'Account approval revoked',
-      description: '${data['fullName']?.toString() ?? uid} ($uid) ${newValue ? 'was approved' : 'had approval revoked'}.',
-      targetId: uid,
-      targetType: 'user',
-    );
+    } catch (_) {}
+    try {
+      await logAudit(
+        ref,
+        action: 'update',
+        title: newValue ? 'Account approved' : 'Account approval revoked',
+        description:
+            '${data['fullName']?.toString() ?? uid} ($uid) ${newValue ? 'was approved' : 'had approval revoked'}.',
+        targetId: uid,
+        targetType: 'user',
+      );
+    } catch (_) {}
   }
 
 
@@ -266,6 +315,132 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     }
   }
 
+  Widget _buildAlumniSections(
+    List<DocumentSnapshot<Map<String, dynamic>>> filtered,
+    List<String> sortedBatches,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isAdmin = ref.watch(isAdminProvider);
+    final sorted = [...filtered]..sort((a, b) {
+        final an = (a.data()?['fullName']?.toString() ?? '').toLowerCase();
+        final bn = (b.data()?['fullName']?.toString() ?? '').toLowerCase();
+        return an.compareTo(bn);
+      });
+
+    final groups = <String, List<DocumentSnapshot<Map<String, dynamic>>>>{};
+    for (final doc in sorted) {
+      final key = _batchKey(doc);
+      groups.putIfAbsent(key, () => []).add(doc);
+    }
+
+    if (groups.isEmpty) return _alumniEmptyState(isDark);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final batch in sortedBatches.where((b) => groups.containsKey(b)))
+          ...[
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withValues(alpha: .12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.school_outlined,
+                      size: 19, color: AppColors.primaryBlue),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        graduationBatchInfo(batch).$2,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isDark ? Colors.white : AppColors.primaryNavy,
+                        ),
+                      ),
+                      Text(
+                        '${groups[batch]!.length} Alumni',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.teal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ...groups[batch]!.map((doc) => _UserCard(
+                  doc: doc,
+                  isAdmin: isAdmin,
+                  canVerify: widget.canVerify,
+                  onEdit: () => _editUser(doc),
+                  onVerify:
+                      widget.canVerify ? () => _toggleVerified(doc) : null,
+                  onToggleApproved:
+                      isAdmin ? () => _toggleApproved(doc) : null,
+                  onViewEmployment:
+                      isAdmin ? () => _openEmployment(doc) : null,
+                  onDelete: isAdmin ? () => _deleteUser(doc) : null,
+                )),
+            const SizedBox(height: AppSpacing.md),
+          ],
+      ],
+    );
+  }
+
+  Widget _alumniEmptyState(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withValues(alpha: .12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.school_outlined,
+                size: 42, color: AppColors.primaryBlue),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            _batchFilter == null
+                ? 'No alumni found'
+                : 'No alumni found for this graduation batch.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : AppColors.primaryNavy,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Adjust your search or graduation batch filters.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
@@ -273,16 +448,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
 
     final userQuery = isAdmin
         ? _users.snapshots()
-        : _users
-            .where('role', whereIn: const ['alumni', 'guest'])
-            .snapshots();
+        : _users.where('role', isEqualTo: 'alumni').snapshots();
 
     final chips = <String, int>{
       'all': stats?.totalUsers ?? 0,
       'alumni': stats?.alumni ?? 0,
-      'coordinator': stats?.coordinators ?? 0,
       if (isAdmin) 'admin': stats?.admins ?? 0,
-      if (isAdmin) 'guest': stats?.guests ?? 0,
     };
     return Scaffold(
       appBar: AppBar(title: const Text('User Management')),
@@ -311,9 +482,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           }
 
           final all = snapshot.data!.docs;
-          final filtered = all.where((doc) {
+          final scoped = all.where((doc) {
             final data = doc.data();
             if (_pendingOnly && data['approved'] == true) {
+              return false;
+            }
+            if (_approvedOnly && data['approved'] != true) {
               return false;
             }
             if (_roleFilter != null &&
@@ -321,23 +495,47 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 data['role'] != _roleFilter) {
               return false;
             }
-            if (_query.isNotEmpty) {
-              final haystack = [
-                data['fullName'],
-                data['email'],
-                data['role'],
-              ].whereType<String>().join(' ').toLowerCase();
-              if (!haystack.contains(_query.toLowerCase())) return false;
-            }
             return true;
           }).toList();
+
+          final alumniScoped =
+              scoped.where((d) => d.data()['role'] == 'alumni').toList();
+          final adminScoped =
+              scoped.where((d) => d.data()['role'] != 'alumni').toList();
+
+          final batchCounts = <String, int>{};
+          for (final doc in alumniScoped) {
+            final key = _batchKey(doc);
+            batchCounts[key] = (batchCounts[key] ?? 0) + 1;
+          }
+          final sortedBatches = batchCounts.keys.toList()
+            ..sort((a, b) {
+              final (aYear, _) = graduationBatchInfo(a);
+              final (bYear, _) = graduationBatchInfo(b);
+              if (aYear != null && bYear != null) return bYear.compareTo(aYear);
+              if (aYear == null) return 1;
+              if (bYear == null) return -1;
+              return 0;
+            });
+
+          final alumniMatch = alumniScoped.where((doc) {
+            final data = doc.data();
+            if (_batchFilter != null && _batchKey(doc) != _batchFilter) {
+              return false;
+            }
+            return _matchesQuery(data);
+          }).toList();
+
+          final adminMatch =
+              adminScoped.where((doc) => _matchesQuery(doc.data())).toList();
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
               TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search name, email or role...',
+                  hintText:
+                      'Search by name, academic year, course or employment...',
                   prefixIcon: const Icon(Icons.search_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.button),
@@ -359,7 +557,20 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           selected: _pendingOnly,
                           onSelected: (v) => setState(() {
                             _pendingOnly = v;
+                            _approvedOnly = false;
                             if (v) _roleFilter = null;
+                          }),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: const Text('Approved alumni'),
+                          selected: _approvedOnly && !_pendingOnly,
+                          onSelected: (v) => setState(() {
+                            _approvedOnly = v;
+                            _pendingOnly = false;
+                            if (v) _roleFilter = 'alumni';
                           }),
                         ),
                       ),
@@ -378,51 +589,87 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           }),
                         ),
                       ),
+                    if (alumniScoped.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: const Text('All Batches'),
+                          selected: _batchFilter == null,
+                          onSelected: (_) =>
+                              setState(() => _batchFilter = null),
+                        ),
+                      ),
+                      for (final batch in sortedBatches)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label:
+                                Text(graduationBatchInfo(batch).$2),
+                            selected: _batchFilter == batch,
+                            onSelected: (_) =>
+                                setState(() => _batchFilter = batch),
+                          ),
+                        ),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              if (MediaQuery.sizeOf(context).width >= 900 && filtered.isNotEmpty)
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: PaginatedDataTable(
-                    header: Text('${filtered.length} Users Registered'),
-                    rowsPerPage: (filtered.length < 10) ? filtered.length : 10,
-                    columns: const [
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Email')),
-                      DataColumn(label: Text('Role')),
-                      DataColumn(label: Text('Course / Batch')),
-                      DataColumn(label: Text('Verification')),
-                      DataColumn(label: Text('Actions')),
-                    ],
-                    source: _UserDataTableSource(
-                      docs: filtered,
-                      isAdmin: isAdmin,
-                      canVerify: widget.canVerify,
-                      onEdit: _editUser,
-                      onVerify: _toggleVerified,
-                      onToggleApproved: _toggleApproved,
-                      onDelete: _deleteUser,
-                    ),
-                  ),
-                )
-              else ...[
-                Text('${filtered.length} users',
+              if (alumniScoped.isNotEmpty)
+                _buildAlumniSections(alumniMatch, sortedBatches)
+              else if (adminMatch.isEmpty)
+                Text('0 users',
                     style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: AppSpacing.xs),
-                ...filtered.map((doc) => _UserCard(
-                      doc: doc,
-                      isAdmin: isAdmin,
-                      canVerify: widget.canVerify,
-                      onEdit: () => _editUser(doc),
-                      onVerify: widget.canVerify
-                          ? () => _toggleVerified(doc)
-                          : null,
-                      onToggleApproved:
-                          isAdmin ? () => _toggleApproved(doc) : null,
-                      onDelete: isAdmin ? () => _deleteUser(doc) : null,
-                    )),
+              if (adminMatch.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                if (MediaQuery.sizeOf(context).width >= 900)
+                  Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: PaginatedDataTable(
+                      header: Text(
+                          '${adminMatch.length} Admin${adminMatch.length == 1 ? '' : 's'}'),
+                      rowsPerPage:
+                          (adminMatch.length < 10) ? adminMatch.length : 10,
+                      columns: const [
+                        DataColumn(label: Text('Name')),
+                        DataColumn(label: Text('Email')),
+                        DataColumn(label: Text('Role')),
+                        DataColumn(label: Text('Course / Batch')),
+                        DataColumn(label: Text('Verification')),
+                        DataColumn(label: Text('Actions')),
+                      ],
+                      source: _UserDataTableSource(
+                        docs: adminMatch,
+                        isAdmin: isAdmin,
+                        canVerify: widget.canVerify,
+                        onEdit: _editUser,
+                        onVerify: _toggleVerified,
+                        onToggleApproved: _toggleApproved,
+                        onViewEmployment: isAdmin ? _openEmployment : null,
+                        onDelete: _deleteUser,
+                      ),
+                    ),
+                  )
+                else ...[
+                  Text(
+                      '${adminMatch.length} Administrator${adminMatch.length == 1 ? '' : 's'}',
+                      style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: AppSpacing.xs),
+                  ...adminMatch.map((doc) => _UserCard(
+                        doc: doc,
+                        isAdmin: isAdmin,
+                        canVerify: widget.canVerify,
+                        onEdit: () => _editUser(doc),
+                        onVerify: widget.canVerify
+                            ? () => _toggleVerified(doc)
+                            : null,
+                        onToggleApproved:
+                            isAdmin ? () => _toggleApproved(doc) : null,
+                        onViewEmployment:
+                            isAdmin ? () => _openEmployment(doc) : null,
+                        onDelete: isAdmin ? () => _deleteUser(doc) : null,
+                      )),
+                ],
               ],
             ],
           );
@@ -439,6 +686,7 @@ class _UserDataTableSource extends DataTableSource {
   final void Function(DocumentSnapshot<Map<String, dynamic>>) onEdit;
   final void Function(DocumentSnapshot<Map<String, dynamic>>) onVerify;
   final void Function(DocumentSnapshot<Map<String, dynamic>>) onToggleApproved;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>)? onViewEmployment;
   final void Function(DocumentSnapshot<Map<String, dynamic>>) onDelete;
 
   _UserDataTableSource({
@@ -448,6 +696,7 @@ class _UserDataTableSource extends DataTableSource {
     required this.onEdit,
     required this.onVerify,
     required this.onToggleApproved,
+    this.onViewEmployment,
     required this.onDelete,
   });
 
@@ -492,9 +741,7 @@ class _UserDataTableSource extends DataTableSource {
           decoration: BoxDecoration(
             color: role == 'admin'
                 ? AppColors.error.withValues(alpha: 0.15)
-                : role == 'coordinator'
-                    ? AppColors.info.withValues(alpha: 0.15)
-                    : AppColors.teal.withValues(alpha: 0.15),
+                : AppColors.teal.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -504,9 +751,7 @@ class _UserDataTableSource extends DataTableSource {
               fontWeight: FontWeight.bold,
               color: role == 'admin'
                   ? AppColors.error
-                  : role == 'coordinator'
-                      ? AppColors.info
-                      : AppColors.teal,
+                  : AppColors.teal,
             ),
           ),
         )),
@@ -525,6 +770,12 @@ class _UserDataTableSource extends DataTableSource {
         DataCell(Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isAdmin && onViewEmployment != null)
+              IconButton(
+                icon: const Icon(Icons.badge_outlined, size: 18),
+                tooltip: 'View employment',
+                onPressed: () => onViewEmployment!(doc),
+              ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, size: 18),
               tooltip: 'Edit',
@@ -577,6 +828,7 @@ class _UserCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback? onVerify;
   final VoidCallback? onToggleApproved;
+  final VoidCallback? onViewEmployment;
   final VoidCallback? onDelete;
 
   const _UserCard({
@@ -586,6 +838,7 @@ class _UserCard extends StatelessWidget {
     required this.onEdit,
     this.onVerify,
     this.onToggleApproved,
+    this.onViewEmployment,
     this.onDelete,
   });
 
@@ -599,7 +852,7 @@ class _UserCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = doc.data() ?? {};
     final name = data['fullName']?.toString() ?? 'Unknown';
-    final role = data['role']?.toString() ?? 'guest';
+    final role = data['role']?.toString() ?? 'alumni';
     final verified = data['isVerified'] == true;
     final approved = data['approved'] == true;
 
@@ -637,7 +890,8 @@ class _UserCard extends StatelessWidget {
         subtitle: Text(
           '${data['email'] ?? ''}\n'
           '${role.toUpperCase()} · ${verified ? 'Verified' : 'Unverified'} · '
-          '${data['course']?.toString() ?? 'No course'}',
+          '${data['course']?.toString() ?? 'No course'} · '
+          '${EmploymentStatusX.fromString(data['employmentStatus']?.toString() ?? '').label}',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         onTap: onEdit,
@@ -663,6 +917,12 @@ class _UserCard extends StatelessWidget {
                     ? Icons.verified_rounded
                     : Icons.verified_outlined),
                 onPressed: onVerify,
+              ),
+            if (onViewEmployment != null)
+              IconButton(
+                tooltip: 'View employment',
+                icon: const Icon(Icons.badge_outlined),
+                onPressed: onViewEmployment,
               ),
             IconButton(
               tooltip: 'Edit',
@@ -837,9 +1097,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     if (widget.adminRoleEditing) {
       changes['role'] = _role;
     }
-    if (widget.adminRoleEditing) {
-      changes['approved'] = _approved;
-    }
+    changes['approved'] = _approved;
     try {
       await widget.doc.reference.update(changes);
       if (mounted) Navigator.pop(context, true);

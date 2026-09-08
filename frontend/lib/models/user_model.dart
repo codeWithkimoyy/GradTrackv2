@@ -2,20 +2,67 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum UserRole { admin, coordinator, alumni, guest }
+enum UserRole { admin, alumni }
 
 extension UserRoleX on UserRole {
   String get label => switch (this) {
         UserRole.admin => 'Administrator',
-        UserRole.coordinator => 'Department Coordinator',
         UserRole.alumni => 'Alumni',
-        UserRole.guest => 'Guest',
       };
 
   static UserRole fromString(String value) => UserRole.values.firstWhere(
         (r) => r.name == value,
-        orElse: () => UserRole.guest,
+        orElse: () => UserRole.alumni,
       );
+}
+
+/// Converts a stored academic year like "2025-2026" into its display form
+/// "2025–2026". Falls back to "Not Specified" for legacy records.
+String displayAcademicYear(String? value) {
+  final v = value?.trim() ?? '';
+  return v.isEmpty ? 'Not Specified' : v.replaceAll('-', '\u2013');
+}
+
+/// Parses the starting year of an academic year ("2025-2026" -> 2025).
+int? academicYearStart(String? value) =>
+    int.tryParse((value ?? '').split('-').first.trim());
+
+/// Human label for a graduation batch header, e.g. "S.Y. 2025–2026".
+/// Legacy alumni without an academic year are shown under
+/// "Academic Year Not Specified".
+String graduationBatchLabel(String? value) {
+  final v = value?.trim() ?? '';
+  return v.isEmpty
+      ? 'Academic Year Not Specified'
+      : 'S.Y. ${displayAcademicYear(v)}';
+}
+
+/// Derives a stable graduation-batch key for grouping and sorting.
+/// Prefers `academicYearGraduated` ("2025-2026"); falls back to the legacy
+/// `graduationYear` (bucket "gy:2025"); empty when neither is available.
+String graduationBatchKey({
+  String? academicYearGraduated,
+  int? graduationYear,
+}) {
+  final ac = (academicYearGraduated ?? '').trim();
+  if (ac.isNotEmpty) return ac;
+  if (graduationYear != null && graduationYear > 0) {
+    return 'gy:$graduationYear';
+  }
+  return '';
+}
+
+/// Returns (sort weight, section label) for a graduation-batch key.
+/// Newer years sort first; records with no year sort last.
+(int? startYear, String label) graduationBatchInfo(String key) {
+  if (key.isEmpty) {
+    return (null, 'Academic Year Not Specified');
+  }
+  if (key.startsWith('gy:')) {
+    final y = int.tryParse(key.substring(3));
+    return y == null ? (null, 'Academic Year Not Specified') : (y, 'S.Y. $y');
+  }
+  return (academicYearStart(key), graduationBatchLabel(key));
 }
 
 enum EmploymentStatus {
@@ -84,6 +131,7 @@ class UserModel {
   final int? graduationYear;
   final String? course;
   final String? section;
+  final String? academicYearGraduated;
   final String? biography;
   final SocialLinks socialLinks;
   final EmploymentStatus employmentStatus;
@@ -110,6 +158,7 @@ class UserModel {
     this.graduationYear,
     this.course,
     this.section,
+    this.academicYearGraduated,
     this.biography,
     this.socialLinks = const SocialLinks(),
     this.employmentStatus = EmploymentStatus.unemployed,
@@ -123,11 +172,12 @@ class UserModel {
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
+    final role = UserRoleX.fromString(map['role'] ?? 'alumni');
     return UserModel(
       uid: uid,
       email: map['email'] ?? '',
       fullName: map['fullName'] ?? '',
-      role: UserRoleX.fromString(map['role'] ?? 'alumni'),
+      role: role,
       photoUrl: map['photoUrl'],
       studentNumber: map['studentNumber'],
       gender: map['gender'],
@@ -138,6 +188,7 @@ class UserModel {
       graduationYear: map['graduationYear'],
       course: map['course'],
       section: map['section'],
+      academicYearGraduated: map['academicYearGraduated'],
       biography: map['biography'],
       socialLinks: SocialLinks.fromMap(map['socialLinks']),
       employmentStatus:
@@ -145,7 +196,7 @@ class UserModel {
       isVerified: map['isVerified'] ?? false,
       emailVerified: map['emailVerified'] ?? false,
       disabled: map['disabled'] ?? false,
-      approved: map['approved'] ?? true,
+      approved: role == UserRole.admin ? true : (map['approved'] ?? true),
       profileCompletion: (map['profileCompletion'] ?? 0.0).toDouble(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
@@ -169,6 +220,7 @@ class UserModel {
         'graduationYear': graduationYear,
         'course': course,
         'section': section,
+        'academicYearGraduated': academicYearGraduated,
         'biography': biography,
         'socialLinks': socialLinks.toMap(),
         'employmentStatus': employmentStatus.name,
@@ -198,6 +250,7 @@ class UserModel {
     int? graduationYear,
     String? course,
     String? section,
+    String? academicYearGraduated,
     String? biography,
     SocialLinks? socialLinks,
     EmploymentStatus? employmentStatus,
@@ -221,6 +274,8 @@ class UserModel {
       graduationYear: graduationYear ?? this.graduationYear,
       course: course ?? this.course,
       section: section ?? this.section,
+      academicYearGraduated:
+          academicYearGraduated ?? this.academicYearGraduated,
       biography: biography ?? this.biography,
       socialLinks: socialLinks ?? this.socialLinks,
       employmentStatus: employmentStatus ?? this.employmentStatus,
@@ -245,6 +300,7 @@ class UserModel {
       u.permanentAddress != null,
       u.graduationYear != null,
       u.course != null,
+      u.academicYearGraduated != null,
       u.biography != null,
       u.socialLinks.linkedIn != null,
     ];

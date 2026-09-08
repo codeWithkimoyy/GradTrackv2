@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/firebase_options.dart';
 import '../models/user_model.dart';
@@ -6,7 +7,7 @@ import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
 
 final firebaseConfiguredProvider = Provider<bool>((_) {
-  return DefaultFirebaseOptions.isConfigured;
+  return DefaultFirebaseOptions.isConfigured && Firebase.apps.isNotEmpty;
 });
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
