@@ -5,6 +5,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_constants.dart';
 import '../models/user_model.dart';
 
+/// One month bucket in a 12-month trend series.
+class TrendPoint {
+  final DateTime month;
+  final int count;
+
+  const TrendPoint(this.month, this.count);
+}
+
+/// Employment outcome for a single graduation-year batch.
+class YearEmployment {
+  final int year;
+  final int employedCount;
+  final int total;
+
+  const YearEmployment(this.year, this.employedCount, this.total);
+
+  double get rate => total == 0 ? 0 : (employedCount / total) * 100;
+}
+
 /// Live aggregate counts for staff dashboards, derived from real Firestore
 /// documents (users, surveys, survey responses, events, announcements).
 class DashboardStats {
@@ -23,6 +42,16 @@ class DashboardStats {
   final int eventCount;
   final int announcementCount;
 
+  /// 12-month new-user signup series (oldest month first).
+  final List<TrendPoint> signupTrend;
+
+  /// Survey responses per month for the last 12 months (oldest first).
+  final List<TrendPoint> responseTrend;
+
+  /// Alumni employed (employed/self-employed/freelance) per graduation year,
+  /// sorted by year ascending. Drives the outcome-by-batch chart.
+  final List<YearEmployment> employmentByYear;
+
   const DashboardStats({
     this.totalUsers = 0,
     this.admins = 0,
@@ -38,6 +67,9 @@ class DashboardStats {
     this.responseCount = 0,
     this.eventCount = 0,
     this.announcementCount = 0,
+    this.signupTrend = const [],
+    this.responseTrend = const [],
+    this.employmentByYear = const [],
   });
 
   static const empty = DashboardStats();
@@ -183,10 +215,19 @@ class StatsRepository {
         responseCount: responsesSnap.docs.length,
         eventCount: snaps[3].docs.length,
         announcementCount: snaps[4].docs.length,
+        signupTrend: _monthlyTrend(
+          userDocs.map((d) => (d.data()['createdAt'] as Timestamp?)?.toDate()),
+        ),
+        responseTrend: _monthlyTrend(
+          responsesSnap.docs
+              .map((d) => (d.data()['completedAt'] as Timestamp?)?.toDate()),
+        ),
+        employmentByYear: _employmentByYear(alumniDocs),
       );
     });
   }
 
+<<<<<<< HEAD
   /// Live alumni list grouped by graduation batch (newest batch first,
   /// legacy records that have neither academic year nor graduation year last).
   Stream<List<AlumniBatch>> watchAlumniBatches() {
@@ -212,11 +253,84 @@ class StatsRepository {
           return 0;
         });
       return batches;
+=======
+  /// Buckets [dates] into the last 12 calendar months (oldest first).
+  /// Null/missing timestamps are skipped; future dates are ignored.
+  static List<TrendPoint> _monthlyTrend(
+      Iterable<DateTime?> dates) {
+    final now = DateTime.now();
+    final months = List<int>.filled(12, 0);
+    final startMonth = DateTime(now.year, now.month - 11);
+    for (final date in dates) {
+      if (date == null) continue;
+      final monthIndex =
+          (date.year * 12 + date.month) - (startMonth.year * 12 + startMonth.month);
+      if (monthIndex < 0 || monthIndex > 11) continue;
+      months[monthIndex]++;
+    }
+    return [
+      for (var i = 0; i < 12; i++)
+        TrendPoint(DateTime(startMonth.year, startMonth.month + i),
+            months[i]),
+    ];
+  }
+
+  /// Groups alumni docs by graduation year and counts working alumni
+  /// (employed / self-employed / freelance) per batch. Years without a
+  /// value are skipped; sorted ascending.
+  static List<YearEmployment> _employmentByYear(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> alumniDocs) {
+    final byYear = <int, (int, int)>{};
+    for (final doc in alumniDocs) {
+      final data = doc.data();
+      final year = data['graduationYear'];
+      if (year is! int) continue;
+      final status = data['employmentStatus'] as String? ?? 'unemployed';
+      final working =
+          status == 'employed' || status == 'selfEmployed' || status == 'freelance';
+      final tally = byYear[year] ?? (0, 0);
+      byYear[year] = (
+        tally.$1 + (working ? 1 : 0),
+        tally.$2 + 1,
+      );
+    }
+    final entries = byYear.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return [
+      for (final e in entries) YearEmployment(e.key, e.value.$1, e.value.$2),
+    ];
+  }
+
+  /// Live list of users whose account is awaiting admin approval
+  /// (approved == false), newest registration first. Admins only —
+  /// the security rules scope this query to the admin role.
+  ///
+  /// Query uses only a single equality filter with no Firestore orderBy
+  /// clause so it requires ZERO composite indexes. Sorting by [createdAt]
+  /// and [limit] are applied in-memory on the client stream.
+  Stream<List<Map<String, dynamic>>> watchPendingApprovals({int limit = 20}) {
+    return _users
+        .where('approved', isEqualTo: false)
+        .snapshots()
+        .map((snap) {
+      final list = snap.docs.map((d) => {...d.data(), 'id': d.id}).toList();
+      list.sort((a, b) {
+        final aDate = (a['createdAt'] as Timestamp?)?.toDate();
+        final bDate = (b['createdAt'] as Timestamp?)?.toDate();
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return bDate.compareTo(aDate);
+      });
+      if (limit > 0 && list.length > limit) {
+        return list.sublist(0, limit);
+      }
+      return list;
+>>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
     });
   }
 
   /// High-performance server-side aggregation using Firestore count() queries.
-  /// Minimizes bandwidth and document read billing by avoiding mass document streaming.
   Future<DashboardStats> fetchAggregatedStaffStats({bool adminScope = true}) async {
     try {
       final totalQuery = adminScope

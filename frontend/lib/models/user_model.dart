@@ -2,7 +2,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+<<<<<<< HEAD
 enum UserRole { admin, alumni }
+=======
+/// Library-scope sentinel distinguishing an omitted copyWith argument
+/// from an explicitly provided null (which clears the field).
+const Object _unset = Object();
+
+enum UserRole { admin, coordinator, alumni, guest }
+>>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
 
 extension UserRoleX on UserRole {
   String get label => switch (this) {
@@ -130,6 +138,7 @@ class UserModel {
   final String? permanentAddress;
   final int? graduationYear;
   final String? course;
+  final String? academicYearGraduated;
   final String? section;
   final String? academicYearGraduated;
   final String? biography;
@@ -157,6 +166,7 @@ class UserModel {
     this.permanentAddress,
     this.graduationYear,
     this.course,
+    this.academicYearGraduated,
     this.section,
     this.academicYearGraduated,
     this.biography,
@@ -187,6 +197,7 @@ class UserModel {
       permanentAddress: map['permanentAddress'],
       graduationYear: map['graduationYear'],
       course: map['course'],
+      academicYearGraduated: map['academicYearGraduated'],
       section: map['section'],
       academicYearGraduated: map['academicYearGraduated'],
       biography: map['biography'],
@@ -219,6 +230,7 @@ class UserModel {
         'permanentAddress': permanentAddress,
         'graduationYear': graduationYear,
         'course': course,
+        'academicYearGraduated': academicYearGraduated,
         'section': section,
         'academicYearGraduated': academicYearGraduated,
         'biography': biography,
@@ -249,6 +261,7 @@ class UserModel {
     String? permanentAddress,
     int? graduationYear,
     String? course,
+    Object? academicYearGraduated = _unset,
     String? section,
     String? academicYearGraduated,
     String? biography,
@@ -273,6 +286,9 @@ class UserModel {
       permanentAddress: permanentAddress ?? this.permanentAddress,
       graduationYear: graduationYear ?? this.graduationYear,
       course: course ?? this.course,
+      academicYearGraduated: academicYearGraduated == _unset
+          ? this.academicYearGraduated
+          : academicYearGraduated as String?,
       section: section ?? this.section,
       academicYearGraduated:
           academicYearGraduated ?? this.academicYearGraduated,
