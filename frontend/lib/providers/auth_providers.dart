@@ -76,6 +76,21 @@ final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
           yield profile ?? fallback;
         }
       } catch (_) {
+        // A single failed read (network blip / transient rule sync) used to
+        // strand users on the pending-approval screen, so retry a few times
+        // against the authoritative document before falling back.
+        for (var attempt = 0; attempt < 3; attempt++) {
+          await Future<void>.delayed(const Duration(seconds: 1) * (attempt + 1));
+          try {
+            final profile = await userRepository.fetchUser(authUser.uid);
+            if (profile != null) {
+              yield profile;
+              return;
+            }
+          } catch (_) {
+            // keep retrying
+          }
+        }
         yield fallback;
       }
     },

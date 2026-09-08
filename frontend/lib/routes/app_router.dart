@@ -203,7 +203,9 @@ String? resolveRedirect({
   if (!loggedIn) return authRoutes.contains(location) ? null : AppRoutes.login;
   if (role == null) return location == AppRoutes.splash ? null : AppRoutes.splash;
 
-  if (!approved && role != UserRole.admin) {
+  // Approval is only enforced for alumni. Admins and coordinators are
+  // credentialed accounts managed by the university, so they never wait.
+  if (!approved && role == UserRole.alumni) {
     return location == AppRoutes.pendingApproval
         ? null
         : AppRoutes.pendingApproval;
@@ -262,6 +264,7 @@ String? resolveRedirect({
       AppRoutes.coordinatorSurveys,
       AppRoutes.coordinatorReports,
         AppRoutes.coordinatorEvents,
+        AppRoutes.alumniNotifications,
         AppRoutes.pendingApproval,
         if (collectionExists) location,
       },
@@ -273,6 +276,7 @@ String? resolveRedirect({
       AppRoutes.adminProfile,
       AppRoutes.editProfile,
         AppRoutes.staffUsers,
+        AppRoutes.alumniNotifications,
         AppRoutes.pendingApproval,
         if (collectionExists) location,
       },

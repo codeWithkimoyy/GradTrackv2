@@ -69,7 +69,7 @@ final Map<String, ContentCollection> contentCollections = {
   ),
   'jobs': const ContentCollection(
     collection: FirestoreCollections.jobs,
-    title: 'Job Opportunities',
+    title: 'Jobs',
     icon: Icons.business_center_outlined,
     fields: [
       ContentField('title', 'Position'),

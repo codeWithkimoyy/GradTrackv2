@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,7 @@ import '../models/user_model.dart';
 import '../providers/auth_providers.dart';
 import '../providers/theme_provider.dart';
 import '../routes/app_router.dart';
+import '../services/auth_service.dart';
 import '../utils/app_snack_bar.dart';
 
 class ProfileMenu extends ConsumerWidget {
@@ -41,7 +43,7 @@ class ProfileMenu extends ConsumerWidget {
         context.push(AppRoutes.editProfile);
         break;
       case 'settings':
-        showInfo(context, 'Account settings coming soon');
+        context.push(AppRoutes.editProfile);
         break;
       case 'change_password':
         _showChangePasswordDialog(context, ref);
@@ -53,15 +55,66 @@ class ProfileMenu extends ConsumerWidget {
             );
         break;
       case 'notifications':
-        showInfo(context, 'Notification preferences coming soon');
+        context.push(AppRoutes.alumniNotifications);
         break;
       case 'help':
-        showInfo(context, 'Help & support coming soon');
+        _showHelpDialog(context);
         break;
       case 'logout':
         _confirmLogout(context, ref);
         break;
     }
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Help & Support'),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _HelpItem(
+                Icons.person_outline,
+                'Manage your account',
+                'Use "Edit Profile" to update your personal details, '
+                    'and "Change Password" to update your login.',
+              ),
+              SizedBox(height: 12),
+              _HelpItem(
+                Icons.workspace_premium_outlined,
+                'Upload documents',
+                'Attach your resume and certificates from the Documents '
+                    'section so the university can verify your credentials.',
+              ),
+              SizedBox(height: 12),
+              _HelpItem(
+                Icons.fact_check_outlined,
+                'Tracer survey',
+                'Complete the graduate tracer survey to help BISU track '
+                    'alumni outcomes.',
+              ),
+              SizedBox(height: 12),
+              _HelpItem(
+                Icons.support_agent_outlined,
+                'Contact support',
+                'For further help, contact your department coordinator or '
+                    'alumni office at support@bisu.edu.ph.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _confirmLogout(BuildContext context, WidgetRef ref) {
@@ -148,16 +201,49 @@ class ProfileMenu extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
+            onPressed: () async {
+              if (!(formKey.currentState?.validate() ?? false)) return;
               Navigator.of(ctx).pop();
-              showSuccess(context, 'Password changed successfully');
+              try {
+                await _changePassword(
+                  currentPassword: currentPwdCtrl.text,
+                  newPassword: newPwdCtrl.text,
+                );
+                if (context.mounted) {
+                  showSuccess(context, 'Password changed successfully');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  showAppSnackBar(
+                    context,
+                    AuthService.friendlyError(e),
+                    backgroundColor: AppColors.error,
+                  );
+                }
+              }
             },
             child: const Text('Update'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+    if (user == null || user.email == null) {
+      throw StateError('You must be signed in to change your password.');
+    }
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(newPassword);
   }
 
   List<PopupMenuEntry<String>> _buildMenuItems(
@@ -276,5 +362,43 @@ class ProfileMenu extends ConsumerWidget {
       return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     }
     return name.isNotEmpty ? name[0].toUpperCase() : 'U';
+  }
+}
+
+class _HelpItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _HelpItem(this.icon, this.title, this.description);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 22, color: AppColors.primaryBlue),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: GoogleFonts.poppins(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

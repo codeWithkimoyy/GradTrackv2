@@ -71,7 +71,7 @@ const _pages = [
     features: [
       _Feature(Icons.event_outlined, 'Upcoming Events'),
       _Feature(Icons.campaign_outlined, 'Announcements'),
-      _Feature(Icons.work_outline_rounded, 'Job Opportunities'),
+      _Feature(Icons.work_outline_rounded, 'Jobs'),
       _Feature(Icons.fact_check_outlined, 'Tracer Survey'),
       _Feature(Icons.groups_outlined, 'Alumni Activities'),
       _Feature(Icons.groups_outlined, 'Community'),

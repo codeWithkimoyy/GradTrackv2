@@ -3,27 +3,65 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
-import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
 
-/// Shown to signed-in users whose account has not yet been approved by an
-/// administrator/coordinator. They cannot reach any app content until approved.
+/// Shown to students whose account has not yet been approved by an
+/// administrator/coordinator. They cannot reach alumni content until approved.
 /// Watches the live profile so it automatically grants access the moment the
 /// account is approved.
 class PendingApprovalScreen extends ConsumerWidget {
   const PendingApprovalScreen({super.key});
 
-  void _openAccount(BuildContext context, WidgetRef ref, UserModel profile) {
-    if (profile.approved) {
-      final home = dashboardForRole(profile.role);
+  Future<void> _checkApproval(BuildContext context, WidgetRef ref) async {
+    final profile = ref.read(currentUserProfileProvider).valueOrNull;
+    final uid = profile?.uid;
+    if (uid == null) {
       showAppSnackBar(
         context,
-        'Your account has been approved. Welcome to GradTrack!',
-        backgroundColor: AppColors.success,
+        'Your profile is not available yet. Please sign out and try again.',
       );
-      context.go(home);
+      return;
+    }
+
+    try {
+      final fresh = await ref
+          .read(authServiceProvider)
+          .fetchUserProfile(uid);
+      if (!context.mounted) return;
+
+      if (fresh == null) {
+        showAppSnackBar(
+          context,
+          'Profile record not found. Please sign out and sign in again.',
+        );
+        return;
+      }
+
+      if (fresh.approved) {
+        showAppSnackBar(
+          context,
+          'Your account has been approved. Welcome to GradTrack!',
+          backgroundColor: AppColors.success,
+        );
+        context.go(dashboardForRole(fresh.role));
+        return;
+      }
+
+      showAppSnackBar(
+        context,
+        'Your account is still pending approval.',
+        backgroundColor: AppColors.warning,
+      );
+    } catch (e) {
+      if (context.mounted) {
+        showAppSnackBar(
+          context,
+          'Could not check approval: $e',
+          backgroundColor: AppColors.error,
+        );
+      }
     }
   }
 
@@ -34,7 +72,7 @@ class PendingApprovalScreen extends ConsumerWidget {
 
     if (profile != null && profile.approved) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) _openAccount(context, ref, profile);
+        if (context.mounted) _checkApproval(context, ref);
       });
     }
 
@@ -67,7 +105,7 @@ class PendingApprovalScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 if (profile != null)
                   FilledButton.icon(
-                    onPressed: () => _openAccount(context, ref, profile),
+                    onPressed: () => _checkApproval(context, ref),
                     icon: const Icon(Icons.verified_user_rounded),
                     label: const Text('Check Approval Status'),
                   ),

@@ -1229,13 +1229,6 @@ class _DashboardBody extends ConsumerWidget {
                         physics: const BouncingScrollPhysics(),
                         children: [
                           _QuickActionCard(
-                            icon: Icons.add_business_rounded,
-                            label: 'Log Employment',
-                            color: AppColors.primaryBlue,
-                            onTap: () => context.push(AppRoutes.addEmployment),
-                          ),
-                          const SizedBox(width: 12),
-                          _QuickActionCard(
                             icon: Icons.upload_file_rounded,
                             label: 'Upload Resume',
                             color: AppColors.teal,

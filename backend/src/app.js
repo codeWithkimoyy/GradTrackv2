@@ -8,6 +8,7 @@ const { isConnected: isMySQLConnected } = require('./config/mysql');
 const profileRouter = require('./routes/profile');
 const uploadRouter = require('./routes/upload');
 const alumniRouter = require('./routes/alumni');
+const authRouter = require('./routes/auth');
 
 const app = express();
 
@@ -16,7 +17,11 @@ app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || env.corsOrigins.includes(origin)) {
+      if (
+        env.corsOrigins.includes('*') ||
+        !origin ||
+        env.corsOrigins.includes(origin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error('Origin is not allowed by CORS.'));
@@ -46,6 +51,7 @@ app.get('/api', (_request, response) => {
 app.use('/api/profile', profileRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/alumni', alumniRouter);
+app.use('/api/auth', authRouter);
 
 app.use((_request, response) => {
   response.status(404).json({
