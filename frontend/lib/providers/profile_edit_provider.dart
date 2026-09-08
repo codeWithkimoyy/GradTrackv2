@@ -82,6 +82,7 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
       'socialLinks': finalUser.socialLinks.toMap(),
       'graduationYear': finalUser.graduationYear,
       'course': finalUser.course,
+      'academicYearGraduated': finalUser.academicYearGraduated,
       'employmentStatus': finalUser.employmentStatus.name,
       'profileCompletion': finalUser.profileCompletion,
       'updatedAt': FieldValue.serverTimestamp(),

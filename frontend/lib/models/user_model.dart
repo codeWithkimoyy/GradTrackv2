@@ -2,6 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Library-scope sentinel distinguishing an omitted copyWith argument
+/// from an explicitly provided null (which clears the field).
+const Object _unset = Object();
+
 enum UserRole { admin, coordinator, alumni, guest }
 
 extension UserRoleX on UserRole {
@@ -83,6 +87,7 @@ class UserModel {
   final String? permanentAddress;
   final int? graduationYear;
   final String? course;
+  final String? academicYearGraduated;
   final String? section;
   final String? biography;
   final SocialLinks socialLinks;
@@ -109,6 +114,7 @@ class UserModel {
     this.permanentAddress,
     this.graduationYear,
     this.course,
+    this.academicYearGraduated,
     this.section,
     this.biography,
     this.socialLinks = const SocialLinks(),
@@ -137,6 +143,7 @@ class UserModel {
       permanentAddress: map['permanentAddress'],
       graduationYear: map['graduationYear'],
       course: map['course'],
+      academicYearGraduated: map['academicYearGraduated'],
       section: map['section'],
       biography: map['biography'],
       socialLinks: SocialLinks.fromMap(map['socialLinks']),
@@ -168,6 +175,7 @@ class UserModel {
         'permanentAddress': permanentAddress,
         'graduationYear': graduationYear,
         'course': course,
+        'academicYearGraduated': academicYearGraduated,
         'section': section,
         'biography': biography,
         'socialLinks': socialLinks.toMap(),
@@ -197,6 +205,7 @@ class UserModel {
     String? permanentAddress,
     int? graduationYear,
     String? course,
+    Object? academicYearGraduated = _unset,
     String? section,
     String? biography,
     SocialLinks? socialLinks,
@@ -220,6 +229,9 @@ class UserModel {
       permanentAddress: permanentAddress ?? this.permanentAddress,
       graduationYear: graduationYear ?? this.graduationYear,
       course: course ?? this.course,
+      academicYearGraduated: academicYearGraduated == _unset
+          ? this.academicYearGraduated
+          : academicYearGraduated as String?,
       section: section ?? this.section,
       biography: biography ?? this.biography,
       socialLinks: socialLinks ?? this.socialLinks,

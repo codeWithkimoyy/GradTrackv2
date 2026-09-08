@@ -4,16 +4,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/app_constants.dart';
+import '../../dashboards/dashboard_components.dart'
+    show DashboardMetric, DashboardMetricGrid;
 import '../../models/notification_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/audit_log_providers.dart';
 import '../../providers/notification_providers.dart';
 import '../../providers/role_providers.dart';
 import '../../providers/stats_providers.dart';
+import '../../utils/academic_year_utils.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../widgets/empty_state_widget.dart';
 
 /// Staff user directory: browse, search, filter, verify, edit, disable,
 /// delete and (admins) add users. UI buttons are role-aware; the Firestore
@@ -39,6 +44,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   String _query = '';
   String? _roleFilter;
   bool _pendingOnly = false;
+
+  /// Selected graduation batch ('All Batches' = null).
+  String? _batchFilter;
+
+  /// Sentinel label for alumni without a graduation batch.
+  static const String unspecifiedBatch = 'Academic Year Not Specified';
 
   CollectionReference<Map<String, dynamic>> get _users =>
       FirebaseFirestore.instance.collection(FirestoreCollections.users);
@@ -323,6 +334,22 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           }
 
           final all = snapshot.data!.docs;
+
+          // ---- Filtering (pending / role / search) ----
+          String searchHaystack(Map<String, dynamic> data) => [
+                data['fullName'],
+                data['email'],
+                data['role'],
+                data['course'],
+                data['academicYearGraduated'],
+              ]
+                  .whereType<String>()
+                  .join(' ')
+                  .toLowerCase()
+                  .replaceAll('-', '–');
+
+          final searchNeedle = _query.trim().toLowerCase().replaceAll('-', '–');
+
           final filtered = all.where((doc) {
             final data = doc.data();
             if (_pendingOnly && data['approved'] == true) {
@@ -333,23 +360,86 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 data['role'] != _roleFilter) {
               return false;
             }
-            if (_query.isNotEmpty) {
-              final haystack = [
-                data['fullName'],
-                data['email'],
-                data['role'],
-              ].whereType<String>().join(' ').toLowerCase();
-              if (!haystack.contains(_query.toLowerCase())) return false;
+            if (searchNeedle.isNotEmpty &&
+                !searchHaystack(data).contains(searchNeedle)) {
+              return false;
             }
             return true;
           }).toList();
+
+          final isAlumniView =
+              _roleFilter == null || _roleFilter == 'alumni';
+          final alumniDocs = isAlumniView
+              ? filtered
+                  .where((d) => d.data()['role'] == 'alumni')
+                  .toList()
+              : <DocumentSnapshot<Map<String, dynamic>>>[];
+          final otherDocs = isAlumniView
+              ? filtered
+                  .where((d) => d.data()['role'] != 'alumni')
+                  .toList()
+              : filtered;
+
+          // ---- Alumni batch grouping ----
+          // Key: academic year string, or null for "Academic Year Not
+          // Specified" (always rendered last).
+          final groups = <String?, List<DocumentSnapshot<Map<String, dynamic>>>>{};
+          for (final doc in alumniDocs) {
+            // Safe read: tolerate non-string stored values (e.g. legacy
+            // numeric years) via toString, mirroring the rest of the screen.
+            final year = doc.data()?['academicYearGraduated']?.toString();
+            final key = (year == null || year.isEmpty) ? null : year;
+            groups.putIfAbsent(key, () => []).add(doc);
+          }
+
+          // Sort members alphabetically inside every group.
+          for (final entry in groups.entries) {
+            entry.value.sort((a, b) =>
+                (a.data()?['fullName']?.toString() ?? '')
+                    .toLowerCase()
+                    .compareTo((b.data()?['fullName']?.toString() ?? '')
+                        .toLowerCase()));
+          }
+
+          // Group keys: batches newest-first, unspecified always last.
+          final batchKeys = groups.keys
+              .whereType<String>()
+              .toList()
+            ..sort((a, b) => b.compareTo(a));
+          final hasUnspecified = groups.containsKey(null);
+
+          // ---- Batch filter application ----
+          final visibleBatchKeys = _batchFilter == null
+              ? batchKeys
+              : (groups.containsKey(_batchFilter)
+                  ? [_batchFilter!]
+                  : <String>[]);
+          final visibleUnspecified =
+              _batchFilter == null || _batchFilter == unspecifiedBatch
+                  ? hasUnspecified
+                  : false;
+
+          final totalAlumni = alumniDocs.length;
+          final selectedBatchCount = _batchFilter == null
+              ? null
+              : (_batchFilter == unspecifiedBatch
+                  ? (groups[null]?.length ?? 0)
+                  : (groups[_batchFilter]?.length ?? 0));
+
+          final alumniListEmpty = isAlumniView &&
+              visibleBatchKeys.isEmpty &&
+              !visibleUnspecified &&
+              otherDocs.isEmpty;
+
+          final availableBatches = <String>[...batchKeys];
+          if (hasUnspecified) availableBatches.add(unspecifiedBatch);
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
               TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search name, email or role...',
+                  hintText: 'Search name, email, course or academic year...',
                   prefixIcon: const Icon(Icons.search_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.button),
@@ -394,7 +484,129 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              if (MediaQuery.sizeOf(context).width >= 900 && filtered.isNotEmpty)
+
+              // ---- Alumni grouped by graduation batch ----
+              if (isAlumniView) ...[
+                DashboardMetricGrid(
+                  metrics: [
+                    DashboardMetric(
+                      'Total Alumni',
+                      '$totalAlumni',
+                      Icons.school_outlined,
+                      AppColors.primaryBlue,
+                    ),
+                    DashboardMetric(
+                      _batchFilter == null
+                          ? 'Selected Batch'
+                          : _batchFilter == unspecifiedBatch
+                              ? unspecifiedBatch
+                              : 'Class of $_batchFilter',
+                      selectedBatchCount == null
+                          ? '—'
+                          : '$selectedBatchCount',
+                      Icons.calendar_month_outlined,
+                      selectedBatchCount == null
+                          ? AppColors.textMuted
+                          : AppColors.success,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Batch filter chips
+                if (availableBatches.isNotEmpty)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: const Text('All Batches'),
+                            selected: _batchFilter == null,
+                            onSelected: (_) =>
+                                setState(() => _batchFilter = null),
+                          ),
+                        ),
+                        for (final batch in availableBatches)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(
+                                  '$batch (${groups[batch == unspecifiedBatch ? null : batch]?.length ?? 0})'),
+                              selected: _batchFilter == batch,
+                              onSelected: (_) =>
+                                  setState(() => _batchFilter = batch),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.md),
+
+                if (alumniListEmpty)
+                  const EmptyStateWidget(
+                    icon: Icons.school_rounded,
+                    title: 'No alumni found',
+                    message:
+                        'No alumni found for this graduation batch.',
+                  )
+                else ...[
+                  for (final batchKey in visibleBatchKeys)
+                    _BatchSection(
+                      title: batchKey,
+                      count: groups[batchKey]!.length,
+                      docs: groups[batchKey]!,
+                      isAdmin: isAdmin,
+                      canVerify: widget.canVerify,
+                      onEdit: _editUser,
+                      onVerify: _toggleVerified,
+                      onToggleApproved: _toggleApproved,
+                      onDelete: _deleteUser,
+                    ),
+                  if (visibleUnspecified)
+                    _BatchSection(
+                      title: unspecifiedBatch,
+                      count: groups[null]!.length,
+                      docs: groups[null]!,
+                      isAdmin: isAdmin,
+                      canVerify: widget.canVerify,
+                      onEdit: _editUser,
+                      onVerify: _toggleVerified,
+                      onToggleApproved: _toggleApproved,
+                      onDelete: _deleteUser,
+                    ),
+                  if (visibleBatchKeys.isEmpty &&
+                      !visibleUnspecified &&
+                      _batchFilter != null)
+                    const EmptyStateWidget(
+                      icon: Icons.school_rounded,
+                      title: 'No alumni found',
+                      message:
+                          'No alumni found for this graduation batch.',
+                    ),
+                ],
+
+                if (otherDocs.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _BatchSection(
+                    title: 'Other Users',
+                    count: otherDocs.length,
+                    docs: otherDocs,
+                    isAdmin: isAdmin,
+                    canVerify: widget.canVerify,
+                    onEdit: _editUser,
+                    onVerify: _toggleVerified,
+                    onToggleApproved: _toggleApproved,
+                    onDelete: _deleteUser,
+                    noun: 'Users',
+                  ),
+                ],
+              ]
+
+              // ---- Non-alumni role views keep the existing layout ----
+              else if (MediaQuery.sizeOf(context).width >= 900 &&
+                  filtered.isNotEmpty)
                 Card(
                   clipBehavior: Clip.antiAlias,
                   child: PaginatedDataTable(
@@ -441,6 +653,88 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         },
       ),
     );
+  }
+}
+
+/// An always-expanded section of alumni sharing one graduation batch
+/// (or the "Academic Year Not Specified" / "Other Users" catch-alls).
+/// Reuses the existing [_UserCard] styling — no accordions.
+class _BatchSection extends StatelessWidget {
+  final String title;
+  final int count;
+  final List<DocumentSnapshot<Map<String, dynamic>>> docs;
+  final bool isAdmin;
+  final bool canVerify;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onEdit;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onVerify;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onToggleApproved;
+  final void Function(DocumentSnapshot<Map<String, dynamic>>) onDelete;
+
+  /// Noun used in the header count, e.g. 'Alumni' or 'Users'. Defaults to
+  /// the alumni label; the "Other Users" catch-all overrides it.
+  final String noun;
+
+  const _BatchSection({
+    required this.title,
+    required this.count,
+    required this.docs,
+    required this.isAdmin,
+    required this.canVerify,
+    required this.onEdit,
+    required this.onVerify,
+    required this.onToggleApproved,
+    required this.onDelete,
+    this.noun = 'Alumni',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 6, bottom: 8),
+          child: Row(
+            children: [
+              Icon(
+                title == _UserManagementScreenState.unspecifiedBatch
+                    ? Icons.help_outline_rounded
+                    : Icons.school_rounded,
+                size: 17,
+                color: AppColors.primaryBlue,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  '$title ($count ${_countNoun(count)})',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...docs.map((doc) => _UserCard(
+              doc: doc,
+              isAdmin: isAdmin,
+              canVerify: canVerify,
+              onEdit: () => onEdit(doc),
+              onVerify: canVerify ? () => onVerify(doc) : null,
+              onToggleApproved: isAdmin ? () => onToggleApproved(doc) : null,
+              onDelete: isAdmin ? () => onDelete(doc) : null,
+            )),
+        const SizedBox(height: AppSpacing.md),
+      ],
+    );
+  }
+
+  String _countNoun(int count) {
+    if (noun == 'Alumni') return count == 1 ? 'Alumnus' : 'Alumni';
+    return count == 1 ? 'User' : 'Users';
   }
 }
 
@@ -636,12 +930,23 @@ class _UserCard extends StatelessWidget {
             ),
             if (!approved) ...[
               const SizedBox(width: 6),
-              const Chip(
-                label: Text('Pending', style: TextStyle(fontSize: 10)),
-                visualDensity: VisualDensity.compact,
-                backgroundColor: AppColors.warning,
-                labelStyle: TextStyle(color: Colors.black87),
-                padding: EdgeInsets.symmetric(horizontal: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: const Text(
+                  'Pending',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.warning,
+                  ),
+                ),
               ),
             ],
           ],
@@ -649,7 +954,8 @@ class _UserCard extends StatelessWidget {
         subtitle: Text(
           '${data['email'] ?? ''}\n'
           '${role.toUpperCase()} · ${verified ? 'Verified' : 'Unverified'} · '
-          '${data['course']?.toString() ?? 'No course'}',
+          '${data['course']?.toString() ?? 'No course'}'
+          '${data['academicYearGraduated'] != null ? ' · ${data['academicYearGraduated']}' : ''}',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         onTap: onEdit,
@@ -658,30 +964,42 @@ class _UserCard extends StatelessWidget {
           children: [
             if (onToggleApproved != null)
               IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 tooltip: approved
                     ? 'Revoke approval'
                     : 'Approve user',
                 color: approved ? AppColors.success : AppColors.warning,
                 icon: Icon(approved
                     ? Icons.check_circle_rounded
-                    : Icons.pending_actions_rounded),
+                    : Icons.pending_actions_rounded, size: 20),
                 onPressed: onToggleApproved,
               ),
             if (onVerify != null)
               IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 tooltip: verified ? 'Revoke verification' : 'Verify alumni',
                 color: verified ? AppColors.success : null,
                 icon: Icon(verified
                     ? Icons.verified_rounded
-                    : Icons.verified_outlined),
+                    : Icons.verified_outlined, size: 20),
                 onPressed: onVerify,
               ),
             IconButton(
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               tooltip: 'Edit',
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(Icons.edit_outlined, size: 20),
               onPressed: onEdit,
             ),
             PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              iconSize: 20,
               onSelected: (value) {
                 switch (value) {
                   case 'delete':
@@ -813,6 +1131,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
   late String _status;
   late bool _verified;
   late bool _approved;
+  String? _academicYear;
 
   @override
   void initState() {
@@ -826,6 +1145,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     _status = data['employmentStatus']?.toString() ?? 'unemployed';
     _verified = data['isVerified'] == true;
     _approved = data['approved'] == true;
+    _academicYear = data['academicYearGraduated']?.toString();
   }
 
   @override
@@ -842,6 +1162,8 @@ class _EditUserDialogState extends State<_EditUserDialog> {
       'course': _course.text.trim().isEmpty ? null : _course.text.trim(),
       'graduationYear':
           int.tryParse(_gradYear.text.trim()),
+      'academicYearGraduated':
+          (_academicYear == null || _academicYear!.isEmpty) ? null : _academicYear,
       'employmentStatus': _status,
       'isVerified': _verified,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -882,6 +1204,26 @@ class _EditUserDialogState extends State<_EditUserDialog> {
                 keyboardType: TextInputType.number,
                 decoration:
                     const InputDecoration(labelText: 'Graduation year')),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: AcademicYearUtils.isValid(_academicYear)
+                  ? _academicYear
+                  : null,
+              decoration: const InputDecoration(
+                labelText: 'Academic Year Graduated',
+                hintText: 'Select Academic Year',
+              ),
+              hint: const Text('Select Academic Year'),
+              items: [
+                for (final year in AcademicYearUtils.options())
+                  DropdownMenuItem(value: year, child: Text(year)),
+                const DropdownMenuItem(
+                  value: '',
+                  child: Text('Not specified'),
+                ),
+              ],
+              onChanged: (v) => setState(() => _academicYear = v),
+            ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _status,

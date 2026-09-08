@@ -275,15 +275,31 @@ class StatsRepository {
   }
 
   /// Live list of users whose account is awaiting admin approval
-  /// (approved != true), newest registration first. Admins only —
+  /// (approved == false), newest registration first. Admins only —
   /// the security rules scope this query to the admin role.
+  ///
+  /// Query uses only a single equality filter with no Firestore orderBy
+  /// clause so it requires ZERO composite indexes. Sorting by [createdAt]
+  /// and [limit] are applied in-memory on the client stream.
   Stream<List<Map<String, dynamic>>> watchPendingApprovals({int limit = 20}) {
     return _users
-        .where('approved', isNotEqualTo: true)
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
+        .where('approved', isEqualTo: false)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => {...d.data(), 'id': d.id}).toList());
+        .map((snap) {
+      final list = snap.docs.map((d) => {...d.data(), 'id': d.id}).toList();
+      list.sort((a, b) {
+        final aDate = (a['createdAt'] as Timestamp?)?.toDate();
+        final bDate = (b['createdAt'] as Timestamp?)?.toDate();
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return bDate.compareTo(aDate);
+      });
+      if (limit > 0 && list.length > limit) {
+        return list.sublist(0, limit);
+      }
+      return list;
+    });
   }
 
   /// High-performance server-side aggregation using Firestore count() queries.

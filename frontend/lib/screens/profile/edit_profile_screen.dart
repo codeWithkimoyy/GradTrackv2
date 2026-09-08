@@ -7,6 +7,7 @@ import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/profile_edit_provider.dart';
+import '../../utils/academic_year_utils.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/avatar_utils.dart';
 import '../../widgets/empty_state_widget.dart';
@@ -22,6 +23,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _studentNumberController = TextEditingController();
+  final _courseController = TextEditingController();
   final _phoneController = TextEditingController();
   final _currentAddressController = TextEditingController();
   final _permanentAddressController = TextEditingController();
@@ -34,17 +36,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _initialized = false;
   Uint8List? _selectedPhotoBytes;
   String? _selectedPhotoName;
+  String? _selectedAcademicYear;
 
   void _hydrate(UserModel user) {
     if (_initialized) return;
     _nameController.text = user.fullName;
     _studentNumberController.text = user.studentNumber ?? '';
+    _courseController.text = user.course ?? '';
     _phoneController.text = user.phoneNumber ?? '';
     _currentAddressController.text = user.currentAddress ?? '';
     _permanentAddressController.text = user.permanentAddress ?? '';
     _bioController.text = user.biography ?? '';
     _linkedInController.text = user.socialLinks.linkedIn ?? '';
     _githubController.text = user.socialLinks.github ?? '';
+    _selectedAcademicYear = user.academicYearGraduated;
     _initialized = true;
     ref.read(profileEditControllerProvider.notifier).startEditing();
   }
@@ -73,6 +78,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _save(UserModel current) async {
     if (!_formKey.currentState!.validate()) return;
+    if (current.role != UserRole.guest && _selectedAcademicYear == null) {
+      showAppSnackBar(
+        context,
+        'Please select your Academic Year Graduated.',
+        backgroundColor: AppColors.warning,
+      );
+      return;
+    }
 
     final controller = ref.read(profileEditControllerProvider.notifier);
     final success = await controller.save(
@@ -80,6 +93,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       updated: current.copyWith(
         fullName: _nameController.text.trim(),
         studentNumber: _studentNumberController.text.trim(),
+        course: _courseController.text.trim().isEmpty
+            ? null
+            : _courseController.text.trim(),
+        academicYearGraduated: current.role == UserRole.guest
+            ? null
+            : _selectedAcademicYear,
         phoneNumber: _phoneController.text.trim(),
         currentAddress: _currentAddressController.text.trim(),
         permanentAddress: _permanentAddressController.text.trim(),
@@ -216,8 +235,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 24),
                 _field('Full Name', _nameController, required: true),
-if (!isGuest) ...[
+                if (!isGuest) ...[
                   _field('Student Number', _studentNumberController),
+                  _field('Course', _courseController),
+                  _academicYearDropdown(isDark),
                 ],
                 _field('Phone Number', _phoneController,
                     keyboardType: TextInputType.phone),
@@ -262,6 +283,37 @@ if (!isGuest) ...[
     );
   }
 
+  Widget _academicYearDropdown(bool isDark) {
+    final years = AcademicYearUtils.options();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            initialValue: AcademicYearUtils.isValid(_selectedAcademicYear)
+                ? _selectedAcademicYear
+                : null,
+            decoration: const InputDecoration(
+              labelText: 'Academic Year Graduated',
+              hintText: 'Select Academic Year',
+            ),
+            hint: const Text('Select Academic Year'),
+            icon: const Icon(Icons.school_outlined),
+            items: [
+              for (final year in years)
+                DropdownMenuItem(value: year, child: Text(year)),
+            ],
+            onChanged: (v) => setState(() => _selectedAcademicYear = v),
+            validator: (v) => v == null
+                ? 'Please select your Academic Year Graduated.'
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _field(
     String label,
     TextEditingController controller, {
@@ -293,6 +345,7 @@ if (!isGuest) ...[
   void dispose() {
     _nameController.dispose();
     _studentNumberController.dispose();
+    _courseController.dispose();
     _phoneController.dispose();
     _currentAddressController.dispose();
     _permanentAddressController.dispose();

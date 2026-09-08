@@ -1409,6 +1409,13 @@ class _DashboardBody extends ConsumerWidget {
                             user.course!,
                             AppColors.teal,
                           ),
+                        if (user.academicYearGraduated != null &&
+                            user.academicYearGraduated!.isNotEmpty)
+                          _tagBadge(
+                            Icons.school_rounded,
+                            'AY ${user.academicYearGraduated}',
+                            AppColors.primaryBlue,
+                          ),
                         if (user.graduationYear != null)
                           _tagBadge(
                             Icons.calendar_today_rounded,
