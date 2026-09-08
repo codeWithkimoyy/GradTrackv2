@@ -6,6 +6,7 @@ import '../constants/app_constants.dart';
 import '../providers/stats_providers.dart';
 import '../repositories/stats_repository.dart';
 import '../routes/app_router.dart';
+import '../widgets/pending_approvals_queue.dart';
 import 'dashboard_components.dart';
 
 class AdminDashboard extends ConsumerWidget {
@@ -21,6 +22,10 @@ class AdminDashboard extends ConsumerWidget {
       icon: Icons.shield_outlined,
       accent: AppColors.primaryBlue,
       children: [
+        PendingApprovalsQueue(
+          onViewAll: () => context.go('${AppRoutes.staffUsers}?pending=1'),
+        ),
+        const SizedBox(height: 14),
         DashboardMetricGrid(
           metrics: [
             DashboardMetric('Total Users', '${stats.totalUsers}',

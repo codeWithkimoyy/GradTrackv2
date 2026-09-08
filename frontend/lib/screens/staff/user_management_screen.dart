@@ -21,8 +21,14 @@ import '../../utils/app_snack_bar.dart';
 class UserManagementScreen extends ConsumerStatefulWidget {
   final String? roleFilter;
   final bool canVerify;
+  final bool initialPendingOnly;
 
-  const UserManagementScreen({super.key, this.roleFilter, this.canVerify = true});
+  const UserManagementScreen({
+    super.key,
+    this.roleFilter,
+    this.canVerify = true,
+    this.initialPendingOnly = false,
+  });
 
   @override
   ConsumerState<UserManagementScreen> createState() =>
@@ -41,6 +47,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   void initState() {
     super.initState();
     _roleFilter = widget.roleFilter;
+    _pendingOnly = widget.initialPendingOnly;
   }
 
   Future<void> _addUser() async {

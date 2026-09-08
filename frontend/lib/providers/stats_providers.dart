@@ -44,3 +44,11 @@ final publicAnnouncementsProvider =
       .watch(statsRepositoryProvider)
       .watchAnnouncements(publicOnly: true);
 });
+
+/// Live pending-approval queue for the admin dashboard (newest first).
+/// Users created by the auth flow default `approved` to false, so this
+/// stream is the admin's actionable work list.
+final pendingApprovalsProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  return ref.watch(statsRepositoryProvider).watchPendingApprovals();
+});

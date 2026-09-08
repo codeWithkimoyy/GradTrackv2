@@ -128,9 +128,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: AppRoutes.staffUsers, builder: (context, state) {
             final role = state.uri.queryParameters['role'];
+            final pendingOnly =
+                state.uri.queryParameters['pending'] == '1';
             return UserManagementScreen(
               roleFilter: role,
               canVerify: role == null || role == 'alumni',
+              initialPendingOnly: pendingOnly,
             );
           }),
           GoRoute(
