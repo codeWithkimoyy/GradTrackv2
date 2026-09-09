@@ -71,7 +71,7 @@ class AlumniDashboard extends ConsumerWidget {
                   const SizedBox(width: 13),
                   Expanded(
                     child: Text(
-                      '${user.course ?? 'Program not set'}\nGraduated ${user.graduationYear ?? 'year not set'}'
+                      '${user.course ?? AppStrings.defaultCourse}\nGraduated ${user.graduationYear ?? 'year not set'}'
                       '${user.academicYearGraduated != null ? ' · AY ${user.academicYearGraduated}' : ''}'
                       ' · ${user.employmentStatus.label}',
                     ),

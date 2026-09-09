@@ -227,8 +227,7 @@ class StatsRepository {
     });
   }
 
-<<<<<<< HEAD
-  /// Live alumni list grouped by graduation batch (newest batch first,
+/// Live alumni list grouped by graduation batch (newest batch first,
   /// legacy records that have neither academic year nor graduation year last).
   Stream<List<AlumniBatch>> watchAlumniBatches() {
     return _users.where('role', isEqualTo: 'alumni').snapshots().map((snap) {
@@ -253,7 +252,9 @@ class StatsRepository {
           return 0;
         });
       return batches;
-=======
+    });
+  }
+
   /// Buckets [dates] into the last 12 calendar months (oldest first).
   /// Null/missing timestamps are skipped; future dates are ignored.
   static List<TrendPoint> _monthlyTrend(
@@ -326,7 +327,6 @@ class StatsRepository {
         return list.sublist(0, limit);
       }
       return list;
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
     });
   }
 

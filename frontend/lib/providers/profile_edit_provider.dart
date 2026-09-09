@@ -109,10 +109,17 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
         // full merge write, which is allowed for self-created docs.
         await _ref.read(userRepositoryProvider).saveUser(finalUser);
       }
-    } catch (_) {
-      // Offline / rules-blocked: keep the edit in local state so the UI
-      // stays consistent for this session.
+    } catch (e) {
+      // The cloud write was rejected. Keep the change in local session
+      // state (useful when offline) but report an honest failure instead of
+      // pretending the profile was saved, so the user knows it did not persist.
       _ref.read(localProfileProvider.notifier).state = finalUser;
+      state = const ProfileEditState(
+        status: ProfileEditStatus.error,
+        message:
+            'Your changes were NOT saved to the cloud. Check your connection and try again.',
+      );
+      return false;
     }
 
     state = const ProfileEditState(

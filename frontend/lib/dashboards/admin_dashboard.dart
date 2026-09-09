@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/app_constants.dart';
-import '../models/user_model.dart';
 import '../providers/stats_providers.dart';
 import '../repositories/stats_repository.dart';
 import '../routes/app_router.dart';
@@ -18,53 +17,10 @@ class AdminDashboard extends ConsumerStatefulWidget {
 }
 
 class _AdminDashboardState extends ConsumerState<AdminDashboard> {
-  /// Currently selected graduation batch key (null = All Batches).
-  String? _selectedBatch;
-
-  Widget _buildBatchFilter(List<AlumniBatch> batches) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: const Text('All Batches'),
-              selected: _selectedBatch == null,
-              onSelected: (_) => setState(() => _selectedBatch = null),
-            ),
-          ),
-          for (final batch in batches)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(graduationBatchInfo(batch.academicYear).$2),
-                selected: _selectedBatch == batch.academicYear,
-                onSelected: (_) =>
-                    setState(() => _selectedBatch = batch.academicYear),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final stats =
         ref.watch(staffStatsProvider).valueOrNull ?? DashboardStats.empty;
-    final batches =
-        ref.watch(alumniBatchesProvider).valueOrNull ?? const <AlumniBatch>[];
-    final batchCounts = {
-      for (final batch in batches) batch.academicYear: batch.count,
-    };
-
-    final selectedLabel = _selectedBatch == null
-        ? 'Selected Batch'
-        : graduationBatchInfo(_selectedBatch!).$2;
-    final selectedValue = _selectedBatch == null
-        ? '—'
-        : '${batchCounts[_selectedBatch] ?? 0}';
 
     return DashboardPage(
       title: 'Admin Command Center',
@@ -82,8 +38,6 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                 Icons.people_outline_rounded, AppColors.primaryBlue),
             DashboardMetric('Total Alumni', '${stats.alumni}',
                 Icons.school_outlined, AppColors.success),
-            DashboardMetric(selectedLabel, selectedValue,
-                Icons.school_rounded, AppColors.teal),
             DashboardMetric('Verified Alumni', '${stats.verifiedAlumni}',
                 Icons.online_prediction_rounded, AppColors.warning),
             DashboardMetric('Total Surveys', '${stats.surveyCount}',
@@ -96,8 +50,6 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                 Icons.campaign_outlined, AppColors.warning),
           ],
         ),
-        const SizedBox(height: 14),
-        _buildBatchFilter(batches),
         const SizedBox(height: 14),
         DashboardSectionCard(
           title: 'Administration',

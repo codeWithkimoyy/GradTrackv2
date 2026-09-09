@@ -25,7 +25,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-  final _courseController = TextEditingController(text: 'BS Computer Science');
+  final _courseController =
+      TextEditingController(text: AppStrings.defaultCourse);
   int _graduationYear = DateTime.now().year;
 
   bool _obscure = true;

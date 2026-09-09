@@ -492,7 +492,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              Center(
+                child: Text(
+                  '${AppStrings.appName} build ${AppStrings.buildId}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
             ],
           ),
         ),

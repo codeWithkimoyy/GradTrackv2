@@ -76,7 +76,7 @@ class _UserHeader extends ConsumerWidget {
         final data = doc.data() ?? {};
         final name = data['fullName']?.toString() ?? 'Unknown';
         final email = data['email']?.toString() ?? '';
-        final course = data['course']?.toString() ?? 'No course';
+        final course = data['course']?.toString() ?? AppStrings.defaultCourse;
         final year = data['graduationYear']?.toString() ?? '';
         final rawBatch = data['academicYearGraduated']?.toString();
         final batchText =

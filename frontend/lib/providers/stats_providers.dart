@@ -41,8 +41,6 @@ final alumniBatchesProvider =
 final announcementsProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(statsRepositoryProvider).watchAnnouncements();
-<<<<<<< HEAD
-=======
 });
 
 /// Live public announcement list (guest view).
@@ -59,5 +57,4 @@ final publicAnnouncementsProvider =
 final pendingApprovalsProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(statsRepositoryProvider).watchPendingApprovals();
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
 });

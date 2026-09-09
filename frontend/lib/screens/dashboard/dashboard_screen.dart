@@ -1382,14 +1382,14 @@ class _DashboardBody extends ConsumerWidget {
                             user.course!,
                             AppColors.teal,
                           ),
-                        if (user.academicYearGraduated != null &&
-                            user.academicYearGraduated!.isNotEmpty)
+                        if (user.academicYearGraduated?.trim().isNotEmpty ==
+                            true)
                           _tagBadge(
                             Icons.school_rounded,
-                            'AY ${user.academicYearGraduated}',
+                            'S.Y. ${displayAcademicYear(user.academicYearGraduated)}',
                             AppColors.primaryBlue,
-                          ),
-                        if (user.graduationYear != null)
+                          )
+                        else if (user.graduationYear != null)
                           _tagBadge(
                             Icons.calendar_today_rounded,
                             'S.Y. ${user.graduationYear}',
@@ -1706,9 +1706,9 @@ class _DashboardBody extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           _infoRow(context, 'Student No.', user.studentNumber ?? 'N/A'),
-          _infoRow(context, 'Course', user.course ?? 'BS Computer Science'),
-          _infoRow(context, 
-              'Graduation Year', user.graduationYear?.toString() ?? '2024'),
+          _infoRow(context, 'Course', user.course ?? AppStrings.defaultCourse),
+          _infoRow(context,
+              'Graduation Year', user.graduationYear?.toString() ?? 'Not set'),
           _infoRow(context, 'Academic Year Graduated',
               displayAcademicYear(user.academicYearGraduated)),
           _infoRow(context, 'Phone', user.phoneNumber ?? 'Not provided'),
@@ -2262,9 +2262,14 @@ class _AlumniTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _itemLine(context, 'Full Name', user.fullName),
-              _itemLine(context, 'Course Program', user.course ?? 'BS Computer Science'),
-              _itemLine(context, 'Graduation Batch',
-                  user.graduationYear?.toString() ?? '2024'),
+              _itemLine(context, 'Course Program',
+                  user.course ?? AppStrings.defaultCourse),
+              _itemLine(
+                  context,
+                  'Graduation Batch',
+                  user.academicYearGraduated?.trim().isNotEmpty == true
+                      ? 'S.Y. ${displayAcademicYear(user.academicYearGraduated)}'
+                      : (user.graduationYear?.toString() ?? 'Not set')),
               _itemLine(context, 'Status', user.employmentStatus.label),
               const SizedBox(height: 16),
               ElevatedButton(

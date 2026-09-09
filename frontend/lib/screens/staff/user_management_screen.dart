@@ -4,16 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-<<<<<<< HEAD
 import 'package:go_router/go_router.dart';
-=======
-import 'package:google_fonts/google_fonts.dart';
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
 import 'package:http/http.dart' as http;
 
 import '../../constants/app_constants.dart';
-import '../../dashboards/dashboard_components.dart'
-    show DashboardMetric, DashboardMetricGrid;
 import '../../models/notification_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/audit_log_providers.dart';
@@ -22,7 +16,6 @@ import '../../providers/role_providers.dart';
 import '../../providers/stats_providers.dart';
 import '../../utils/academic_year_utils.dart';
 import '../../utils/app_snack_bar.dart';
-import '../../widgets/empty_state_widget.dart';
 
 /// Staff user directory: browse, search, filter, verify, edit, disable,
 /// delete and (admins) add users. UI buttons are role-aware; the Firestore
@@ -30,21 +23,15 @@ import '../../widgets/empty_state_widget.dart';
 class UserManagementScreen extends ConsumerStatefulWidget {
   final String? roleFilter;
   final bool canVerify;
-<<<<<<< HEAD
   final bool approvedOnly;
-=======
   final bool initialPendingOnly;
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
 
   const UserManagementScreen({
     super.key,
     this.roleFilter,
     this.canVerify = true,
-<<<<<<< HEAD
     this.approvedOnly = false,
-=======
     this.initialPendingOnly = false,
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
   });
 
   @override
@@ -57,13 +44,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   String? _roleFilter;
   bool _pendingOnly = false;
   bool _approvedOnly = false;
-  String? _batchFilter;
 
   /// Selected graduation batch ('All Batches' = null).
   String? _batchFilter;
 
-  /// Sentinel label for alumni without a graduation batch.
-  static const String unspecifiedBatch = 'Academic Year Not Specified';
+  /// Sentinel value for the "All Batches" dropdown option.
+  static const String _allBatches = '__all__';
 
   CollectionReference<Map<String, dynamic>> get _users =>
       FirebaseFirestore.instance.collection(FirestoreCollections.users);
@@ -102,15 +88,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   void initState() {
     super.initState();
     _roleFilter = widget.roleFilter;
-<<<<<<< HEAD
     _approvedOnly = widget.approvedOnly;
+    _pendingOnly = widget.initialPendingOnly;
   }
 
   void _openEmployment(DocumentSnapshot<Map<String, dynamic>> doc) {
     context.push('/staff/users/employment?userId=${doc.id}');
-=======
-    _pendingOnly = widget.initialPendingOnly;
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
   }
 
   Future<void> _addUser() async {
@@ -138,9 +121,11 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       final localId = (jsonDecode(resp.body) as Map)['localId'] as String;
 
       await _users.doc(localId).set({
+        'userId': localId,
         'email': result.email,
         'fullName': result.fullName,
         'role': result.role.name,
+        'course': AppStrings.defaultCourse,
         'isVerified': false,
         'emailVerified': false,
         'createdAt': FieldValue.serverTimestamp(),
@@ -168,18 +153,42 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   }
 
   String _parseApiError(String body) {
+    String? code;
+    String? message;
     try {
       final map = jsonDecode(body) as Map;
-      return switch (map['error']?['message'] as String? ?? '') {
-        'EMAIL_EXISTS' => 'An account already exists for this email.',
-        'INVALID_EMAIL' => 'Please enter a valid email address.',
-        'WEAK_PASSWORD' => 'Password should be at least 6 characters.',
-        'EMAIL_NOT_FOUND' => 'Email address not found.',
-        final m => m,
-      };
+      final raw = (map['error']?['message'] as String?) ?? '';
+      // Google returns "CODE : human readable message"; extract both parts.
+      final sep = raw.indexOf(' : ');
+      if (sep > 0) {
+        code = raw.substring(0, sep).trim();
+        message = raw.substring(sep + 3).trim();
+      } else {
+        code = raw.trim();
+      }
     } catch (_) {
-      return 'Unexpected error.';
+      // Fall through to the friendly default below.
     }
+    final friendly = switch (code ?? '') {
+      'EMAIL_EXISTS' => 'An account already exists for this email.',
+      'INVALID_EMAIL' => 'Please enter a valid email address.',
+      'WEAK_PASSWORD' => 'Password should be at least 6 characters.',
+      'EMAIL_NOT_FOUND' => 'Email address not found.',
+      'OPERATION_NOT_ALLOWED' =>
+        'Email/password sign-up is not enabled in the Firebase console.',
+      'TOO_MANY_ATTEMPTS_TRY_LATER' =>
+        'Too many attempts. Please try again later.',
+      'MISSING_API_KEY' =>
+        'Firebase API key is missing. Run flutterfire configure.',
+      'API_KEY_INVALID' => 'The Firebase API key is invalid.',
+      'API_KEY_NOT_VALID_FOR_PROJECT' =>
+        'The Firebase API key is not valid for this project.',
+      _ => '',
+    };
+    if (friendly.isNotEmpty) return friendly;
+    if (message != null && message.isNotEmpty) return message;
+    if (code != null && code.isNotEmpty) return code;
+    return 'Bad request (400). Please check the details and try again.';
   }
 
   Future<void> _editUser(
@@ -508,27 +517,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           }
 
           final all = snapshot.data!.docs;
-<<<<<<< HEAD
           final scoped = all.where((doc) {
-=======
-
-          // ---- Filtering (pending / role / search) ----
-          String searchHaystack(Map<String, dynamic> data) => [
-                data['fullName'],
-                data['email'],
-                data['role'],
-                data['course'],
-                data['academicYearGraduated'],
-              ]
-                  .whereType<String>()
-                  .join(' ')
-                  .toLowerCase()
-                  .replaceAll('-', '–');
-
-          final searchNeedle = _query.trim().toLowerCase().replaceAll('-', '–');
-
-          final filtered = all.where((doc) {
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
             final data = doc.data();
             if (_pendingOnly && data['approved'] == true) {
               return false;
@@ -541,8 +530,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 data['role'] != _roleFilter) {
               return false;
             }
-<<<<<<< HEAD
-            return true;
+return true;
           }).toList();
 
           final alumniScoped =
@@ -575,93 +563,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
 
           final adminMatch =
               adminScoped.where((doc) => _matchesQuery(doc.data())).toList();
-=======
-            if (searchNeedle.isNotEmpty &&
-                !searchHaystack(data).contains(searchNeedle)) {
-              return false;
-            }
-            return true;
-          }).toList();
-
-          final isAlumniView =
-              _roleFilter == null || _roleFilter == 'alumni';
-          final alumniDocs = isAlumniView
-              ? filtered
-                  .where((d) => d.data()['role'] == 'alumni')
-                  .toList()
-              : <DocumentSnapshot<Map<String, dynamic>>>[];
-          final otherDocs = isAlumniView
-              ? filtered
-                  .where((d) => d.data()['role'] != 'alumni')
-                  .toList()
-              : filtered;
-
-          // ---- Alumni batch grouping ----
-          // Key: academic year string, or null for "Academic Year Not
-          // Specified" (always rendered last).
-          final groups = <String?, List<DocumentSnapshot<Map<String, dynamic>>>>{};
-          for (final doc in alumniDocs) {
-            // Safe read: tolerate non-string stored values (e.g. legacy
-            // numeric years) via toString, mirroring the rest of the screen.
-            final year = doc.data()?['academicYearGraduated']?.toString();
-            final key = (year == null || year.isEmpty) ? null : year;
-            groups.putIfAbsent(key, () => []).add(doc);
-          }
-
-          // Sort members alphabetically inside every group.
-          for (final entry in groups.entries) {
-            entry.value.sort((a, b) =>
-                (a.data()?['fullName']?.toString() ?? '')
-                    .toLowerCase()
-                    .compareTo((b.data()?['fullName']?.toString() ?? '')
-                        .toLowerCase()));
-          }
-
-          // Group keys: batches newest-first, unspecified always last.
-          final batchKeys = groups.keys
-              .whereType<String>()
-              .toList()
-            ..sort((a, b) => b.compareTo(a));
-          final hasUnspecified = groups.containsKey(null);
-
-          // ---- Batch filter application ----
-          final visibleBatchKeys = _batchFilter == null
-              ? batchKeys
-              : (groups.containsKey(_batchFilter)
-                  ? [_batchFilter!]
-                  : <String>[]);
-          final visibleUnspecified =
-              _batchFilter == null || _batchFilter == unspecifiedBatch
-                  ? hasUnspecified
-                  : false;
-
-          final totalAlumni = alumniDocs.length;
-          final selectedBatchCount = _batchFilter == null
-              ? null
-              : (_batchFilter == unspecifiedBatch
-                  ? (groups[null]?.length ?? 0)
-                  : (groups[_batchFilter]?.length ?? 0));
-
-          final alumniListEmpty = isAlumniView &&
-              visibleBatchKeys.isEmpty &&
-              !visibleUnspecified &&
-              otherDocs.isEmpty;
-
-          final availableBatches = <String>[...batchKeys];
-          if (hasUnspecified) availableBatches.add(unspecifiedBatch);
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
               TextField(
                 decoration: InputDecoration(
-<<<<<<< HEAD
                   hintText:
                       'Search by name, academic year, course or employment...',
-=======
-                  hintText: 'Search name, email, course or academic year...',
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
                   prefixIcon: const Icon(Icons.search_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.button),
@@ -685,6 +594,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                             _pendingOnly = v;
                             _approvedOnly = false;
                             if (v) _roleFilter = null;
+                            _batchFilter = null;
                           }),
                         ),
                       ),
@@ -697,6 +607,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                             _approvedOnly = v;
                             _pendingOnly = false;
                             if (v) _roleFilter = 'alumni';
+                            _batchFilter = null;
                           }),
                         ),
                       ),
@@ -712,191 +623,55 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           onSelected: (_) => setState(() {
                             _roleFilter = entry.key;
                             _pendingOnly = false;
+                            _batchFilter = null;
                           }),
                         ),
                       ),
-                    if (alumniScoped.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: const Text('All Batches'),
-                          selected: _batchFilter == null,
-                          onSelected: (_) =>
-                              setState(() => _batchFilter = null),
-                        ),
-                      ),
-                      for (final batch in sortedBatches)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label:
-                                Text(graduationBatchInfo(batch).$2),
-                            selected: _batchFilter == batch,
-                            onSelected: (_) =>
-                                setState(() => _batchFilter = batch),
-                          ),
-                        ),
-                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-<<<<<<< HEAD
-              if (alumniScoped.isNotEmpty)
-                _buildAlumniSections(alumniMatch, sortedBatches)
-              else if (adminMatch.isEmpty)
-                Text('0 users',
-=======
-
-              // ---- Alumni grouped by graduation batch ----
-              if (isAlumniView) ...[
-                DashboardMetricGrid(
-                  metrics: [
-                    DashboardMetric(
-                      'Total Alumni',
-                      '$totalAlumni',
-                      Icons.school_outlined,
-                      AppColors.primaryBlue,
+              if (alumniScoped.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Filter by batch',
+                    prefixIcon: const Icon(Icons.school_rounded, size: 20),
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.button),
                     ),
-                    DashboardMetric(
-                      _batchFilter == null
-                          ? 'Selected Batch'
-                          : _batchFilter == unspecifiedBatch
-                              ? unspecifiedBatch
-                              : 'Class of $_batchFilter',
-                      selectedBatchCount == null
-                          ? '—'
-                          : '$selectedBatchCount',
-                      Icons.calendar_month_outlined,
-                      selectedBatchCount == null
-                          ? AppColors.textMuted
-                          : AppColors.success,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Batch filter chips
-                if (availableBatches.isNotEmpty)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: const Text('All Batches'),
-                            selected: _batchFilter == null,
-                            onSelected: (_) =>
-                                setState(() => _batchFilter = null),
-                          ),
+                  ),
+                  isEmpty: _batchFilter == null,
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _batchFilter ?? _allBatches,
+                      isExpanded: true,
+                      isDense: true,
+                      items: [
+                        const DropdownMenuItem(
+                          value: _allBatches,
+                          child: Text('All Batches'),
                         ),
-                        for (final batch in availableBatches)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(
-                                  '$batch (${groups[batch == unspecifiedBatch ? null : batch]?.length ?? 0})'),
-                              selected: _batchFilter == batch,
-                              onSelected: (_) =>
-                                  setState(() => _batchFilter = batch),
+                        for (final batch in sortedBatches)
+                          DropdownMenuItem(
+                            value: batch,
+                            child: Text(
+                              graduationBatchInfo(batch).$2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                       ],
+                      onChanged: (v) => setState(
+                          () => _batchFilter = v == _allBatches ? null : v),
                     ),
                   ),
-                const SizedBox(height: AppSpacing.md),
-
-                if (alumniListEmpty)
-                  const EmptyStateWidget(
-                    icon: Icons.school_rounded,
-                    title: 'No alumni found',
-                    message:
-                        'No alumni found for this graduation batch.',
-                  )
-                else ...[
-                  for (final batchKey in visibleBatchKeys)
-                    _BatchSection(
-                      title: batchKey,
-                      count: groups[batchKey]!.length,
-                      docs: groups[batchKey]!,
-                      isAdmin: isAdmin,
-                      canVerify: widget.canVerify,
-                      onEdit: _editUser,
-                      onVerify: _toggleVerified,
-                      onToggleApproved: _toggleApproved,
-                      onDelete: _deleteUser,
-                    ),
-                  if (visibleUnspecified)
-                    _BatchSection(
-                      title: unspecifiedBatch,
-                      count: groups[null]!.length,
-                      docs: groups[null]!,
-                      isAdmin: isAdmin,
-                      canVerify: widget.canVerify,
-                      onEdit: _editUser,
-                      onVerify: _toggleVerified,
-                      onToggleApproved: _toggleApproved,
-                      onDelete: _deleteUser,
-                    ),
-                  if (visibleBatchKeys.isEmpty &&
-                      !visibleUnspecified &&
-                      _batchFilter != null)
-                    const EmptyStateWidget(
-                      icon: Icons.school_rounded,
-                      title: 'No alumni found',
-                      message:
-                          'No alumni found for this graduation batch.',
-                    ),
-                ],
-
-                if (otherDocs.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  _BatchSection(
-                    title: 'Other Users',
-                    count: otherDocs.length,
-                    docs: otherDocs,
-                    isAdmin: isAdmin,
-                    canVerify: widget.canVerify,
-                    onEdit: _editUser,
-                    onVerify: _toggleVerified,
-                    onToggleApproved: _toggleApproved,
-                    onDelete: _deleteUser,
-                    noun: 'Users',
-                  ),
-                ],
-              ]
-
-              // ---- Non-alumni role views keep the existing layout ----
-              else if (MediaQuery.sizeOf(context).width >= 900 &&
-                  filtered.isNotEmpty)
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: PaginatedDataTable(
-                    header: Text('${filtered.length} Users Registered'),
-                    rowsPerPage: (filtered.length < 10) ? filtered.length : 10,
-                    columns: const [
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Email')),
-                      DataColumn(label: Text('Role')),
-                      DataColumn(label: Text('Course / Batch')),
-                      DataColumn(label: Text('Verification')),
-                      DataColumn(label: Text('Actions')),
-                    ],
-                    source: _UserDataTableSource(
-                      docs: filtered,
-                      isAdmin: isAdmin,
-                      canVerify: widget.canVerify,
-                      onEdit: _editUser,
-                      onVerify: _toggleVerified,
-                      onToggleApproved: _toggleApproved,
-                      onDelete: _deleteUser,
-                    ),
-                  ),
-                )
-              else ...[
-                Text('${filtered.length} users',
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+if (alumniScoped.isNotEmpty)
+                _buildAlumniSections(alumniMatch, sortedBatches)
+              else if (adminMatch.isEmpty)
+                Text('0 users',
                     style: Theme.of(context).textTheme.bodySmall),
               if (adminMatch.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -957,88 +732,6 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   }
 }
 
-/// An always-expanded section of alumni sharing one graduation batch
-/// (or the "Academic Year Not Specified" / "Other Users" catch-alls).
-/// Reuses the existing [_UserCard] styling — no accordions.
-class _BatchSection extends StatelessWidget {
-  final String title;
-  final int count;
-  final List<DocumentSnapshot<Map<String, dynamic>>> docs;
-  final bool isAdmin;
-  final bool canVerify;
-  final void Function(DocumentSnapshot<Map<String, dynamic>>) onEdit;
-  final void Function(DocumentSnapshot<Map<String, dynamic>>) onVerify;
-  final void Function(DocumentSnapshot<Map<String, dynamic>>) onToggleApproved;
-  final void Function(DocumentSnapshot<Map<String, dynamic>>) onDelete;
-
-  /// Noun used in the header count, e.g. 'Alumni' or 'Users'. Defaults to
-  /// the alumni label; the "Other Users" catch-all overrides it.
-  final String noun;
-
-  const _BatchSection({
-    required this.title,
-    required this.count,
-    required this.docs,
-    required this.isAdmin,
-    required this.canVerify,
-    required this.onEdit,
-    required this.onVerify,
-    required this.onToggleApproved,
-    required this.onDelete,
-    this.noun = 'Alumni',
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 6, bottom: 8),
-          child: Row(
-            children: [
-              Icon(
-                title == _UserManagementScreenState.unspecifiedBatch
-                    ? Icons.help_outline_rounded
-                    : Icons.school_rounded,
-                size: 17,
-                color: AppColors.primaryBlue,
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  '$title ($count ${_countNoun(count)})',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        ...docs.map((doc) => _UserCard(
-              doc: doc,
-              isAdmin: isAdmin,
-              canVerify: canVerify,
-              onEdit: () => onEdit(doc),
-              onVerify: canVerify ? () => onVerify(doc) : null,
-              onToggleApproved: isAdmin ? () => onToggleApproved(doc) : null,
-              onDelete: isAdmin ? () => onDelete(doc) : null,
-            )),
-        const SizedBox(height: AppSpacing.md),
-      ],
-    );
-  }
-
-  String _countNoun(int count) {
-    if (noun == 'Alumni') return count == 1 ? 'Alumnus' : 'Alumni';
-    return count == 1 ? 'User' : 'Users';
-  }
-}
-
 class _UserDataTableSource extends DataTableSource {
   final List<DocumentSnapshot<Map<String, dynamic>>> docs;
   final bool isAdmin;
@@ -1068,7 +761,7 @@ class _UserDataTableSource extends DataTableSource {
     final name = data['fullName']?.toString() ?? 'Unknown';
     final email = data['email']?.toString() ?? '';
     final role = data['role']?.toString() ?? 'alumni';
-    final course = data['course']?.toString() ?? '—';
+    final course = data['course']?.toString() ?? AppStrings.defaultCourse;
     final year = data['graduationYear']?.toString() ?? '';
     final verified = data['isVerified'] == true;
     final approved = data['approved'] == true;
@@ -1261,13 +954,9 @@ class _UserCard extends StatelessWidget {
         subtitle: Text(
           '${data['email'] ?? ''}\n'
           '${role.toUpperCase()} · ${verified ? 'Verified' : 'Unverified'} · '
-<<<<<<< HEAD
-          '${data['course']?.toString() ?? 'No course'} · '
+          '${data['course']?.toString() ?? AppStrings.defaultCourse} · '
+          '${data['academicYearGraduated'] != null ? '${data['academicYearGraduated']} · ' : ''}'
           '${EmploymentStatusX.fromString(data['employmentStatus']?.toString() ?? '').label}',
-=======
-          '${data['course']?.toString() ?? 'No course'}'
-          '${data['academicYearGraduated'] != null ? ' · ${data['academicYearGraduated']}' : ''}',
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
           style: Theme.of(context).textTheme.bodySmall,
         ),
         onTap: onEdit,
@@ -1357,6 +1046,7 @@ class _AddUserDialog extends StatefulWidget {
 }
 
 class _AddUserDialogState extends State<_AddUserDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -1371,13 +1061,9 @@ class _AddUserDialogState extends State<_AddUserDialog> {
   }
 
   void _submit() {
-    final name = _name.text.trim();
-    final email = _email.text.trim();
-    final password = _password.text;
-    if (name.isEmpty || !email.contains('@')) return;
-    if (password.length < 6) return;
+    if (!_formKey.currentState!.validate()) return;
     Navigator.pop(
-        context, _NewUser(name, email, password, _role));
+        context, _NewUser(_name.text.trim(), _email.text.trim(), _password.text, _role));
   }
 
   @override
@@ -1385,37 +1071,54 @@ class _AddUserDialogState extends State<_AddUserDialog> {
     return AlertDialog(
       title: const Text('Add User'),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Full name'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email address'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _password,
-              obscureText: true,
-              decoration: const InputDecoration(
-                  labelText: 'Temporary password (min 6 characters)'),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<UserRole>(
-              initialValue: _role,
-              decoration: const InputDecoration(labelText: 'Role'),
-              items: [
-                for (final role in UserRole.values)
-                  DropdownMenuItem(value: role, child: Text(role.label)),
-              ],
-              onChanged: (v) => setState(() => _role = v ?? UserRole.alumni),
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(labelText: 'Full name'),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Full name is required.' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'Email address'),
+                validator: (v) {
+                  final val = v?.trim() ?? '';
+                  if (val.isEmpty) return 'Email is required.';
+                  if (!val.contains('@') || !val.contains('.')) {
+                    return 'Enter a valid email address.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _password,
+                obscureText: true,
+                decoration: const InputDecoration(
+                    labelText: 'Temporary password (min 6 characters)'),
+                validator: (v) => (v == null || v.length < 6)
+                    ? 'Password must be at least 6 characters.'
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<UserRole>(
+                initialValue: _role,
+                decoration: const InputDecoration(labelText: 'Role'),
+                items: [
+                  for (final role in UserRole.values)
+                    DropdownMenuItem(value: role, child: Text(role.label)),
+                ],
+                onChanged: (v) => setState(() => _role = v ?? UserRole.alumni),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -1451,12 +1154,28 @@ class _EditUserDialogState extends State<_EditUserDialog> {
   late bool _approved;
   String? _academicYear;
 
+  /// The stored academic year (e.g. "2025-2026") mapped onto the dropdown's
+  /// option list (en-dashes, e.g. "2025–2026"), so an existing value is
+  /// shown instead of the empty "Select Academic Year" placeholder.
+  String? get _academicYearDropdownValue {
+    final raw = _academicYear?.trim().replaceAll('–', '-');
+    if (raw == null || raw.isEmpty) return null;
+    final normalized = raw.replaceAll('-', '–').toLowerCase();
+    for (final option in AcademicYearUtils.options()) {
+      if (option.toLowerCase() == normalized) return option;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
     final data = widget.doc.data() ?? {};
     _name = TextEditingController(text: data['fullName']?.toString() ?? '');
-    _course = TextEditingController(text: data['course']?.toString() ?? '');
+    _course = TextEditingController(
+        text: data['course']?.toString().trim().isNotEmpty == true
+            ? data['course']!.toString()
+            : AppStrings.defaultCourse);
     _gradYear = TextEditingController(
         text: data['graduationYear']?.toString() ?? '');
     _role = data['role']?.toString() ?? 'alumni';
@@ -1477,7 +1196,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
   Future<void> _save() async {
     final changes = <String, dynamic>{
       'fullName': _name.text.trim(),
-      'course': _course.text.trim().isEmpty ? null : _course.text.trim(),
+      'course': _course.text.trim().isEmpty ? AppStrings.defaultCourse : _course.text.trim(),
       'graduationYear':
           int.tryParse(_gradYear.text.trim()),
       'academicYearGraduated':
@@ -1524,9 +1243,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
                     const InputDecoration(labelText: 'Graduation year')),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              initialValue: AcademicYearUtils.isValid(_academicYear)
-                  ? _academicYear
-                  : null,
+              initialValue: _academicYearDropdownValue,
               decoration: const InputDecoration(
                 labelText: 'Academic Year Graduated',
                 hintText: 'Select Academic Year',
@@ -1540,7 +1257,8 @@ class _EditUserDialogState extends State<_EditUserDialog> {
                   child: Text('Not specified'),
                 ),
               ],
-              onChanged: (v) => setState(() => _academicYear = v),
+              onChanged: (v) =>
+                  setState(() => _academicYear = v?.replaceAll('–', '-')),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(

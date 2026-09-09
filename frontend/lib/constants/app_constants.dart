@@ -85,6 +85,10 @@ class AppStrings {
   static const String appName = 'GradTrack';
   static const String universityName = 'Bohol Island State University';
   static const String tagline = 'Empowering Graduates. Connecting Futures.';
+  static const String defaultCourse = 'BS Computer Science';
+
+  /// Build tag shown on the login screen so deployments/caches are verifiable.
+  static const String buildId = 'b-2026-0909-01';
 }
 
 /// Firestore collection names, centralized to avoid typos across the app.

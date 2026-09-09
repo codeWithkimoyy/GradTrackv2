@@ -69,12 +69,18 @@ service cloud.firestore {
       allow read: if isAdmin() ||
                     (isSignedIn() && request.auth.uid == userId);
       allow create: if isAdmin() ||
-                    (canOwnCreate() &&
+                    (isSignedIn() &&
+                      request.auth.uid == userId &&
                       request.resource.data.role == 'alumni');
       allow update: if isAdmin() ||
-                    (canOwnUpdate() &&
+                    (isSignedIn() &&
+                     request.auth.uid == userId &&
                      request.resource.data.role == resource.data.role &&
-                     !request.resource.data.keys().hasAny(['disabled', 'role']));
+                     !request.resource.data
+                          .diff(resource.data)
+                          .affectedKeys()
+                          .hasAny(['disabled', 'role',
+                                   'approved', 'isVerified']));
       allow delete: if isAdmin();
     }
 

@@ -128,7 +128,8 @@ class _AlumnusSection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final name = user?['fullName']?.toString() ?? 'Unknown alumnus';
     final email = user?['email']?.toString() ?? '';
-    final course = user?['course']?.toString() ?? '';
+    final rawCourse = user?['course']?.toString() ?? '';
+    final course = rawCourse.trim().isEmpty ? AppStrings.defaultCourse : rawCourse;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -2,15 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-<<<<<<< HEAD
-enum UserRole { admin, alumni }
-=======
-/// Library-scope sentinel distinguishing an omitted copyWith argument
-/// from an explicitly provided null (which clears the field).
 const Object _unset = Object();
 
-enum UserRole { admin, coordinator, alumni, guest }
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
+enum UserRole { admin, alumni }
 
 extension UserRoleX on UserRole {
   String get label => switch (this) {
@@ -140,7 +134,6 @@ class UserModel {
   final String? course;
   final String? academicYearGraduated;
   final String? section;
-  final String? academicYearGraduated;
   final String? biography;
   final SocialLinks socialLinks;
   final EmploymentStatus employmentStatus;
@@ -168,7 +161,6 @@ class UserModel {
     this.course,
     this.academicYearGraduated,
     this.section,
-    this.academicYearGraduated,
     this.biography,
     this.socialLinks = const SocialLinks(),
     this.employmentStatus = EmploymentStatus.unemployed,
@@ -199,7 +191,6 @@ class UserModel {
       course: map['course'],
       academicYearGraduated: map['academicYearGraduated'],
       section: map['section'],
-      academicYearGraduated: map['academicYearGraduated'],
       biography: map['biography'],
       socialLinks: SocialLinks.fromMap(map['socialLinks']),
       employmentStatus:
@@ -232,7 +223,6 @@ class UserModel {
         'course': course,
         'academicYearGraduated': academicYearGraduated,
         'section': section,
-        'academicYearGraduated': academicYearGraduated,
         'biography': biography,
         'socialLinks': socialLinks.toMap(),
         'employmentStatus': employmentStatus.name,
@@ -263,7 +253,6 @@ class UserModel {
     String? course,
     Object? academicYearGraduated = _unset,
     String? section,
-    String? academicYearGraduated,
     String? biography,
     SocialLinks? socialLinks,
     EmploymentStatus? employmentStatus,
@@ -290,8 +279,6 @@ class UserModel {
           ? this.academicYearGraduated
           : academicYearGraduated as String?,
       section: section ?? this.section,
-      academicYearGraduated:
-          academicYearGraduated ?? this.academicYearGraduated,
       biography: biography ?? this.biography,
       socialLinks: socialLinks ?? this.socialLinks,
       employmentStatus: employmentStatus ?? this.employmentStatus,

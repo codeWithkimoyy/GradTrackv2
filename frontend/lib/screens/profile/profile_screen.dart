@@ -172,19 +172,18 @@ class ProfileScreen extends ConsumerWidget {
               _InfoTile(
                   icon: Icons.school_outlined,
                   label: 'Degree Program / Course',
-                  value: user.course ?? 'Not set'),
+                  value: user.course ?? AppStrings.defaultCourse),
               _InfoTile(
                   icon: Icons.school_rounded,
                   label: 'Academic Year Graduated',
-                  value: user.academicYearGraduated ?? 'Not set'),
+                  value: (user.academicYearGraduated?.trim().isNotEmpty ??
+                          false)
+                      ? 'S.Y. ${displayAcademicYear(user.academicYearGraduated)}'
+                      : 'Not set'),
               _InfoTile(
                   icon: Icons.calendar_today_outlined,
                   label: 'Graduation Year',
                   value: user.graduationYear?.toString() ?? 'Not set'),
-              _InfoTile(
-                  icon: Icons.school_rounded,
-                  label: 'Academic Year Graduated',
-                  value: displayAcademicYear(user.academicYearGraduated)),
               _InfoTile(
                   icon: Icons.phone_outlined,
                   label: 'Contact Phone',

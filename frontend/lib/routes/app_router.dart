@@ -123,11 +123,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             return UserManagementScreen(
               roleFilter: role,
               canVerify: role == null || role == 'alumni',
-<<<<<<< HEAD
               approvedOnly: state.uri.queryParameters['approved'] == '1',
-=======
               initialPendingOnly: pendingOnly,
->>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
             );
           }),
           GoRoute(path: AppRoutes.staffUserEmployment, builder: (context, state) {
