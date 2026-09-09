@@ -10,19 +10,10 @@ final isAdminProvider = Provider<bool>((ref) {
   return ref.watch(currentUserRoleProvider) == UserRole.admin;
 });
 
-final isCoordinatorProvider = Provider<bool>((ref) {
-  return ref.watch(currentUserRoleProvider) == UserRole.coordinator;
-});
-
 final isStaffProvider = Provider<bool>((ref) {
-  final role = ref.watch(currentUserRoleProvider);
-  return role == UserRole.admin || role == UserRole.coordinator;
+  return ref.watch(currentUserRoleProvider) == UserRole.admin;
 });
 
 final isAlumniProvider = Provider<bool>((ref) {
   return ref.watch(currentUserRoleProvider) == UserRole.alumni;
-});
-
-final isGuestProvider = Provider<bool>((ref) {
-  return ref.watch(currentUserRoleProvider) == UserRole.guest;
 });

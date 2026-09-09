@@ -17,18 +17,49 @@ import 'routes/app_router.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: 'assets/.env');
+  try {
+    await dotenv.load(fileName: 'assets/.env');
+  } catch (_) {
+    try {
+      await dotenv.load(fileName: 'assets/.env.example');
+    } catch (_) {
+      // Gracefully continue even if .env is missing
+    }
+  }
   final firebaseInitialized = DefaultFirebaseOptions.isConfigured
       ? await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
-        ).then((_) => true).catchError((_) => false)
+        ).then((_) => true).timeout(
+          const Duration(seconds: 4),
+          onTimeout: () => false,
+        ).catchError((_) => false)
       : false;
 
   if (firebaseInitialized && kIsWeb) {
-    FirebaseFirestore.instance.settings = const Settings(
-      webExperimentalForceLongPolling: true,
-    );
+    try {
+      FirebaseFirestore.instance.settings = const Settings(
+        webExperimentalForceLongPolling: true,
+      );
+    } catch (_) {}
   }
+
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: const Color(0xFF081B33),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Text(
+              'Application Error:\n\n${details.exceptionAsString()}',
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  };
 
   if (!kDebugMode && firebaseInitialized && !kIsWeb) {
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;

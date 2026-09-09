@@ -1,14 +1,14 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../constants/app_constants.dart';
 import '../../routes/app_router.dart';
 
-const _deepNavy = Color(0xFF081B33);
-const _accentGold = Color(0xFFF59E0B);
+const _deepNavy = Color(0xFF071E4A);
 
 class _Feature {
   const _Feature(this.icon, this.title);
@@ -39,39 +39,37 @@ const _pages = [
     titlePrefix: 'Welcome to',
     titleHighlight: 'GradTrack',
     subtitle:
-        'Stay connected with Bohol Island State University beyond graduation. Manage your graduate profile, employment records, certifications, and alumni engagement - all in one secure platform.',
+        'Official alumni portal of Bohol Island State University. Verify your graduate identity and stay connected with your alma mater.',
     features: [
-      _Feature(Icons.person_outline_rounded, 'Graduate Profile'),
-      _Feature(Icons.work_outline_rounded, 'Employment Records'),
-      _Feature(Icons.workspace_premium_outlined, 'Certificates'),
-      _Feature(Icons.cloud_done_outlined, 'Cloud Sync'),
+      _Feature(Icons.verified_user_rounded, 'Verified Alumni'),
+      _Feature(Icons.school_rounded, 'Graduate Identity'),
+      _Feature(Icons.cloud_done_rounded, 'University Sync'),
+      _Feature(Icons.groups_rounded, 'Campus Network'),
     ],
   ),
   _PageData(
     image: 'assets/images/Splash2.jpeg',
     titlePrefix: 'Track Your',
-    titleHighlight: 'Career Journey',
+    titleHighlight: 'Career Path',
     subtitle:
-        'Monitor your employment status, upload certifications, showcase achievements, and build your professional portfolio throughout your career.',
+        'Record your employment timeline, archive verified certificates, and showcase career progression in one place.',
     features: [
-      _Feature(Icons.person_rounded, 'Employed'),
-      _Feature(Icons.trending_up_rounded, 'Career Growth'),
-      _Feature(Icons.emoji_events_rounded, 'Promotion'),
-      _Feature(Icons.business_center_outlined, 'Experience'),
-      _Feature(Icons.verified_outlined, 'Certifications'),
-      _Feature(Icons.star_rounded, 'Skills'),
+      _Feature(Icons.work_rounded, 'Employment Timeline'),
+      _Feature(Icons.workspace_premium_rounded, 'Certifications'),
+      _Feature(Icons.trending_up_rounded, 'Career Milestones'),
+      _Feature(Icons.stars_rounded, 'Skill Portfolios'),
     ],
   ),
   _PageData(
     image: 'assets/images/Splash3.jpeg',
-    titlePrefix: 'Join the BISU',
-    titleHighlight: 'Alumni Community',
+    titlePrefix: 'Empower Future',
+    titleHighlight: 'Graduates',
     subtitle:
-        'Receive university announcements, answer graduate tracer surveys, discover career opportunities, reconnect with classmates, and stay engaged with the BISU alumni network.',
+        'Participate in institutional tracer surveys, unlock job opportunities, and engage with campus alumni initiatives.',
     features: [
       _Feature(Icons.event_outlined, 'Upcoming Events'),
       _Feature(Icons.campaign_outlined, 'Announcements'),
-      _Feature(Icons.work_outline_rounded, 'Job Opportunities'),
+      _Feature(Icons.work_outline_rounded, 'Employment'),
       _Feature(Icons.fact_check_outlined, 'Tracer Survey'),
       _Feature(Icons.groups_outlined, 'Alumni Activities'),
       _Feature(Icons.groups_outlined, 'Community'),
@@ -194,66 +192,29 @@ class _CrossfadeBackground extends StatelessWidget {
           ),
           child: ColoredBox(
             key: ValueKey(page.image),
-            color: const Color(0xFF1670D8),
+            color: _deepNavy,
             child: TweenAnimationBuilder<double>(
               tween: Tween(begin: 1.035, end: 1),
               duration: const Duration(milliseconds: 420),
               curve: Curves.easeInOutCubic,
               builder: (context, scale, child) => Transform.scale(
                 scale: scale,
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: child,
               ),
-              child: pageIndex == 0
-                  ? Image.asset(
-                      page.image,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      filterQuality: FilterQuality.high,
-                    )
-                  : Align(
-                      alignment: Alignment.topCenter,
-                      child: FractionallySizedBox(
-                        widthFactor: 1,
-                        heightFactor: .58,
-                        child: Image.asset(
-                          page.image,
-                          fit: BoxFit.fill,
-                          filterQuality: FilterQuality.high,
-                        ),
-                      ),
-                    ),
+              child: SizedBox.expand(
+                child: Image.asset(
+                  page.image,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                ),
+              ),
             ),
           ),
         ),
         const DecoratedBox(
-          decoration: BoxDecoration(color: Color(0x26030C1C)),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0, .30, .48, .72, 1],
-              colors: [
-                Color(0x08071A35),
-                Color(0x180A66FF),
-                Color(0xB70A4EBA),
-                Color(0xEC1262D6),
-                Color(0xFF69A4EE),
-              ],
-            ),
-          ),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment.center,
-              radius: .95,
-              colors: [Colors.transparent, Color(0x78020A17)],
-              stops: [.48, 1],
-            ),
-          ),
+          decoration: BoxDecoration(color: Color(0xCC071E4A)),
         ),
       ],
     );
@@ -285,8 +246,7 @@ class _FixedOnboardingLayout extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxHeight < 700;
-              final titleSize = compact ? 34.0 : 40.0;
-              final isWelcome = pageIndex == 0;
+              final titleSize = compact ? 32.0 : 38.0;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -319,40 +279,36 @@ class _FixedOnboardingLayout extends StatelessWidget {
                           TextSpan(text: '${page.titlePrefix}\n'),
                           TextSpan(
                             text: page.titleHighlight,
-                            style: const TextStyle(color: _accentGold),
+                            style: TextStyle(
+                              color: AppColors.gold,
+                              fontFamily: GoogleFonts.poppins().fontFamily,
+                            ),
                           ),
                         ],
                       ),
                       maxLines: 2,
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: titleSize,
-                        height: .98,
+                        height: 1.02,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 0,
-                        shadows: const [
-                          Shadow(color: Color(0x73000000), blurRadius: 18),
-                        ],
+                        letterSpacing: -0.5,
                       ),
                     ),
                   ),
-                  SizedBox(height: compact ? 30 : 50),
+                  SizedBox(height: compact ? 20 : 36),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
                     child: Text(
                       page.subtitle,
                       key: ValueKey(page.subtitle),
-                      maxLines: 5,
+                      maxLines: compact ? 4 : 5,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: .92),
-                        fontSize: compact ? 13.5 : 15.5,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: .1,
-                        shadows: const [
-                          Shadow(color: Color(0x55000000), blurRadius: 8),
-                        ],
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withValues(alpha: .90),
+                        fontSize: compact ? 13.0 : 14.5,
+                        height: 1.45,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -361,20 +317,18 @@ class _FixedOnboardingLayout extends StatelessWidget {
                     fit: FlexFit.loose,
                     child: Padding(
                       padding: EdgeInsets.only(
-                        top: compact ? 20 : 28,
+                        top: compact ? 16 : 24,
                         bottom: compact ? 10 : 14,
                       ),
                       child: Align(
                         alignment: Alignment.topCenter,
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxHeight: isWelcome
-                                ? (compact ? 112 : 132)
-                                : (compact ? 210 : 242),
+                            maxHeight: compact ? 112 : 132,
                           ),
                           child: _MorphingFeatureGrid(
                             features: page.features,
-                            pageIndex: pageIndex,
+                            compact: compact,
                           ),
                         ),
                       ),
@@ -384,13 +338,11 @@ class _FixedOnboardingLayout extends StatelessWidget {
                     height: 48,
                     child: Row(
                       children: [
-                        Expanded(
-                          child: _PageIndicator(
-                            index: pageIndex,
-                            onSelected: onPageSelected,
-                          ),
+                        _PageIndicator(
+                          index: pageIndex,
+                          onSelected: onPageSelected,
                         ),
-                        const SizedBox(width: 18),
+                        const Spacer(),
                         Flexible(
                           child: _NextButton(
                             isLast: pageIndex == _pages.length - 1,
@@ -415,14 +367,9 @@ class _GradTrackLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 126,
       height: 54,
-      decoration: const BoxDecoration(
-        boxShadow: [
-          BoxShadow(color: Color(0x520A66FF), blurRadius: 22, spreadRadius: 1),
-        ],
-      ),
       child: Image.asset(
         'assets/images/logo_full.png',
         fit: BoxFit.contain,
@@ -442,18 +389,16 @@ class _SkipButton extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: _deepNavy.withValues(alpha: .28),
-        minimumSize: const Size(64, 42),
-        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
-          side: BorderSide(color: Colors.white.withValues(alpha: .25)),
-        ),
+        foregroundColor: Colors.white70,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       ),
-      child: const Text(
+      child: Text(
         'Skip',
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.white70,
+        ),
       ),
     );
   }
@@ -462,45 +407,39 @@ class _SkipButton extends StatelessWidget {
 class _MorphingFeatureGrid extends StatelessWidget {
   const _MorphingFeatureGrid({
     required this.features,
-    required this.pageIndex,
+    this.compact = false,
   });
 
   final List<_Feature> features;
-  final int pageIndex;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const spacing = 10.0;
-        final columns = pageIndex == 0 ? 4 : 3;
-        final rows = pageIndex == 0 ? 1 : 2;
-        final cardWidth =
-            (constraints.maxWidth - spacing * (columns - 1)) / columns;
-        final cardHeight =
-            (constraints.maxHeight - spacing * (rows - 1)) / rows;
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: List.generate(features.length, (slot) {
-            final feature = features[slot];
-            return SizedBox(
-              width: cardWidth,
-              height: cardHeight,
+    final spacing = compact ? 6.0 : 8.0;
+    return Row(
+      children: List.generate(features.length, (slot) {
+        final feature = features[slot];
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: slot == features.length - 1 ? 0 : spacing,
+            ),
+            child: SizedBox(
+              height: double.infinity,
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
+                duration: const Duration(milliseconds: 350),
                 switchInCurve: Curves.easeInOutCubic,
                 switchOutCurve: Curves.easeInOutCubic,
                 child: _FeatureCard(
-                  key: ValueKey('feature-$slot'),
+                  key: ValueKey('feature-$slot-${feature.title}'),
                   feature: feature,
-                  darkLabel: pageIndex == 0,
+                  compact: compact,
                 ),
               ),
-            );
-          }),
+            ),
+          ),
         );
-      },
+      }),
     );
   }
 }
@@ -509,80 +448,63 @@ class _FeatureCard extends StatelessWidget {
   const _FeatureCard({
     super.key,
     required this.feature,
-    required this.darkLabel,
+    this.compact = false,
   });
 
   final _Feature feature;
-  final bool darkLabel;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: .28),
-                Colors.white.withValues(alpha: .12),
-              ],
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 4 : 6,
+        vertical: compact ? 8 : 10,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withValues(alpha: 0.14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            fit: FlexFit.loose,
+            child: Container(
+              width: compact ? 36 : 40,
+              height: compact ? 36 : 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryBlue.withValues(alpha: 0.20),
+              ),
+              child: Icon(
+                feature.icon,
+                color: Colors.white,
+                size: compact ? 20 : 24,
+              ),
             ),
-            border: Border.all(color: Colors.white.withValues(alpha: .24)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x3A001D52),
-                blurRadius: 22,
-                offset: Offset(0, 9),
-              ),
-            ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                fit: FlexFit.loose,
-                child: Container(
-                  width: 43,
-                  height: 43,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: .11),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x402563EB), blurRadius: 12),
-                    ],
-                  ),
-                  child: Icon(feature.icon, color: Colors.white, size: 27),
+          SizedBox(height: compact ? 6 : 8),
+          Expanded(
+            child: Center(
+              child: Text(
+                feature.title,
+                key: ValueKey(feature.title),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: compact ? 10.0 : 11.0,
+                  height: 1.2,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
                 ),
               ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 380),
-                  child: Text(
-                    feature.title,
-                    key: ValueKey(feature.title),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: darkLabel ? _deepNavy : Colors.white,
-                      fontSize: 11.5,
-                      height: 1.25,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: .1,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -597,28 +519,26 @@ class _PageIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(
         _pages.length,
-        (i) => Expanded(
-          child: GestureDetector(
+        (i) {
+          final isActive = i == index;
+          return GestureDetector(
             onTap: () => onSelected(i),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
+              duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOutCubic,
-              height: 4,
-              margin: EdgeInsets.only(right: i == _pages.length - 1 ? 0 : 7),
+              width: isActive ? 28 : 8,
+              height: 7,
+              margin: EdgeInsets.only(right: i == _pages.length - 1 ? 0 : 6),
               decoration: BoxDecoration(
-                color: i <= index
-                    ? _accentGold
-                    : Colors.white.withValues(alpha: .23),
-                borderRadius: BorderRadius.circular(3),
-                boxShadow: i == index
-                    ? const [BoxShadow(color: _accentGold, blurRadius: 10)]
-                    : null,
+                color: isActive ? AppColors.primaryBlue : Colors.white24,
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -635,27 +555,40 @@ class _NextButton extends StatelessWidget {
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: _accentGold,
-        foregroundColor: _deepNavy,
-        minimumSize: Size(isLast ? 132 : 58, 54),
-        padding: EdgeInsets.symmetric(horizontal: isLast ? 20 : 16),
-        elevation: 10,
-        shadowColor: _accentGold.withValues(alpha: .32),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(27)),
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(0, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isLast) ...[
-              const Text(
-                'Get started',
-                style: TextStyle(fontWeight: FontWeight.w800),
+            Text(
+              isLast ? 'Get Started' : 'Continue',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
               ),
-              const SizedBox(width: 8),
-            ],
-            const Icon(Icons.arrow_forward_rounded, size: 22),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.20),
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                size: 15,
+                color: Colors.white,
+              ),
+            ),
           ],
         ),
       ),
@@ -675,7 +608,7 @@ class _OnboardingAtmospherePainter extends CustomPainter {
       final y =
           ((i * 113 - progress * 38) % size.height + size.height) % size.height;
       final gold = i % 6 == 0;
-      final color = gold ? _accentGold : const Color(0xFF9CCBFF);
+      final color = gold ? AppColors.gold : const Color(0xFF9CCBFF);
       canvas.drawCircle(
         Offset(x, y),
         gold ? 2.2 : 1.4,

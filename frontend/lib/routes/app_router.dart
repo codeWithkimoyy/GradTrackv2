@@ -4,11 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../dashboards/admin_dashboard.dart';
 import '../dashboards/alumni_dashboard.dart';
-import '../dashboards/coordinator_dashboard.dart';
-import '../dashboards/guest_dashboard.dart';
 import '../models/user_model.dart';
 import '../providers/auth_providers.dart';
-import '../screens/about/about_screen.dart';
 import '../screens/alumni/notifications_screen.dart';
 import '../screens/alumni/survey_screen.dart';
 import '../screens/analytics/analytics_screen.dart';
@@ -26,6 +23,10 @@ import '../screens/employment/employment_history_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shared/collection_list_screen.dart';
+import '../screens/staff/audit_log_screen.dart';
+import '../screens/staff/employment_history_screen.dart';
+import '../screens/staff/reports_screen.dart';
+import '../screens/staff/user_employment_screen.dart';
 import '../screens/staff/user_management_screen.dart';
 
 class AppRoutes {
@@ -40,29 +41,23 @@ class AppRoutes {
   static const dashboardJobs = '/dashboard/jobs';
   static const dashboardDocuments = '/dashboard/documents';
   static const dashboardProfile = '/dashboard/profile';
-  static const about = '/about';
   static const pendingApproval = '/pending-approval';
 
-  static const guestDashboard = '/guest/dashboard';
   static const alumniDashboard = '/alumni/dashboard';
   static const alumniSurvey = '/alumni/survey';
   static const alumniJobs = '/alumni/jobs';
   static const alumniNotifications = '/alumni/notifications';
   static const alumniProfile = '/alumni/profile';
   static const alumniDocuments = '/alumni/documents';
-  static const coordinatorDashboard = '/coordinator/dashboard';
-  static const coordinatorAlumni = '/coordinator/alumni';
-  static const coordinatorSurveys = '/coordinator/surveys';
-  static const coordinatorReports = '/coordinator/reports';
-  static const coordinatorEvents = '/coordinator/events';
-  static const coordinatorAnalytics = '/coordinator/analytics';
   static const adminDashboard = '/admin/dashboard';
   static const adminUsers = '/admin/users';
   static const adminAnalytics = '/admin/analytics';
   static const adminAuditLogs = '/admin/audit-logs';
+  static const adminEmploymentHistory = '/admin/employment-history';
   static const adminProfile = '/admin/profile';
 
   static const staffUsers = '/staff/users';
+  static const staffUserEmployment = '/staff/users/employment';
   static String collectionData(String key) => '/staff/data/$key';
   static const staffData = '/staff/data';
 
@@ -75,18 +70,30 @@ class AppRoutes {
 }
 
 String dashboardForRole(UserRole role) => switch (role) {
-      UserRole.guest => AppRoutes.guestDashboard,
       UserRole.alumni => AppRoutes.alumniDashboard,
-      UserRole.coordinator => AppRoutes.coordinatorDashboard,
       UserRole.admin => AppRoutes.adminDashboard,
     };
 
+class _RouterListenable extends ChangeNotifier {
+  _RouterListenable(Ref ref) {
+    ref.listen(authStateProvider, (_, __) => notifyListeners());
+    ref.listen(currentUserProfileProvider, (_, __) => notifyListeners());
+  }
+}
+
+final routerListenableProvider = Provider<_RouterListenable>((ref) {
+  return _RouterListenable(ref);
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final listenable = ref.watch(routerListenableProvider);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: listenable,
     redirect: (context, state) {
       final location = state.matchedLocation;
+      final authState = ref.read(authStateProvider);
       final profile = ref.read(currentUserProfileProvider).valueOrNull;
       return resolveRedirect(
         location: location,
@@ -102,7 +109,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
       GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterScreen()),
       GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
-      GoRoute(path: AppRoutes.about, builder: (_, __) => const AboutScreen()),
       GoRoute(
         path: AppRoutes.pendingApproval,
         builder: (_, __) => const PendingApprovalScreen(),
@@ -112,15 +118,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: AppRoutes.staffUsers, builder: (context, state) {
             final role = state.uri.queryParameters['role'];
+            final pendingOnly =
+                state.uri.queryParameters['pending'] == '1';
             return UserManagementScreen(
               roleFilter: role,
               canVerify: role == null || role == 'alumni',
+<<<<<<< HEAD
+              approvedOnly: state.uri.queryParameters['approved'] == '1',
+=======
+              initialPendingOnly: pendingOnly,
+>>>>>>> 912ab68eea4fd77971b7cda4789ea56cc9845bd6
             );
+          }),
+          GoRoute(path: AppRoutes.staffUserEmployment, builder: (context, state) {
+            final userId = state.uri.queryParameters['userId'] ?? '';
+            return UserEmploymentScreen(userId: userId);
           }),
           GoRoute(
             path: '${AppRoutes.staffData}/:key',
             builder: (context, state) {
               final key = state.pathParameters['key'] ?? '';
+              if (key == 'audit_logs') {
+                return const AuditLogScreen();
+              }
+              if (key == 'reports') {
+                return const ReportsScreen();
+              }
               final content = lookupCollection(key);
               if (content == null) {
                 return const _NotFoundScreen();
@@ -128,23 +151,17 @@ final routerProvider = Provider<GoRouter>((ref) {
               return CollectionListScreen(content: content);
             },
           ),
-          GoRoute(path: AppRoutes.guestDashboard, builder: (_, __) => const GuestDashboard()),
           GoRoute(path: AppRoutes.alumniDashboard, builder: (_, __) => const _AlumniDashboardRoute()),
           GoRoute(path: AppRoutes.alumniSurvey, builder: (_, __) => const SurveyScreen()),
           GoRoute(path: AppRoutes.alumniJobs, builder: (_, __) => CollectionListScreen(content: lookupCollection('jobs')!)),
           GoRoute(path: AppRoutes.alumniNotifications, builder: (_, __) => const NotificationsScreen()),
           GoRoute(path: AppRoutes.alumniProfile, builder: (_, __) => const ProfileScreen()),
           GoRoute(path: AppRoutes.alumniDocuments, builder: (_, __) => const CertificateGalleryScreen()),
-          GoRoute(path: AppRoutes.coordinatorDashboard, builder: (_, __) => const CoordinatorDashboard()),
-          GoRoute(path: AppRoutes.coordinatorAlumni, builder: (_, __) => const UserManagementScreen(roleFilter: 'alumni')),
-          GoRoute(path: AppRoutes.coordinatorSurveys, builder: (_, __) => CollectionListScreen(content: lookupCollection('surveys')!)),
-          GoRoute(path: AppRoutes.coordinatorReports, builder: (_, __) => CollectionListScreen(content: lookupCollection('reports')!)),
-          GoRoute(path: AppRoutes.coordinatorEvents, builder: (_, __) => CollectionListScreen(content: lookupCollection('events')!)),
-          GoRoute(path: AppRoutes.coordinatorAnalytics, builder: (_, __) => const AnalyticsScreen()),
           GoRoute(path: AppRoutes.adminDashboard, builder: (_, __) => const AdminDashboard()),
           GoRoute(path: AppRoutes.adminAnalytics, builder: (_, __) => const AnalyticsScreen(adminMode: true)),
+          GoRoute(path: AppRoutes.adminEmploymentHistory, builder: (_, __) => const EmploymentHistoryAdminScreen()),
           GoRoute(path: AppRoutes.adminUsers, builder: (_, __) => const UserManagementScreen()),
-          GoRoute(path: AppRoutes.adminAuditLogs, builder: (_, __) => CollectionListScreen(content: lookupCollection('audit_logs')!)),
+          GoRoute(path: AppRoutes.adminAuditLogs, builder: (_, __) => const AuditLogScreen()),
           GoRoute(path: AppRoutes.adminProfile, builder: (_, __) => const ProfileScreen()),
         ],
       ),
@@ -181,13 +198,18 @@ String? resolveRedirect({
   if (!loggedIn) return authRoutes.contains(location) ? null : AppRoutes.login;
   if (role == null) return location == AppRoutes.splash ? null : AppRoutes.splash;
 
-  if (!approved && role != UserRole.admin) {
+  // Approval is only enforced for alumni. Admins are credentialed staff
+  // accounts managed by the university, so they never wait.
+  if (!approved && role == UserRole.alumni) {
     return location == AppRoutes.pendingApproval
         ? null
         : AppRoutes.pendingApproval;
   }
 
   final home = dashboardForRole(role);
+  if ((approved || role == UserRole.admin) && location == AppRoutes.pendingApproval) {
+    return home;
+  }
   final legacy = <String, String>{
     AppRoutes.dashboard: home,
     AppRoutes.dashboardAlumni: role == UserRole.alumni ? AppRoutes.alumniDashboard : home,
@@ -208,12 +230,6 @@ String? resolveRedirect({
       collectionKey != null && lookupCollection(collectionKey) != null;
 
   final allowed = <UserRole, Set<String>>{
-      UserRole.guest: {
-        AppRoutes.guestDashboard,
-        AppRoutes.about,
-        AppRoutes.pendingApproval,
-        if (collectionExists) location,
-      },
     UserRole.alumni: {
       AppRoutes.alumniDashboard,
       AppRoutes.alumniSurvey,
@@ -226,34 +242,22 @@ String? resolveRedirect({
       AppRoutes.employment,
       AppRoutes.addEmployment,
       AppRoutes.resume,
-        AppRoutes.certificates,
-        AppRoutes.pendingApproval,
-        if (collectionExists) location,
-      },
-    UserRole.coordinator: {
-      AppRoutes.coordinatorDashboard,
-      AppRoutes.coordinatorAnalytics,
-      AppRoutes.adminAnalytics,
-      AppRoutes.staffUsers,
-      AppRoutes.adminUsers,
-      AppRoutes.coordinatorAlumni,
-      AppRoutes.coordinatorSurveys,
-      AppRoutes.coordinatorReports,
-        AppRoutes.coordinatorEvents,
-        AppRoutes.pendingApproval,
-        if (collectionExists) location,
-      },
+      AppRoutes.certificates,
+      if (collectionExists) location,
+    },
     UserRole.admin: {
       AppRoutes.adminDashboard,
       AppRoutes.adminAnalytics,
       AppRoutes.adminUsers,
       AppRoutes.adminAuditLogs,
+      AppRoutes.adminEmploymentHistory,
       AppRoutes.adminProfile,
       AppRoutes.editProfile,
-        AppRoutes.staffUsers,
-        AppRoutes.pendingApproval,
-        if (collectionExists) location,
-      },
+      AppRoutes.staffUsers,
+      AppRoutes.alumniNotifications,
+      AppRoutes.pendingApproval,
+      if (collectionExists) location,
+    },
   }[role]!;
   final canAccess =
       allowed.any((path) => location == path || location.startsWith('$path/'));

@@ -34,7 +34,7 @@ migrate_working_dir/
 
 # Firebase project-specific configuration (generate locally)
 /backend/.firebaserc
-/frontend/lib/config/firebase_options.dart
+# /frontend/lib/config/firebase_options.dart is now tracked with a dynamic fallback
 /frontend/android/app/google-services.json
 /frontend/ios/Runner/GoogleService-Info.plist
 /frontend/macos/Runner/GoogleService-Info.plist

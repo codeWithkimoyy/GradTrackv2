@@ -24,7 +24,7 @@ class DashboardShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentUserProfileProvider).valueOrNull;
-    final role = profile?.role ?? UserRole.guest;
+    final role = profile?.role ?? UserRole.alumni;
     final items = _navItemsForRole(role);
     final location = GoRouterState.of(context).matchedLocation;
     final selected = _selectedIndex(location, items);
@@ -51,8 +51,10 @@ class DashboardShell extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 900;
-        if (desktop) {
+        final desktop = constraints.maxWidth >= 960;
+        final tablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+
+        if (desktop || tablet) {
           return Scaffold(
             backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             body: SafeArea(
@@ -62,6 +64,7 @@ class DashboardShell extends ConsumerWidget {
                     items: items,
                     selectedIndex: selected,
                     onSelected: navigate,
+                    isCompact: tablet,
                   ),
                   Expanded(
                     child: Column(
@@ -176,16 +179,7 @@ class _PremiumBottomNavigation extends StatelessWidget {
                             curve: Curves.easeInOutCubic,
                             constraints: const BoxConstraints(minHeight: 58),
                             decoration: BoxDecoration(
-                              gradient: selected
-                                  ? LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        item.color,
-                                        _darken(item.color),
-                                      ],
-                                    )
-                                  : null,
+                              color: selected ? item.color : null,
                               borderRadius: BorderRadius.circular(22),
                               boxShadow: selected
                                   ? [
@@ -303,7 +297,6 @@ class _ShellNavItem {
 }
 
 List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
-      UserRole.guest => const [],
       UserRole.alumni => const [
         _ShellNavItem(Icons.home_outlined, Icons.home_rounded, 'Home',
             AppRoutes.alumniDashboard, Color(0xFF2563EB),
@@ -311,8 +304,9 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
         _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
             'Survey', AppRoutes.alumniSurvey, Color(0xFF0D9488),
             sticker: '\u{1F4C3}'),
-        _ShellNavItem(Icons.work_outline_rounded, Icons.work_rounded, 'Jobs',
-            AppRoutes.alumniJobs, Color(0xFFD97706), sticker: '\u{1F4BC}'),
+        _ShellNavItem(Icons.work_outline_rounded, Icons.work_rounded,
+            'Employment', AppRoutes.alumniJobs, Color(0xFFD97706),
+            sticker: '\u{1F4BC}'),
         _ShellNavItem(
             Icons.notifications_none_rounded,
             Icons.notifications_rounded,
@@ -324,25 +318,8 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
             'Profile', AppRoutes.alumniProfile, Color(0xFF06B6D4),
             sticker: '\u{1F464}'),
       ],
-      UserRole.coordinator => const [
-        _ShellNavItem(Icons.analytics_outlined, Icons.analytics_rounded,
-            'Overview', AppRoutes.coordinatorDashboard, Color(0xFF2563EB),
-            sticker: '\u{1F4CA}'),
-        _ShellNavItem(Icons.groups_outlined, Icons.groups_rounded, 'Alumni',
-            AppRoutes.coordinatorAlumni, Color(0xFF0D9488),
-            sticker: '\u{1F393}'),
-        _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
-            'Surveys', AppRoutes.coordinatorSurveys, Color(0xFFD97706),
-            sticker: '\u{1F4CB}'),
-        _ShellNavItem(Icons.assessment_outlined, Icons.assessment_rounded,
-            'Reports', AppRoutes.coordinatorReports, Color(0xFFA855F7),
-            sticker: '\u{1F4C8}'),
-        _ShellNavItem(Icons.event_outlined, Icons.event_rounded, 'Events',
-            AppRoutes.coordinatorEvents, Color(0xFF06B6D4),
-            sticker: '\u{1F5D3}\u{FE0F}'),
-      ],
       UserRole.admin => const [
-        _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Overview',
+        _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Home',
             AppRoutes.adminDashboard, Color(0xFF2563EB),
             sticker: '\u{1F6E1}\u{FE0F}'),
         _ShellNavItem(Icons.people_outline_rounded, Icons.people_rounded,
@@ -360,9 +337,6 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
       ],
     };
 
-Color _darken(Color color, [double amount = 0.3]) =>
-    Color.lerp(color, Colors.black, amount)!;
-
 int _selectedIndex(String location, List<_ShellNavItem> items) {
   final index = items.lastIndexWhere((item) => location.startsWith(item.path));
   return index < 0 ? 0 : index;
@@ -373,19 +347,21 @@ class _DesktopSidebar extends StatelessWidget {
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
+    this.isCompact = false,
   });
 
   final List<_ShellNavItem> items;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      width: 260,
-      padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
+      width: isCompact ? 76 : 260,
+      padding: EdgeInsets.fromLTRB(isCompact ? 8 : 18, 22, isCompact ? 8 : 18, 20),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDarkAlt : Colors.white,
         border: Border(
@@ -411,6 +387,8 @@ class _DesktopSidebar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             child: Row(
+              mainAxisAlignment:
+                  isCompact ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 Container(
                   width: 42,
@@ -428,33 +406,34 @@ class _DesktopSidebar extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Grad',
-                              style: GoogleFonts.poppins(
-                                color: isDark ? Colors.white : AppColors.primaryNavy,
+                if (!isCompact) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Grad',
+                                style: GoogleFonts.poppins(
+                                  color: isDark ? Colors.white : AppColors.primaryNavy,
+                                ),
                               ),
-                            ),
-                            const TextSpan(
-                              text: 'Track',
-                              style: TextStyle(color: AppColors.goldDark),
-                            ),
-                          ],
+                              const TextSpan(
+                                text: 'Track',
+                                style: TextStyle(color: AppColors.goldDark),
+                              ),
+                            ],
+                          ),
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                          ),
                         ),
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                        ),
-                      ),
                       const SizedBox(height: 2),
                       Text(
                         'BISU ALUMNI PORTAL',
@@ -469,24 +448,28 @@ class _DesktopSidebar extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: 28),
+        ),
+          if (!isCompact) ...[
+            const SizedBox(height: 28),
 
-          // Menu Section Label
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(
-              'NAVIGATION',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                letterSpacing: 1.4,
+            // Menu Section Label
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                'NAVIGATION',
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  letterSpacing: 1.4,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
+          ] else
+            const SizedBox(height: 18),
 
           // Navigation List
           Expanded(
@@ -503,13 +486,15 @@ class _DesktopSidebar extends StatelessWidget {
                   selected: selected,
                   activeColor: item.color,
                   onTap: () => onSelected(index),
+                  isCompact: isCompact,
                 );
               },
             ),
           ),
 
           // Integrated Secure Portal Footer Card
-          Container(
+          if (!isCompact)
+            Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: isDark ? AppColors.cardDark : AppColors.primarySoft,
@@ -596,6 +581,7 @@ class _SidebarMenuItem extends StatefulWidget {
   final bool selected;
   final Color activeColor;
   final VoidCallback onTap;
+  final bool isCompact;
 
   const _SidebarMenuItem({
     required this.icon,
@@ -603,6 +589,7 @@ class _SidebarMenuItem extends StatefulWidget {
     required this.selected,
     required this.activeColor,
     required this.onTap,
+    this.isCompact = false,
   });
 
   @override
@@ -643,7 +630,8 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: EdgeInsets.symmetric(
+              horizontal: widget.isCompact ? 10 : 14, vertical: 12),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(14),
@@ -664,32 +652,39 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
                   ]
                 : [],
           ),
-          child: Row(
-            children: [
-              Icon(widget.icon, color: iconColor, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: GoogleFonts.poppins(
-                    color: textColor,
-                    fontSize: 13,
-                    fontWeight:
-                        widget.selected ? FontWeight.w700 : FontWeight.w500,
+          child: widget.isCompact
+              ? Tooltip(
+                  message: widget.label,
+                  child: Center(
+                    child: Icon(widget.icon, color: iconColor, size: 22),
                   ),
+                )
+              : Row(
+                  children: [
+                    Icon(widget.icon, color: iconColor, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: GoogleFonts.poppins(
+                          color: textColor,
+                          fontSize: 13,
+                          fontWeight:
+                              widget.selected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (widget.selected)
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: AppColors.gold,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              if (widget.selected)
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: AppColors.gold,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );
@@ -1205,13 +1200,6 @@ class _DashboardBody extends ConsumerWidget {
                         physics: const BouncingScrollPhysics(),
                         children: [
                           _QuickActionCard(
-                            icon: Icons.add_business_rounded,
-                            label: 'Log Employment',
-                            color: AppColors.primaryBlue,
-                            onTap: () => context.push(AppRoutes.addEmployment),
-                          ),
-                          const SizedBox(width: 12),
-                          _QuickActionCard(
                             icon: Icons.upload_file_rounded,
                             label: 'Upload Resume',
                             color: AppColors.teal,
@@ -1394,10 +1382,17 @@ class _DashboardBody extends ConsumerWidget {
                             user.course!,
                             AppColors.teal,
                           ),
+                        if (user.academicYearGraduated != null &&
+                            user.academicYearGraduated!.isNotEmpty)
+                          _tagBadge(
+                            Icons.school_rounded,
+                            'AY ${user.academicYearGraduated}',
+                            AppColors.primaryBlue,
+                          ),
                         if (user.graduationYear != null)
                           _tagBadge(
                             Icons.calendar_today_rounded,
-                            'Class of ${user.graduationYear}',
+                            'S.Y. ${user.graduationYear}',
                             AppColors.primaryBlue,
                           ),
                       ],
@@ -1714,6 +1709,8 @@ class _DashboardBody extends ConsumerWidget {
           _infoRow(context, 'Course', user.course ?? 'BS Computer Science'),
           _infoRow(context, 
               'Graduation Year', user.graduationYear?.toString() ?? '2024'),
+          _infoRow(context, 'Academic Year Graduated',
+              displayAcademicYear(user.academicYearGraduated)),
           _infoRow(context, 'Phone', user.phoneNumber ?? 'Not provided'),
           _infoRow(context, 'Status', user.employmentStatus.label),
           const Divider(height: 24),

@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/firebase_options.dart';
 import '../models/user_model.dart';
@@ -6,7 +7,7 @@ import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
 
 final firebaseConfiguredProvider = Provider<bool>((_) {
-  return DefaultFirebaseOptions.isConfigured;
+  return DefaultFirebaseOptions.isConfigured && Firebase.apps.isNotEmpty;
 });
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
@@ -76,6 +77,21 @@ final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
           yield profile ?? fallback;
         }
       } catch (_) {
+        // A single failed read (network blip / transient rule sync) used to
+        // strand users on the pending-approval screen, so retry a few times
+        // against the authoritative document before falling back.
+        for (var attempt = 0; attempt < 3; attempt++) {
+          await Future<void>.delayed(const Duration(seconds: 1) * (attempt + 1));
+          try {
+            final profile = await userRepository.fetchUser(authUser.uid);
+            if (profile != null) {
+              yield profile;
+              return;
+            }
+          } catch (_) {
+            // keep retrying
+          }
+        }
         yield fallback;
       }
     },

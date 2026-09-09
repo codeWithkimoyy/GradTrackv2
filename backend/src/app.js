@@ -4,7 +4,11 @@ const helmet = require('helmet');
 
 const env = require('./config/env');
 const { hasFirebaseCredentials } = require('./config/firebase');
+const { isConnected: isMySQLConnected } = require('./config/mysql');
 const profileRouter = require('./routes/profile');
+const uploadRouter = require('./routes/upload');
+const alumniRouter = require('./routes/alumni');
+const authRouter = require('./routes/auth');
 
 const app = express();
 
@@ -13,7 +17,11 @@ app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || env.corsOrigins.includes(origin)) {
+      if (
+        env.corsOrigins.includes('*') ||
+        !origin ||
+        env.corsOrigins.includes(origin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error('Origin is not allowed by CORS.'));
@@ -28,6 +36,7 @@ app.get('/health', (_request, response) => {
     status: 'ok',
     service: 'gradtrack-backend',
     firebaseConfigured: hasFirebaseCredentials,
+    mysqlConfigured: isMySQLConnected,
   });
 });
 
@@ -35,10 +44,14 @@ app.get('/api', (_request, response) => {
   response.json({
     name: 'GradTrack API',
     version: '1.0.0',
+    database: 'MySQL (Primary) + Firebase (Auth/Sync)',
   });
 });
 
 app.use('/api/profile', profileRouter);
+app.use('/api/upload', uploadRouter);
+app.use('/api/alumni', alumniRouter);
+app.use('/api/auth', authRouter);
 
 app.use((_request, response) => {
   response.status(404).json({

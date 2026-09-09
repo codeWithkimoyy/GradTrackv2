@@ -35,23 +35,8 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
       builder: (context, child) {
         final p = _controller.value;
         return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment(
-                math.sin(p * math.pi * 2) * 0.3,
-                math.cos(p * math.pi * 2) * 0.3,
-              ),
-              end: Alignment(
-                math.cos(p * math.pi * 2) * 0.3,
-                math.sin(p * math.pi * 2) * 0.3,
-              ),
-              colors: const [
-                Color(0xFF0A2540),
-                Color(0xFF0F4C81),
-                Color(0xFF1E3A8A),
-                Color(0xFF2563EB),
-              ],
-            ),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A2540),
           ),
           child: Stack(
             children: [

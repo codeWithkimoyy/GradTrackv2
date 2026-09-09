@@ -26,16 +26,12 @@ service cloud.firestore {
       return currentUserRole() == 'admin';
     }
 
-    function isCoordinator() {
-      return currentUserRole() == 'coordinator';
-    }
-
     function isStaff() {
-      return isAdmin() || isCoordinator();
+      return isAdmin();
     }
 
     function isAlumni() {
-      return isSignedIn() && currentUserRole() == 'alumni';
+      return isSignedIn() && currentUserRole() != 'admin';
     }
 
     function ownerOfResource() {
@@ -51,8 +47,13 @@ service cloud.firestore {
     }
 
     function canPublishContent() {
-      return request.resource.data.keys().hasAll(['title']) &&
+      return (request.resource.data.keys().hasAll(['title']) ||
+              request.resource.data.keys().hasAll(['jobTitle'])) &&
              request.resource.data.visibility in ['public', 'private'];
+    }
+
+    function ownerOfJob() {
+      return isSignedIn() && request.auth.uid == resource.data.createdBy;
     }
 
     function canOwnUpdate() {
@@ -66,18 +67,12 @@ service cloud.firestore {
     // ---------- USERS ----------
     match /users/{userId} {
       allow read: if isAdmin() ||
-                    (isCoordinator() &&
-                     resource.data.role in ['alumni', 'guest']) ||
                     (isSignedIn() && request.auth.uid == userId);
       allow create: if isAdmin() ||
                     (canOwnCreate() &&
-                      request.resource.data.role in ['alumni', 'guest']);
+                      request.resource.data.role == 'alumni');
       allow update: if isAdmin() ||
-                    (isCoordinator() &&
-                     resource.data.role in ['alumni', 'guest'] &&
-                     !request.resource.data.keys().hasAny(['role', 'disabled', 'email'])) ||
                     (canOwnUpdate() &&
-                     resource.data.role in ['alumni', 'guest'] &&
                      request.resource.data.role == resource.data.role &&
                      !request.resource.data.keys().hasAny(['disabled', 'role']));
       allow delete: if isAdmin();
@@ -139,9 +134,11 @@ service cloud.firestore {
 
     match /jobs/{id} {
       allow read: if isPublicResource() || isAlumni() || isStaff();
-      allow create: if isStaff() && canPublishContent();
-      allow update: if isStaff() && canPublishContent();
-      allow delete: if isStaff();
+      allow create: if (isStaff() || isAlumni()) &&
+                          canPublishContent() &&
+                          isSignedIn() &&
+                          request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isStaff() || ownerOfJob();
     }
 
     match /event_registrations/{id} {
@@ -173,7 +170,7 @@ service cloud.firestore {
 
     match /audit_logs/{id} {
       allow read: if isAdmin();
-      allow create: if isAdmin();
+      allow create: if isStaff();
       allow update, delete: if false;
     }
 
@@ -188,8 +185,16 @@ service cloud.firestore {
     }
 
     match /messages/{messageId} {
-      allow read: if isSignedIn();
-      allow create: if ownerOfRequest();
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.senderId ||
+        request.auth.uid == resource.data.recipientId ||
+        (resource.data.keys().hasAny(['participantIds']) && request.auth.uid in resource.data.participantIds) ||
+        isStaff()
+      );
+      allow create: if isSignedIn() && (
+        request.auth.uid == request.resource.data.userId ||
+        request.auth.uid == request.resource.data.senderId
+      );
       allow update, delete: if false;
     }
   }

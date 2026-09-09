@@ -30,7 +30,7 @@ final currentJobProvider = Provider<EmploymentRecord?>((ref) {
 });
 
 /// Family provider to watch another user's records/milestones — used by
-/// coordinators/admins viewing a specific alumnus's profile.
+/// admins viewing a specific alumnus's profile.
 final employmentRecordsForUserProvider =
     StreamProvider.family<List<EmploymentRecord>, String>((ref, userId) {
   return ref.watch(employmentRepositoryProvider).watchRecords(userId);

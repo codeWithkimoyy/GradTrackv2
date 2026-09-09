@@ -17,40 +17,34 @@ Roles are stored on the `users/{uid}` document as the string field `role`
 (`frontend/lib/models/user_model.dart`):
 
 ```dart
-enum UserRole { admin, coordinator, alumni, guest }
+enum UserRole { admin, alumni }
 ```
 
 | Role | Label | Description |
 |---|---|---|
 | `admin` | Administrator | Full control: users, analytics, audit logs, system settings |
-| `coordinator` | Department Coordinator | Alumni records, content publishing (surveys, reports, events), read users |
 | `alumni` | Alumni | Own profile, employment, documents, browse public content |
-| `guest` | Guest | Anonymous/anonymous-like browse of public content only |
 
 Derived terms used throughout the codebase and rules:
 
-- **staff** = `admin` OR `coordinator`
+- **staff** = `admin`
 - **signed-in** = has auth AND account not disabled
 - **owner** = signed-in AND `auth.uid == resource.userId`
 
 ```mermaid
 flowchart LR
     U["Auth User<br/>(Firebase Auth uid)"]
-    D["users/{uid} doc<br/>role: admin|coordinator|alumni|guest"]
+    D["users/{uid} doc<br/>role: admin|alumni"]
 
     U -->|"currentUserProfileProvider"| D
     D -->|"role missing / unknown"| D2["falls back to 'alumni'"]
 
     D --> R["UserRole resolved"]
     R --> A["admin"]
-    R --> C["coordinator"]
     R --> AL["alumni"]
-    R --> G["guest"]
-    A --> S["staff = admin | coordinator"]
-    C --> S
+    A --> S["staff = admin"]
     S --> W["write/CRUD privileges"]
     AL --> O["owner = uid == resource.userId"]
-    G --> P["public-only visibility"]
 ```
 
 ### Account lifecycle gates
@@ -89,31 +83,25 @@ Role homes (`dashboardForRole`):
 
 | Role | Home |
 |---|---|
-| guest | `/guest/dashboard` |
 | alumni | `/alumni/dashboard` |
-| coordinator | `/coordinator/dashboard` |
 | admin | `/admin/dashboard` |
 
 ### Route allow matrix
 
-`/staff/data/:key` is available to **every** role (guest included), but only for
+`/staff/data/:key` is available to **every** signed-in role, but only for
 keys registered in the `contentCollections` registry
 (`frontend/lib/screens/shared/collection_list_screen.dart`); an unknown key
 renders `_NotFoundScreen`.
 
-| Route | guest | alumni | coordinator | admin |
-|---|---|---|---|---|
-| `/guest/dashboard` | ✅ | ❌ | ❌ | ❌ |
-| `/about` | ✅ | ❌ | ❌ | ❌ |
-| `/alumni/dashboard`, `/alumni/survey`, `/alumni/jobs`, `/alumni/notifications`, `/alumni/profile`, `/alumni/documents` | ❌ | ✅ | ❌ | ❌ |
-| `/profile`, `/profile/edit`, `/employment`, `/employment/add`, `/documents/resume`, `/documents/certificates` | ❌ | ✅ | ❌ | ✅ (profile only) |
-| `/coordinator/dashboard`, `/coordinator/alumni`, `/coordinator/surveys`, `/coordinator/reports`, `/coordinator/events` | ❌ | ❌ | ✅ | ❌ |
-| `/admin/dashboard`, `/admin/users`, `/admin/analytics`, `/admin/audit-logs`, `/admin/profile` | ❌ | ❌ | ⚠️ analytics only | ✅ |
-| `/staff/users` | ❌ | ❌ | ✅ | ✅ |
-| `/staff/data/:key` | ✅ | ✅ | ✅ | ✅ |
+| Route | alumni | admin |
+|---|---|---|
+| `/alumni/dashboard`, `/alumni/survey`, `/alumni/jobs`, `/alumni/notifications`, `/alumni/profile`, `/alumni/documents` | ✅ | ❌ |
+| `/profile`, `/profile/edit`, `/employment`, `/employment/add`, `/documents/resume`, `/documents/certificates` | ✅ | ✅ (profile only) |
+| `/admin/dashboard`, `/admin/users`, `/admin/analytics`, `/admin/audit-logs`, `/admin/profile` | ❌ | ✅ |
+| `/staff/users` | ❌ | ✅ |
+| `/staff/data/:key` | ✅ | ✅ |
 
 ⚠️ exceptions:
-- `/admin/analytics` is also allowed for coordinators.
 - `/editProfile` is allowed for admin; `/profile` is allowed for alumni and admin.
 - Any other route for a logged-in role -> redirected to that role's home.
 
@@ -122,21 +110,12 @@ renders `_NotFoundScreen`.
 ```mermaid
 mindmap
   root((DashboardShell))
-    guest
-      No navigation
-      "Browse /staff/data pages directly"
     alumni
       Home /alumni/dashboard
       Survey /alumni/survey
       Jobs /alumni/jobs
       Notifications /alumni/notifications
       Profile /alumni/profile
-    coordinator
-      Overview /coordinator/dashboard
-      Alumni /coordinator/alumni
-      Surveys /coordinator/surveys
-      Reports /coordinator/reports
-      Events /coordinator/events
     admin
       Overview /admin/dashboard
       Users /admin/users
@@ -154,9 +133,8 @@ Source: `backend/firestore.rules`. Helper functions:
 | Helper | Meaning |
 |---|---|
 | `isAdmin()` | role == `admin` |
-| `isCoordinator()` | role == `coordinator` |
-| `isStaff()` | `isAdmin() \|\| isCoordinator()` |
-| `isAlumni()` | signed-in AND role == `alumni` |
+| `isStaff()` | same as `isAdmin()` (kept for readability) |
+| `isAlumni()` | signed-in AND role != `admin` (legacy coordinator/guest docs treated as alumni) |
 | `ownerOfResource()` / `canOwnUpdate()` / `canOwnCreate()` | signed-in AND `auth.uid == resource.userId` |
 | `isPublicResource()` | `visibility == 'public'` |
 | `canPublishContent()` | payload has `title` AND `visibility` in `[public, private]` |
@@ -171,54 +149,52 @@ flowchart TD
     D -- yes --> DENY
     D -- no --> R{"role from users/{uid}"}
     R -- admin --> ALLOW["ALLOW (per collection rule)"]
-    R -- coordinator --> CO["evaluate coordinator rules"]
     R -- alumni --> AL["evaluate alumni rules"]
-    R -- guest --> GU["public-only rules"]
 ```
 
 ### Operations matrix
 
 Legend: `R` read · `C` create · `U` update · `D` delete · `–` denied.
 
-| Collection | guest | alumni | coordinator | admin |
-|---|---|---|---|---|
-| `users` | – | self: R, C (role alumni/guest), U (role unchanged) | R (alumni/guest users only), U (no role/disabled/email changes) | R C U D |
-| `employment_records` | – | owner: R C U D | R U D | R U D |
-| `career_milestones` | – | owner: R C U D | R U D | R U D |
-| `certificates` | – | owner: R C U D | R U D | R U D |
-| `skills` | – | owner: R C U D | R U D | R U D |
-| `surveys` | R if public | R if public | C U D (publish valid) | C U D (publish valid) |
-| `survey_responses` | – | owner: R C U | R; D | R; D |
-| `announcements` | R if public | R | C U D (publish valid) | C U D (publish valid) |
-| `events` | R if public | R | C U D (publish valid) | C U D (publish valid) |
-| `jobs` | R if public | R | C U D (publish valid) | C U D (publish valid) |
-| `event_registrations` | – | owner: R C D | R D | R D |
-| `notifications` | – | owner: R C U D | R C U D | R C U D |
-| `reports` | – | – | R C | R C; D; U always denied |
-| `activity_logs` | – | – | C | R; C |
-| `audit_logs` | – | – | – | R C (write-only, no U/D) |
-| `system_settings` | – | – | – | R C U D |
-| `conversations` | – | participant: R C U D | participant: R C U D | participant: R C U D |
-| `messages` | – | any signed-in: R; own: C (U/D always denied) | same | same |
+| Collection | alumni | admin |
+|---|---|---|
+| `users` | self: R, C (role alumni), U (role unchanged) | R C U D |
+| `employment_records` | owner: R C U D | R U D |
+| `career_milestones` | owner: R C U D | R U D |
+| `certificates` | owner: R C U D | R U D |
+| `skills` | owner: R C U D | R U D |
+| `surveys` | R if public | C U D (publish valid) |
+| `survey_responses` | owner: R C U | R; D |
+| `announcements` | R | C U D (publish valid) |
+| `events` | R | C U D (publish valid) |
+| `jobs` | R | C U D (publish valid) |
+| `event_registrations` | owner: R C D | R D |
+| `notifications` | owner: R C U D | R C U D |
+| `reports` | – | R C; D; U always denied |
+| `activity_logs` | – | R; C |
+| `audit_logs` | – | R C (write-only, no U/D) |
+| `system_settings` | – | R C U D |
+| `conversations` | participant: R C U D | participant: R C U D |
+| `messages` | any signed-in: R; own: C (U/D always denied) | same |
 
 Notes:
 
 - `messages` reads allow any signed-in user; creation requires
   `auth.uid == message.userId`.
 - `users` self-update cannot change `role` or `disabled`; self-create is limited
-  to `alumni` / `guest` roles (this is how alumni self-register).
+  to the `alumni` role (this is how alumni self-register).
 - Reports and audit/log collections are effectively append-only
   (`update/delete` hard-denied).
 
 ```mermaid
 flowchart LR
-    subgraph PUBLIC["Readable by guests (visibility == 'public')"]
+    subgraph PUBLIC["Readable by all (visibility == 'public')"]
         AN["announcements"]
         EV["events"]
         JO["jobs"]
         SU["surveys"]
     end
-    subgraph STAFF["Staff-managed content (staff = admin | coordinator)"]
+    subgraph STAFF["Staff-managed content (staff = admin)"]
         EV2["events / jobs / surveys CRUD"]
         AN2["announcements CRUD"]
         RP["reports R/C"]
@@ -249,10 +225,8 @@ flowchart LR
 |---|---|
 | `currentUserRoleProvider` | current profile role (null while loading) |
 | `isAdminProvider` | role == admin |
-| `isCoordinatorProvider` | role == coordinator |
-| `isStaffProvider` | admin OR coordinator |
+| `isStaffProvider` | role == admin |
 | `isAlumniProvider` | role == alumni |
-| `isGuestProvider` | role == guest |
 
 Where role checks are applied in the UI:
 
@@ -260,9 +234,9 @@ Where role checks are applied in the UI:
 |---|---|---|
 | `DashboardShell._navItemsForRole` | role switch | Builds per-role nav items |
 | `routerProvider.redirect` | route allow sets | Blocks unauthorized navigation |
-| `CollectionListScreen` | `publicOnly` (role null/guest) | Guests only see `visibility == 'public'` docs; Add/Edit/Delete only for staff |
+| `CollectionListScreen` | `publicOnly` (role null) | Unknown roles only see `visibility == 'public'` docs; Add/Edit/Delete only for staff |
 | `collectionContentsProvider` | `publicOnly` | Adds `where('visibility', isEqualTo: 'public')` to the query |
-| `UserManagementScreen` | `roleFilter` + `canVerify` | Coordinator can manage alumni/guest users; verification only for alumni |
+| `UserManagementScreen` | `roleFilter` + `canVerify` | Admin can manage users; verification for alumni |
 | `ProfileScreen` / `EmploymentHistoryPage` etc. | `isStaff` | Staff read-only views of alumni records, alumni get edit affordances |
 | `ThemeToggleButton` / FAB rows | `isStaff && !publicOnly` | Staff-only Add button overlay on content lists |
 
@@ -273,25 +247,24 @@ Where role checks are applied in the UI:
 
 ## 5. RACI-style capability summary
 
-| Capability | guest | alumni | coordinator | admin |
-|---|---|---|---|---|
-| Browse public announcements/events/jobs/surveys | ✅ | ✅ | ✅ | ✅ |
-| Publish content (surveys, events, jobs, announcements) | ❌ | ❌ | ✅ | ✅ |
-| Complete own profile & employment records | ❌ | ✅ | ❌ | ❌ (via profile) |
-| Read all alumni records | ❌ | ❌ | ✅ | ✅ |
-| Manage alumni/guest users | ❌ | ❌ | ⚠️ (no role/disabled/email) | ✅ |
-| View analytics | ❌ | ❌ | ✅ | ✅ |
-| View audit logs | ❌ | ❌ | ❌ | ✅ |
-| Change system settings | ❌ | ❌ | ❌ | ✅ |
-| Delete users | ❌ | ❌ | ❌ | ✅ |
+| Capability | alumni | admin |
+|---|---|---|
+| Browse public announcements/events/jobs/surveys | ✅ | ✅ |
+| Publish content (surveys, events, jobs, announcements) | ❌ | ✅ |
+| Complete own profile & employment records | ✅ | ❌ (via profile) |
+| Read all alumni records | ❌ | ✅ |
+| Manage users | ❌ | ✅ |
+| View analytics | ❌ | ✅ |
+| View audit logs | ❌ | ✅ |
+| Change system settings | ❌ | ✅ |
+| Delete users | ❌ | ✅ |
 
 ### Cross-cutting rules
 
 - **Never trust the client:** all checks repeat in `firestore.rules`.
 - **Ownership** is expressed by writing `userId` on documents at create time,
   then matching `auth.uid` on read/update.
-- **Guests** have no `users` doc write path to promote themselves: self-create
-  only allows role `alumni` / `guest`, and role escalation requires `admin` or a
-  `coordinator` update that cannot touch `role`.
+- **Role escalation** requires an `admin` update; self-create is limited to the
+  `alumni` role, and self-update cannot touch `role`.
 - **Disabled accounts** are revoked at every layer: routing redirect,
   `isNotDisabled()` in every rules helper.

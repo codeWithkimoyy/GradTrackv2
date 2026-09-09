@@ -107,17 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const DecoratedBox(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0, .28, .58, 1],
-                colors: [
-                  Color(0x66000000),
-                  Color(0x33000000),
-                  Color(0xCC003DA8),
-                  Color(0xFF003DA8),
-                ],
-              ),
+              color: Color(0xC7051329),
             ),
           ),
           SafeArea(
@@ -137,28 +127,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildMobileLayout(BoxConstraints constraints) {
     final isCompact = constraints.maxWidth < 370;
-    final maxCardHeight = constraints.maxHeight * 0.82;
-    final cardWidth = (constraints.maxWidth * 0.88).clamp(0.0, 460.0);
+    final cardWidth = (constraints.maxWidth * 0.90).clamp(0.0, 440.0);
 
-    return Column(
-      children: [
-        const Expanded(child: SizedBox.shrink()),
-        FractionallySizedBox(
-          widthFactor: 0.88,
-          child: _buildGlassCard(
-            cardWidth: cardWidth,
-            maxHeight: maxCardHeight,
-            isCompact: isCompact,
-          ),
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        physics: const ClampingScrollPhysics(),
+        child: _buildGlassCard(
+          cardWidth: cardWidth,
+          maxHeight: double.infinity,
+          isCompact: isCompact,
         ),
-        const Expanded(child: SizedBox.shrink()),
-      ],
+      ),
     );
   }
 
   Widget _buildWideLayout(BoxConstraints constraints) {
     final isCompact = constraints.maxWidth < 1000;
-    final maxCardHeight = constraints.maxHeight * 0.86;
     final cardWidth = (constraints.maxWidth * 0.38).clamp(380.0, 440.0);
 
     return Row(
@@ -168,11 +153,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         Expanded(
           child: Center(
-            child: _buildGlassCard(
-              cardWidth: cardWidth,
-              maxHeight: maxCardHeight,
-              isCompact: isCompact,
-              showLogoInForm: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              physics: const ClampingScrollPhysics(),
+              child: _buildGlassCard(
+                cardWidth: cardWidth,
+                maxHeight: double.infinity,
+                isCompact: isCompact,
+                showLogoInForm: false,
+              ),
             ),
           ),
         ),
@@ -181,72 +170,96 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildBrandPanel(BoxConstraints constraints, bool isCompact) {
-    final fontSize = isCompact ? 34.0 : 42.0;
+    final fontSize = isCompact ? 32.0 : 40.0;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: Image.asset(
-                      'assets/images/logo_full.png',
-                      fit: BoxFit.contain,
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border:
+                      Border.all(color: AppColors.gold.withValues(alpha: 0.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.school_rounded,
+                        size: 14, color: AppColors.gold),
+                    const SizedBox(width: 6),
+                    Text(
+                      'BOHOL ISLAND STATE UNIVERSITY',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                        color: AppColors.gold,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 28),
-              Text(
-                'Welcome to\nGradTrack',
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 48,
+                child: Image.asset(
+                  'assets/images/logo_full.png',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.centerLeft,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text.rich(
+                const TextSpan(
+                  children: [
+                    TextSpan(
+                        text: 'Empowering Graduates.\nConnecting '),
+                    TextSpan(
+                      text: 'Futures.',
+                      style: TextStyle(color: AppColors.gold),
+                    ),
+                  ],
+                ),
                 textAlign: TextAlign.left,
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: fontSize,
-                  height: 1.05,
+                  height: 1.1,
                   fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                'Graduate Tracking System',
+                'The official graduate tracer and career progression network for BISU Bilar Campus alumni.',
                 style: GoogleFonts.poppins(
-                  color: Colors.white.withValues(alpha: 0.95),
-                  fontSize: isCompact ? 16 : 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Bohol Island State University - Bilar Campus',
-                style: GoogleFonts.poppins(
-                  color: Colors.white.withValues(alpha: 0.80),
-                  fontSize: isCompact ? 13 : 15,
-                  height: 1.4,
+                  color: Colors.white.withValues(alpha: 0.82),
+                  fontSize: isCompact ? 13.5 : 15.0,
+                  height: 1.45,
                 ),
               ),
               const SizedBox(height: 26),
               const _FeatureLine(
-                icon: Icons.verified_user_outlined,
-                text: 'Track your graduate journey',
+                icon: Icons.verified_user_rounded,
+                text: 'Official Graduate & Alumni Verification',
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               const _FeatureLine(
-                icon: Icons.handshake_outlined,
-                text: 'Connect with your alumni community',
+                icon: Icons.work_rounded,
+                text: 'Career Milestones & Employment Tracking',
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               const _FeatureLine(
-                icon: Icons.insights_outlined,
-                text: 'Shape the university\u2019s future outcomes',
+                icon: Icons.fact_check_rounded,
+                text: 'Institutional Tracer & Feedback Surveys',
               ),
             ],
           ),
@@ -261,28 +274,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required bool isCompact,
     bool showLogoInForm = true,
   }) {
-    final cardContentWidth = cardWidth - 48;
+    final paddingH = isCompact ? 16.0 : 24.0;
+    final cardContentWidth = cardWidth - (paddingH * 2);
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight),
+      constraints: maxHeight.isFinite
+          ? BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight)
+          : BoxConstraints(maxWidth: cardWidth),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+            padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: 20),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(24),
+              color: const Color(0xF207162C),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
-                width: 1.5,
+                color: Colors.white.withValues(alpha: 0.16),
+                width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.20),
-                  blurRadius: 30,
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 36,
                   offset: const Offset(0, 18),
                 ),
               ],
@@ -297,15 +313,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     height: 1.5,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0),
-                          Colors.white.withValues(alpha: 0.55),
-                          Colors.white.withValues(alpha: 0),
-                        ],
-                      ),
+                      color: Colors.white.withValues(alpha: 0.35),
                     ),
                   ),
                 ),
@@ -331,15 +339,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }) {
     return Form(
       key: _formKey,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.topCenter,
-        child: SizedBox(
-          width: cardContentWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      child: SizedBox(
+        width: cardContentWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
               const SizedBox(height: 18),
               if (showLogoInForm) _AuthLogo(),
               if (showLogoInForm) const SizedBox(height: 12),
@@ -404,35 +409,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onForgotPassword: () => context.push(AppRoutes.forgotPassword),
               ),
               const SizedBox(height: 16),
-              _GradientButton(
+              _PrimaryButton(
+                loading: _loading,
                 onPressed: _loading ? null : _submit,
                 label: 'Sign In',
-              ),
-              const SizedBox(height: 10),
-              _PressableScale(
-                onTap: _loading ? null : () => context.push(AppRoutes.register),
-                child: OutlinedButton(
-                  onPressed:
-                      _loading ? null : () => context.push(AppRoutes.register),
-                  style: OutlinedButton.styleFrom(
-                    fixedSize: const Size.fromHeight(50),
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.06),
-                    overlayColor: Colors.white.withValues(alpha: 0.15),
-                    side: BorderSide(
-                      color: const Color(0xFF5DDCFF).withValues(alpha: 0.9),
-                      width: 1.3,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(23),
-                    ),
-                    textStyle: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  child: const Text('Create Account'),
-                ),
               ),
               const SizedBox(height: 14),
               Row(
@@ -462,9 +442,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: OutlinedButton.styleFrom(
                     fixedSize: const Size.fromHeight(48),
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.22),
-                    side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.30)),
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    side: const BorderSide(
+                      color: Color(0xFF5DDCFF),
+                      width: 1.2,
+                    ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     textStyle: GoogleFonts.poppins(
@@ -477,12 +459,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 18),
+              Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withValues(alpha: 0.78),
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: _loading ? null : () => context.push(AppRoutes.register),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        child: Text(
+                          'Create Account',
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFFFFC21A),
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                            decorationColor: const Color(0xFFFFC21A),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _glassField(Widget field) {
@@ -521,7 +535,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       suffixIcon: suffixWidget,
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.10),
+      fillColor: Colors.white.withValues(alpha: 0.12),
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       isDense: true,
@@ -552,8 +566,7 @@ class _AuthLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        width: 56,
-        height: 56,
+        height: 44,
         child: Image.asset('assets/images/logo_full.png', fit: BoxFit.contain),
       ),
     );
@@ -567,14 +580,15 @@ class _AuthTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = isCompact ? 28.0 : 32.0;
+    final fontSize = isCompact ? 24.0 : 26.0;
     return Text.rich(
       const TextSpan(
         children: [
-          TextSpan(text: 'Welcome to '),
+          TextSpan(text: 'Sign in to '),
+          TextSpan(text: 'Grad'),
           TextSpan(
-            text: 'GradTrack',
-            style: TextStyle(color: Color(0xFFF59E0B)),
+            text: 'Track',
+            style: TextStyle(color: Color(0xFFFFC21A)),
           ),
         ],
       ),
@@ -582,8 +596,8 @@ class _AuthTitle extends StatelessWidget {
       style: GoogleFonts.poppins(
         color: Colors.white,
         fontSize: fontSize,
-        height: 1.0,
-        fontWeight: FontWeight.w800,
+        height: 1.1,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
@@ -597,19 +611,13 @@ class _AuthSubtitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Graduate Tracking System\nBohol Island State University - Bilar Campus',
+      'Enter your university credentials to continue',
       textAlign: TextAlign.center,
       style: GoogleFonts.poppins(
-        color: Colors.white.withValues(alpha: 0.85),
-        fontSize: isCompact ? 12.5 : 14,
-        height: 1.3,
+        color: Colors.white.withValues(alpha: 0.72),
+        fontSize: isCompact ? 12.5 : 13.5,
+        height: 1.35,
         fontWeight: FontWeight.w400,
-        shadows: const [
-          Shadow(
-            color: Colors.black26,
-            blurRadius: 10,
-          ),
-        ],
       ),
     );
   }
@@ -630,20 +638,23 @@ class _AccountActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
       children: [
-        Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => onRememberChanged(!rememberMe),
+        InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => onRememberChanged(!rememberMe),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: 18,
-                  height: 18,
+                  width: 20,
+                  height: 20,
                   child: Checkbox(
                     value: rememberMe,
                     activeColor: _LoginScreenState._accentBlue,
@@ -660,32 +671,27 @@ class _AccountActionsRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    'Remember Me',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: _LoginScreenState._primaryText,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                Text(
+                  'Remember Me',
+                  style: GoogleFonts.poppins(
+                    color: _LoginScreenState._primaryText,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(width: 8),
         TextButton(
           onPressed: onForgotPassword,
           style: TextButton.styleFrom(
-            minimumSize: Size.zero,
-            padding: EdgeInsets.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            minimumSize: const Size(0, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+            tapTargetSize: MaterialTapTargetSize.padded,
             foregroundColor: _LoginScreenState._accentBlue,
             textStyle: GoogleFonts.poppins(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -696,17 +702,21 @@ class _AccountActionsRow extends StatelessWidget {
   }
 }
 
-class _GradientButton extends StatelessWidget {
-  const _GradientButton({
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({
     required this.onPressed,
     required this.label,
+    this.loading = false,
   });
 
   final VoidCallback? onPressed;
   final String label;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+
     return _PressableScale(
       onTap: onPressed,
       child: Material(
@@ -715,15 +725,9 @@ class _GradientButton extends StatelessWidget {
         child: Ink(
           height: 50,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF19C2FF),
-                Color(0xFF2D7DFF),
-                Color(0xFF4C5DFF),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+            color: enabled
+                ? AppColors.primaryBlue
+                : const Color(0xFF64748B),
             borderRadius: BorderRadius.circular(25),
           ),
           child: InkWell(
@@ -733,35 +737,46 @@ class _GradientButton extends StatelessWidget {
             onTap: onPressed,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  const SizedBox(width: 36),
-                  Expanded(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+              child: loading
+                  ? const Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
                       ),
+                    )
+                  : Row(
+                      children: [
+                        const SizedBox(width: 36),
+                        Expanded(
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Color(0xFF2457F5),
+                            size: 16,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Color(0xFF2457F5),
-                      size: 16,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),
@@ -815,30 +830,40 @@ class _FeatureLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withValues(alpha: 0.28),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFF60A5FA), size: 19),
           ),
-          child: Icon(icon, color: const Color(0xFF5DDCFF), size: 20),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text(
-            text,
-            style: GoogleFonts.poppins(
-              color: Colors.white.withValues(alpha: 0.92),
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.poppins(
+                color: Colors.white.withValues(alpha: 0.94),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          const Icon(Icons.check_circle_rounded,
+              color: Color(0xFFFFC21A), size: 16),
+        ],
+      ),
     );
   }
 }

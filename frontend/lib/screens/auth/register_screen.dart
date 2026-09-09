@@ -100,42 +100,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ),
           const DecoratedBox(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0, .28, .58, 1],
-                colors: [
-                  Color(0x66000000),
-                  Color(0x33000000),
-                  Color(0xCC003DA8),
-                  Color(0xFF003DA8),
-                ],
-              ),
+              color: Color(0xC7051329),
             ),
           ),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final maxCardHeight = constraints.maxHeight * 0.82;
                 final cardWidth =
-                    (constraints.maxWidth * 0.88).clamp(0.0, 460.0);
+                    (constraints.maxWidth * 0.90).clamp(0.0, 480.0);
 
-                return Column(
-                  children: [
-                    const Expanded(child: SizedBox.shrink()),
-                    FractionallySizedBox(
-                      widthFactor: 0.88,
-                      child: FadeTransition(
-                        opacity: _fade,
-                        child: _buildGlassCard(
-                          cardWidth: cardWidth,
-                          maxHeight: maxCardHeight,
-                          years: years,
-                        ),
+                return Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                    physics: const ClampingScrollPhysics(),
+                    child: FadeTransition(
+                      opacity: _fade,
+                      child: _buildGlassCard(
+                        cardWidth: cardWidth,
+                        maxHeight: double.infinity,
+                        years: years,
                       ),
                     ),
-                    const Expanded(child: SizedBox.shrink()),
-                  ],
+                  ),
                 );
               },
             ),
@@ -153,7 +139,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     final cardContentWidth = cardWidth - 48;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight),
+      constraints: maxHeight.isFinite
+          ? BoxConstraints(maxWidth: cardWidth, maxHeight: maxHeight)
+          : BoxConstraints(maxWidth: cardWidth),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
@@ -162,16 +150,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(24),
+              color: const Color(0xF207162C),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
-                width: 1.5,
+                color: Colors.white.withValues(alpha: 0.16),
+                width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.20),
-                  blurRadius: 30,
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 36,
                   offset: const Offset(0, 18),
                 ),
               ],
@@ -186,26 +174,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     height: 1.5,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0),
-                          Colors.white.withValues(alpha: 0.55),
-                          Colors.white.withValues(alpha: 0),
-                        ],
-                      ),
+                      color: Colors.white.withValues(alpha: 0.35),
                     ),
                   ),
                 ),
                 Form(
                   key: _formKey,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      width: cardContentWidth,
-                      child: Column(
+                  child: SizedBox(
+                    width: cardContentWidth,
+                    child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -385,45 +362,50 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           const SizedBox(height: 8),
                           _buildTermsField(),
                           const SizedBox(height: 14),
-                          _GradientButton(
+                          _PrimaryButton(
                             loading: _loading,
                             onPressed: _loading ? null : _submit,
                             label: 'Create Account',
                           ),
-                          const SizedBox(height: 10),
-                          _PressableScale(
-                            onTap: _loading ? null : _goBackToLogin,
-                            child: OutlinedButton(
-                              onPressed:
-                                  _loading ? null : _goBackToLogin,
-                              style: OutlinedButton.styleFrom(
-                                fixedSize: const Size.fromHeight(50),
-                                foregroundColor: Colors.white,
-                                backgroundColor:
-                                    Colors.white.withValues(alpha: 0.06),
-                                overlayColor:
-                                    Colors.white.withValues(alpha: 0.15),
-                                side: BorderSide(
-                                  color: const Color(0xFF5DDCFF)
-                                      .withValues(alpha: 0.9),
-                                  width: 1.3,
+                          const SizedBox(height: 18),
+                          Center(
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  'Already have an account? ',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white.withValues(alpha: 0.78),
+                                    fontSize: 13.5,
+                                  ),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(23),
+                                InkWell(
+                                  onTap: _loading ? null : _goBackToLogin,
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 6),
+                                    child: Text(
+                                      'Sign In',
+                                      style: GoogleFonts.poppins(
+                                        color: const Color(0xFFFFC21A),
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor:
+                                            const Color(0xFFFFC21A),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                textStyle: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              child: const Text('Back to Login'),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -449,53 +431,63 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: Checkbox(
-                  value: _acceptedTerms,
-                  activeColor: const Color(0xFF159BFF),
-                  checkColor: Colors.white,
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  side: const BorderSide(color: Color(0x99FFFFFF)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  onChanged: (value) {
-                    setState(() => _acceptedTerms = value ?? false);
-                    field.didChange(_acceptedTerms);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text.rich(
-                  const TextSpan(
-                    children: [
-                      TextSpan(text: 'I agree to the '),
-                      TextSpan(
-                        text: 'Terms of Service',
-                        style: TextStyle(color: Color(0xFFFFC21A)),
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              setState(() => _acceptedTerms = !_acceptedTerms);
+              field.didChange(_acceptedTerms);
+            },
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Checkbox(
+                      value: _acceptedTerms,
+                      activeColor: const Color(0xFF159BFF),
+                      checkColor: Colors.white,
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      side: const BorderSide(color: Color(0x99FFFFFF)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
                       ),
-                      TextSpan(text: ' and '),
-                      TextSpan(
-                        text: 'Privacy Policy',
-                        style: TextStyle(color: Color(0xFFFFC21A)),
+                      onChanged: (value) {
+                        setState(() => _acceptedTerms = value ?? false);
+                        field.didChange(_acceptedTerms);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text.rich(
+                      const TextSpan(
+                        children: [
+                          TextSpan(text: 'I agree to the '),
+                          TextSpan(
+                            text: 'Terms of Service',
+                            style: TextStyle(color: Color(0xFFFFC21A)),
+                          ),
+                          TextSpan(text: ' and '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(color: Color(0xFFFFC21A)),
+                          ),
+                        ],
                       ),
-                    ],
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                    ),
                   ),
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 11,
-                    height: 1.3,
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
           if (field.hasError)
             const Padding(
@@ -546,7 +538,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       ),
       suffixIcon: suffixWidget,
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.10),
+      fillColor: Colors.white.withValues(alpha: 0.12),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       isDense: true,
       enabledBorder: _fieldBorder(_fieldBorderColor, 1),
@@ -638,8 +630,8 @@ class _AuthSubtitle extends StatelessWidget {
   }
 }
 
-class _GradientButton extends StatelessWidget {
-  const _GradientButton({
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({
     required this.loading,
     required this.onPressed,
     required this.label,
@@ -661,27 +653,14 @@ class _GradientButton extends StatelessWidget {
         child: Ink(
           height: 50,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: enabled
-                  ? const [
-                      Color(0xFF19C2FF),
-                      Color(0xFF2D7DFF),
-                      Color(0xFF4C5DFF),
-                    ]
-                  : const [
-                      Color(0xFF93A4C7),
-                      Color(0xFF93A4C7),
-                    ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+            color: enabled ? AppColors.primaryBlue : const Color(0xFF64748B),
             borderRadius: BorderRadius.circular(25),
             boxShadow: enabled
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF19C2FF).withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+                      color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
                   ]
                 : null,

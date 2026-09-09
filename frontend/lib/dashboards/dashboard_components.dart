@@ -25,14 +25,7 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).scaffoldBackgroundColor,
-            accent.withValues(alpha: .055),
-          ],
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
       ),
       child: CustomScrollView(
         slivers: [
@@ -102,7 +95,9 @@ class DashboardMetricGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 820 ? 4 : 2;
+        final columns = constraints.maxWidth >= 820
+            ? (metrics.length <= 2 ? 2 : 4)
+            : (constraints.maxWidth < 280 ? 1 : 2);
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -111,7 +106,7 @@ class DashboardMetricGrid extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: columns == 4 ? 1.55 : 1.28,
+            mainAxisExtent: 126,
           ),
           itemBuilder: (context, index) => _MetricCard(metric: metrics[index]),
         );
@@ -137,49 +132,66 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(21),
-        gradient: LinearGradient(
-          colors: [
-            metric.color.withValues(alpha: .17),
-            Theme.of(context).colorScheme.surface.withValues(alpha: .90),
-          ],
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: metric.color.withValues(alpha: .24),
+          width: 1.2,
         ),
-        border: Border.all(color: metric.color.withValues(alpha: .23)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x140B1F3A),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            color: Color(0x0E0B1F3A),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(metric.icon, color: metric.color, size: 25),
-          const Spacer(),
-          Text(
-            metric.value,
-            style: GoogleFonts.poppins(
-              fontSize: 25,
-              fontWeight: FontWeight.w700,
-              height: 1,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: metric.color.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: Icon(metric.icon, color: metric.color, size: 20),
           ),
-          const SizedBox(height: 5),
-          Text(
-            metric.label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 11.5,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: .58),
-            ),
+          const SizedBox(height: 4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  metric.value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 23,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                metric.label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  height: 1.2,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: .58),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -207,7 +219,7 @@ class DashboardSectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: .92),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: AppColors.primaryBlue.withValues(alpha: .10),
@@ -265,18 +277,19 @@ class DashboardActionGrid extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: columns == 4 ? 1.9 : 1.65,
+            childAspectRatio: columns == 4 ? 1.6 : 1.35,
           ),
           itemBuilder: (context, index) {
             final action = actions[index];
             return Material(
-              color: Theme.of(context).colorScheme.surface,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(18),
               child: InkWell(
                 onTap: action.onTap,
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
-                  padding: const EdgeInsets.all(13),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
@@ -286,7 +299,16 @@ class DashboardActionGrid extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(action.icon, color: AppColors.primaryBlue, size: 24),
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withValues(alpha: .11),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: Icon(action.icon,
+                            color: AppColors.primaryBlue, size: 22),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         action.label,
