@@ -44,10 +44,36 @@ void main() {
         );
       }
     });
+
+    test('admin can open a batch year details page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminBatchFor(2023),
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.admin,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('alumni cannot open a batch year details page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminBatchFor(2023),
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          approved: true,
+        ),
+        AppRoutes.alumniDashboard,
+      );
+    });
   });
 
   group('resolveRedirect - other roles', () {
-    test('guest is redirected home when not signed in', () {
+    test('unauthenticated user is redirected to login', () {
       final result = resolveRedirect(
         location: AppRoutes.adminDashboard,
         authLoading: notLoading,
@@ -58,15 +84,15 @@ void main() {
       expect(result, AppRoutes.login);
     });
 
-    test('coordinator cannot reach admin Audit Logs tab', () {
+    test('alumni cannot reach admin Audit Logs tab', () {
       final result = resolveRedirect(
         location: AppRoutes.adminAuditLogs,
         authLoading: notLoading,
         loggedIn: loggedIn,
-        role: UserRole.coordinator,
+        role: UserRole.alumni,
         approved: true,
       );
-      expect(result, AppRoutes.coordinatorDashboard);
+      expect(result, AppRoutes.alumniDashboard);
     });
 
     test('approved alumni on pending-approval is automatically redirected to alumni dashboard', () {
@@ -89,6 +115,79 @@ void main() {
         approved: false,
       );
       expect(result, AppRoutes.pendingApproval);
+    });
+  });
+
+  group('resolveRedirect - alumni verification flow', () {
+    test('unauthenticated user can open the Verify Alumni ID page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.verifyAlumniId,
+          authLoading: notLoading,
+          loggedIn: false,
+          role: null,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('unauthenticated user can open a registration page for an Alumni ID', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.registerWith('BISU-2020-001'),
+          authLoading: notLoading,
+          loggedIn: false,
+          role: null,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('admin can open the Alumni Management module', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminAlumni,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.admin,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('alumni cannot open the Alumni Management module', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminAlumni,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          approved: true,
+        ),
+        AppRoutes.alumniDashboard,
+      );
+    });
+
+    test('signed-in user is sent home from the auth flow pages', () {
+      for (final path in [
+        AppRoutes.verifyAlumniId,
+        AppRoutes.registerWith('BISU-2020-001'),
+      ]) {
+        expect(
+          resolveRedirect(
+            location: path,
+            authLoading: notLoading,
+            loggedIn: loggedIn,
+            role: UserRole.alumni,
+            approved: true,
+          ),
+          AppRoutes.alumniDashboard,
+          reason: 'signed-in users must be redirected away from auth pages',
+        );
+      }
     });
   });
 }

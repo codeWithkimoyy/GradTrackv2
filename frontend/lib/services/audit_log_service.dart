@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_constants.dart';
 
 /// Append-only trail of administrative/security actions. Only admins may read
-/// these records and only staff (admin/coordinator) may write them (enforced
+/// these records and only staff (admin) may write them (enforced
 /// by the Firestore rules); entries are never updated or deleted.
 ///
 /// The `title`/`description` fields double as the primary activity summary so

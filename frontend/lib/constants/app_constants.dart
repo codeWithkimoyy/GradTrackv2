@@ -59,6 +59,18 @@ class AppColors {
   static const Color iconBgGold = Color(0xFF78350F);
   static const Color iconBgGreen = Color(0xFF065F46);
   static const Color iconBgRed = Color(0xFF991B1B);
+
+  // BISU Royal Blue Palette (Official-inspired primary #003DA5)
+  static const Color bisuBlue50 = Color(0xFFEFF6FF);
+  static const Color bisuBlue100 = Color(0xFFDBEAFE);
+  static const Color bisuBlue200 = Color(0xFFBFDBFE);
+  static const Color bisuBlue300 = Color(0xFF93C5FD);
+  static const Color bisuBlue400 = Color(0xFF60A5FA);
+  static const Color bisuBlue500 = Color(0xFF3B82F6);
+  static const Color bisuBlue600 = Color(0xFF1E5FD1);
+  static const Color bisuBlue700 = Color(0xFF003DA5); // Official-inspired primary
+  static const Color bisuBlue800 = Color(0xFF002D7A);
+  static const Color bisuBlue900 = Color(0xFF001F5B);
 }
 
 class AppRadius {
@@ -85,12 +97,27 @@ class AppStrings {
   static const String appName = 'GradTrack';
   static const String universityName = 'Bohol Island State University';
   static const String tagline = 'Empowering Graduates. Connecting Futures.';
+  static const String defaultCourse = 'BS Computer Science';
+
+  /// Synthesized address used for alumni Auth login so they can sign in with
+  /// their Alumni ID instead of an email: BISU-2020-001@gradtrack.bisu.edu.ph.
+  static const String alumniEmailSuffix = '@gradtrack.bisu.edu.ph';
+
+  static String alumniEmailFromId(String alumniId) =>
+      '$alumniId$alumniEmailSuffix';
+
+  /// Alumni IDs may only contain letters, digits, hyphens and underscores.
+  static final RegExp alumniIdPattern = RegExp(r'^[A-Za-z0-9_\-]+$');
+
+  /// Build tag shown on the login screen so deployments/caches are verifiable.
+  static const String buildId = 'b-2026-0909-10';
 }
 
 /// Firestore collection names, centralized to avoid typos across the app.
 class FirestoreCollections {
   FirestoreCollections._();
   static const String users = 'users';
+  static const String alumniRegistry = 'alumni_registry';
   static const String employment = 'employment_records';
   static const String surveys = 'surveys';
   static const String surveyResponses = 'survey_responses';

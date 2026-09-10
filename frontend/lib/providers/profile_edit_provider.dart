@@ -88,6 +88,17 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
+    // Keep the legacy "Graduation Year" field in sync with the graduation
+    // batch so every profile surface (Class of X, Quick Record) reflects
+    // the academic year the alumni picked. "2025-2026" -> 2026.
+    final batch = finalUser.academicYearGraduated?.trim();
+    if (batch != null && batch.isNotEmpty) {
+      final startYear = academicYearStart(batch);
+      if (startYear != null) {
+        changes['graduationYear'] = startYear + 1;
+      }
+    }
+
     try {
       try {
         await _ref
@@ -98,10 +109,17 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
         // full merge write, which is allowed for self-created docs.
         await _ref.read(userRepositoryProvider).saveUser(finalUser);
       }
-    } catch (_) {
-      // Offline / rules-blocked: keep the edit in local state so the UI
-      // stays consistent for this session.
+    } catch (e) {
+      // The cloud write was rejected. Keep the change in local session
+      // state (useful when offline) but report an honest failure instead of
+      // pretending the profile was saved, so the user knows it did not persist.
       _ref.read(localProfileProvider.notifier).state = finalUser;
+      state = const ProfileEditState(
+        status: ProfileEditStatus.error,
+        message:
+            'Your changes were NOT saved to the cloud. Check your connection and try again.',
+      );
+      return false;
     }
 
     state = const ProfileEditState(

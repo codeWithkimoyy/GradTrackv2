@@ -10,7 +10,6 @@ import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
-import '../../widgets/google_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -54,31 +53,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _loading = true);
 
     try {
+      final identifier = _emailController.text.trim();
       await ref.read(authServiceProvider).signInWithEmail(
-            email: _emailController.text.trim(),
+            email: AuthService.resolveIdentifier(identifier),
             password: _passwordController.text,
           );
 
       if (_rememberMe) {
-        await _secureStorage.write(
-            key: 'remembered_email', value: _emailController.text.trim());
+        await _secureStorage.write(key: 'remembered_email', value: identifier);
       } else {
         await _secureStorage.delete(key: 'remembered_email');
       }
 
       if (mounted) context.go(AppRoutes.dashboard);
-    } catch (e) {
-      _showError(AuthService.friendlyError(e));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _signInWithGoogle() async {
-    setState(() => _loading = true);
-    try {
-      final result = await ref.read(authServiceProvider).signInWithGoogle();
-      if (result != null && mounted) context.go(AppRoutes.dashboard);
     } catch (e) {
       _showError(AuthService.friendlyError(e));
     } finally {
@@ -218,9 +205,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 20),
               Text.rich(
-                TextSpan(
+                const TextSpan(
                   children: [
-                    const TextSpan(
+                    TextSpan(
                         text: 'Empowering Graduates.\nConnecting '),
                     TextSpan(
                       text: 'Futures.',
@@ -355,15 +342,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               _glassField(
                 TextFormField(
                   controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
+                  keyboardType: TextInputType.text,
+                  autocorrect: false,
                   style: _bodyStyle(),
                   cursorColor: _focusCyan,
                   decoration: _inputDecoration(
-                    hintText: 'Email Address',
-                    prefixWidget: const Icon(Icons.email_outlined, size: 20),
+                    hintText: 'Alumni ID or Email',
+                    prefixWidget: const Icon(Icons.badge_outlined, size: 20),
                   ),
-                  validator: (v) =>
-                      (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Enter your Alumni ID or email'
+                      : null,
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 12, top: 4),
+                child: Text(
+                  'Alumni sign in with your Alumni ID. Administrators use their email.',
+                  style: TextStyle(color: Color(0xFFCEE7FF), fontSize: 10.5),
                 ),
               ),
               const SizedBox(height: 10),
@@ -414,51 +410,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: _loading ? null : _submit,
                 label: 'Sign In',
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  const Expanded(child: Divider(color: Color(0x66FFFFFF))),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      'OR',
-                      style: GoogleFonts.poppins(
-                        color: _secondaryText,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const Expanded(child: Divider(color: Color(0x66FFFFFF))),
-                ],
-              ),
-              const SizedBox(height: 14),
-              _PressableScale(
-                onTap: _loading ? null : _signInWithGoogle,
-                child: OutlinedButton.icon(
-                  onPressed: _loading ? null : _signInWithGoogle,
-                  icon: const GoogleLogo(size: 20),
-                  label: const Text('Continue with Google'),
-                  style: OutlinedButton.styleFrom(
-                    fixedSize: const Size.fromHeight(48),
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.08),
-                    side: const BorderSide(
-                      color: Color(0xFF5DDCFF),
-                      width: 1.2,
-                    ),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    textStyle: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 18),
               Center(
                 child: Wrap(
@@ -473,7 +424,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     InkWell(
-                      onTap: _loading ? null : () => context.push(AppRoutes.register),
+                      onTap: _loading ? null : () => context.push(AppRoutes.verifyAlumniId),
                       borderRadius: BorderRadius.circular(4),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -492,7 +443,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              Center(
+                child: Text(
+                  '${AppStrings.appName} build ${AppStrings.buildId}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
             ],
           ),
         ),

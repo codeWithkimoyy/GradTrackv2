@@ -19,6 +19,7 @@ const editableFields = new Set([
   'biography',
   'socialLinks',
   'employmentStatus',
+  'academicYearGraduated',
 ]);
 
 router.use(authenticate);

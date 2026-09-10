@@ -34,7 +34,7 @@ class AlumniDashboard extends ConsumerWidget {
       title: 'Welcome back, ${user.fullName}',
       subtitle: 'Your personal graduate success dashboard.',
       icon: Icons.verified_user_outlined,
-      accent: AppColors.primaryBlue,
+      accent: AppColors.bisuBlue700,
       children: [
         if (unreadCount > 0) ...[
           Container(
@@ -139,7 +139,7 @@ class AlumniDashboard extends ConsumerWidget {
                   const SizedBox(width: 13),
                   Expanded(
                     child: Text(
-                      '${user.course ?? 'Program not set'}\nGraduated ${user.graduationYear ?? 'year not set'}'
+                      '${user.course ?? AppStrings.defaultCourse}\nGraduated ${user.graduationYear ?? 'year not set'}'
                       '${user.academicYearGraduated != null ? ' · AY ${user.academicYearGraduated}' : ''}'
                       ' · ${user.employmentStatus.label}',
                     ),
@@ -147,7 +147,7 @@ class AlumniDashboard extends ConsumerWidget {
                   Text(
                     '$completion%',
                     style: const TextStyle(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.bisuBlue700,
                       fontSize: 21,
                       fontWeight: FontWeight.w700,
                     ),
@@ -159,9 +159,9 @@ class AlumniDashboard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
                   value: completion / 100,
-                  backgroundColor: AppColors.borderLight.withValues(alpha: 0.5),
+                  backgroundColor: AppColors.bisuBlue100.withValues(alpha: 0.6),
                   valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryBlue),
+                      AppColors.bisuBlue700),
                   minHeight: 6,
                 ),
               ),
@@ -175,28 +175,28 @@ class AlumniDashboard extends ConsumerWidget {
               'Profile Completion',
               '$completion%',
               Icons.account_circle_outlined,
-              AppColors.primaryBlue,
+              AppColors.bisuBlue700,
               onTap: () => context.go(AppRoutes.alumniProfile),
             ),
             DashboardMetric(
               'Survey Progress',
               surveyLabel,
               Icons.fact_check_outlined,
-              AppColors.success,
+              AppColors.bisuBlue600,
               onTap: () => context.go(AppRoutes.alumniSurvey),
             ),
             DashboardMetric(
               'Employment Status',
               user.employmentStatus.label,
               Icons.work_outline_rounded,
-              AppColors.gold,
+              AppColors.bisuBlue500,
               onTap: () => context.push(AppRoutes.employment),
             ),
             DashboardMetric(
               'Notifications',
               unreadCount == 0 ? 'All read' : '$unreadCount new',
               Icons.notifications_none_rounded,
-              AppColors.warning,
+              AppColors.bisuBlue400,
               onTap: () => context.go(AppRoutes.alumniNotifications),
             ),
           ],
@@ -214,7 +214,7 @@ class AlumniDashboard extends ConsumerWidget {
               DashboardAction('Employment History', Icons.work_outline_rounded,
                   () => context.push(AppRoutes.employment)),
               DashboardAction('Message Admin', Icons.chat_outlined,
-                  () => context.push('/messages')),
+                  () => context.push(AppRoutes.messages)),
               DashboardAction('Notifications', Icons.notifications_none_rounded,
                   () => context.go(AppRoutes.alumniNotifications)),
               DashboardAction('Job Opportunities', Icons.business_center_outlined,
@@ -222,6 +222,10 @@ class AlumniDashboard extends ConsumerWidget {
               DashboardAction('Events', Icons.event_outlined,
                   () => context.go(AppRoutes.collectionData('events'))),
               DashboardAction('Certificates', Icons.workspace_premium_outlined,
+                  () => context.go(AppRoutes.alumniDocuments)),
+            ],
+          ),
+        ),
                   () => context.go(AppRoutes.alumniDocuments)),
             ],
           ),

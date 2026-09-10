@@ -25,7 +25,7 @@ class DashboardShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentUserProfileProvider).valueOrNull;
-    final role = profile?.role ?? UserRole.guest;
+    final role = profile?.role ?? UserRole.alumni;
     final items = _navItemsForRole(role);
     final location = GoRouterState.of(context).matchedLocation;
     final selected = _selectedIndex(location, items);
@@ -52,10 +52,13 @@ class DashboardShell extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 960;
-        final tablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+        // Crossover layout: admins always get the desktop web-style shell
+        // (sidebar + top bar), alumni always get the mobile app-style shell
+        // (bottom navigation) — regardless of viewport width.
+        final webStyle = role == UserRole.admin;
+        final compactSidebar = constraints.maxWidth < 700;
 
-        if (desktop || tablet) {
+        if (webStyle) {
           return Scaffold(
             backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             body: SafeArea(
@@ -65,12 +68,12 @@ class DashboardShell extends ConsumerWidget {
                     items: items,
                     selectedIndex: selected,
                     onSelected: navigate,
-                    isCompact: tablet,
+                    isCompact: compactSidebar,
                   ),
                   Expanded(
                     child: Column(
                       children: [
-                        const _DesktopTopBar(),
+                        _DesktopTopBar(compact: compactSidebar),
                         Expanded(
                           child: ColoredBox(
                             color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -328,7 +331,6 @@ class _ShellNavItem {
 }
 
 List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
-      UserRole.guest => const [],
       UserRole.alumni => const [
         _ShellNavItem(Icons.home_outlined, Icons.home_rounded, 'Home',
             AppRoutes.alumniDashboard, Color(0xFF2563EB),
@@ -336,8 +338,9 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
         _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
             'Survey', AppRoutes.alumniSurvey, Color(0xFF0D9488),
             sticker: '\u{1F4C3}'),
-        _ShellNavItem(Icons.work_outline_rounded, Icons.work_rounded, 'Jobs',
-            AppRoutes.alumniJobs, Color(0xFFD97706), sticker: '\u{1F4BC}'),
+        _ShellNavItem(Icons.work_outline_rounded, Icons.work_rounded,
+            'Employment', AppRoutes.alumniJobs, Color(0xFFD97706),
+            sticker: '\u{1F4BC}'),
         _ShellNavItem(
             Icons.notifications_none_rounded,
             Icons.notifications_rounded,
@@ -349,27 +352,13 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
             'Profile', AppRoutes.alumniProfile, Color(0xFF06B6D4),
             sticker: '\u{1F464}'),
       ],
-      UserRole.coordinator => const [
-        _ShellNavItem(Icons.analytics_outlined, Icons.analytics_rounded,
-            'Overview', AppRoutes.coordinatorDashboard, Color(0xFF2563EB),
-            sticker: '\u{1F4CA}'),
-        _ShellNavItem(Icons.groups_outlined, Icons.groups_rounded, 'Alumni',
-            AppRoutes.coordinatorAlumni, Color(0xFF0D9488),
-            sticker: '\u{1F393}'),
-        _ShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
-            'Surveys', AppRoutes.coordinatorSurveys, Color(0xFFD97706),
-            sticker: '\u{1F4CB}'),
-        _ShellNavItem(Icons.assessment_outlined, Icons.assessment_rounded,
-            'Reports', AppRoutes.coordinatorReports, Color(0xFFA855F7),
-            sticker: '\u{1F4C8}'),
-        _ShellNavItem(Icons.event_outlined, Icons.event_rounded, 'Events',
-            AppRoutes.coordinatorEvents, Color(0xFF06B6D4),
-            sticker: '\u{1F5D3}\u{FE0F}'),
-      ],
       UserRole.admin => const [
-        _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Overview',
+        _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Home',
             AppRoutes.adminDashboard, Color(0xFF2563EB),
             sticker: '\u{1F6E1}\u{FE0F}'),
+        _ShellNavItem(Icons.school_outlined, Icons.school_rounded,
+            'Alumni', AppRoutes.adminAlumni, Color(0xFFD97706),
+            sticker: '\u{1F393}'),
         _ShellNavItem(Icons.people_outline_rounded, Icons.people_rounded,
             'Users', AppRoutes.adminUsers, Color(0xFF0D9488),
             sticker: '\u{1F465}'),
@@ -801,7 +790,9 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 }
 
 class _DesktopTopBar extends ConsumerWidget {
-  const _DesktopTopBar();
+  const _DesktopTopBar({this.compact = false});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -812,7 +803,7 @@ class _DesktopTopBar extends ConsumerWidget {
 
     return Container(
       height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         border: Border(
@@ -825,49 +816,50 @@ class _DesktopTopBar extends ConsumerWidget {
       child: Row(
         children: [
           // Breadcrumb / Context Title
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Graduate Tracking System',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : AppColors.primaryNavy,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Row(
-                children: [
-                  Text(
-                    'Bohol Island State University',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
+          if (!compact)
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Graduate Tracking System',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AppColors.teal.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Bilar Campus',
+                ),
+                const SizedBox(height: 1),
+                Row(
+                  children: [
+                    Text(
+                      'Bohol Island State University',
                       style: GoogleFonts.poppins(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.teal,
+                        fontSize: 11,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.teal.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Bilar Campus',
+                        style: GoogleFonts.poppins(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.teal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           const Spacer(),
 
           // Messages / Chat Button
@@ -878,7 +870,7 @@ class _DesktopTopBar extends ConsumerWidget {
 
           // Notification Bell
           if (user != null) NotificationBell(userId: user.uid),
-          const SizedBox(width: 14),
+          if (!compact) const SizedBox(width: 14),
 
           // User Avatar & Profile Dropdown
           if (user != null)
@@ -887,7 +879,7 @@ class _DesktopTopBar extends ConsumerWidget {
                 cursor: SystemMouseCursors.click,
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      EdgeInsets.symmetric(horizontal: compact ? 4 : 10, vertical: compact ? 4 : 6),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.cardDark : Colors.white,
                     borderRadius: BorderRadius.circular(14),
@@ -922,37 +914,39 @@ class _DesktopTopBar extends ConsumerWidget {
                               )
                             : null,
                       ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            user.fullName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : AppColors.primaryNavy,
+                      if (!compact) ...[
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              user.fullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : AppColors.primaryNavy,
+                              ),
                             ),
-                          ),
-                          Text(
-                            user.role.label,
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: AppColors.teal,
-                              fontWeight: FontWeight.w600,
+                            Text(
+                              user.role.label,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: AppColors.teal,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                        size: 18,
-                      ),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          size: 18,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1368,13 +1362,6 @@ class _DashboardBody extends ConsumerWidget {
                         physics: const BouncingScrollPhysics(),
                         children: [
                           _QuickActionCard(
-                            icon: Icons.add_business_rounded,
-                            label: 'Log Employment',
-                            color: AppColors.primaryBlue,
-                            onTap: () => context.push(AppRoutes.addEmployment),
-                          ),
-                          const SizedBox(width: 12),
-                          _QuickActionCard(
                             icon: Icons.upload_file_rounded,
                             label: 'Upload Resume',
                             color: AppColors.teal,
@@ -1557,17 +1544,17 @@ class _DashboardBody extends ConsumerWidget {
                             user.course!,
                             AppColors.teal,
                           ),
-                        if (user.academicYearGraduated != null &&
-                            user.academicYearGraduated!.isNotEmpty)
+                        if (user.academicYearGraduated?.trim().isNotEmpty ==
+                            true)
                           _tagBadge(
                             Icons.school_rounded,
-                            'AY ${user.academicYearGraduated}',
+                            'S.Y. ${displayAcademicYear(user.academicYearGraduated)}',
                             AppColors.primaryBlue,
-                          ),
-                        if (user.graduationYear != null)
+                          )
+                        else if (user.graduationYear != null)
                           _tagBadge(
                             Icons.calendar_today_rounded,
-                            'Class of ${user.graduationYear}',
+                            'S.Y. ${user.graduationYear}',
                             AppColors.primaryBlue,
                           ),
                       ],
@@ -1881,9 +1868,11 @@ class _DashboardBody extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           _infoRow(context, 'Student No.', user.studentNumber ?? 'N/A'),
-          _infoRow(context, 'Course', user.course ?? 'BS Computer Science'),
-          _infoRow(context, 
-              'Graduation Year', user.graduationYear?.toString() ?? '2024'),
+          _infoRow(context, 'Course', user.course ?? AppStrings.defaultCourse),
+          _infoRow(context,
+              'Graduation Year', user.graduationYear?.toString() ?? 'Not set'),
+          _infoRow(context, 'Academic Year Graduated',
+              displayAcademicYear(user.academicYearGraduated)),
           _infoRow(context, 'Phone', user.phoneNumber ?? 'Not provided'),
           _infoRow(context, 'Status', user.employmentStatus.label),
           const Divider(height: 24),
@@ -2435,9 +2424,14 @@ class _AlumniTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _itemLine(context, 'Full Name', user.fullName),
-              _itemLine(context, 'Course Program', user.course ?? 'BS Computer Science'),
-              _itemLine(context, 'Graduation Batch',
-                  user.graduationYear?.toString() ?? '2024'),
+              _itemLine(context, 'Course Program',
+                  user.course ?? AppStrings.defaultCourse),
+              _itemLine(
+                  context,
+                  'Graduation Batch',
+                  user.academicYearGraduated?.trim().isNotEmpty == true
+                      ? 'S.Y. ${displayAcademicYear(user.academicYearGraduated)}'
+                      : (user.graduationYear?.toString() ?? 'Not set')),
               _itemLine(context, 'Status', user.employmentStatus.label),
               const SizedBox(height: 16),
               ElevatedButton(

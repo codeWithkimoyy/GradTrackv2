@@ -67,10 +67,12 @@ const _pages = [
     subtitle:
         'Participate in institutional tracer surveys, unlock job opportunities, and engage with campus alumni initiatives.',
     features: [
-      _Feature(Icons.fact_check_rounded, 'Tracer Survey'),
-      _Feature(Icons.business_center_rounded, 'Career Hub'),
-      _Feature(Icons.campaign_rounded, 'Announcements'),
-      _Feature(Icons.event_rounded, 'Alumni Events'),
+      _Feature(Icons.event_outlined, 'Upcoming Events'),
+      _Feature(Icons.campaign_outlined, 'Announcements'),
+      _Feature(Icons.work_outline_rounded, 'Employment'),
+      _Feature(Icons.fact_check_outlined, 'Tracer Survey'),
+      _Feature(Icons.groups_outlined, 'Alumni Activities'),
+      _Feature(Icons.groups_outlined, 'Community'),
     ],
   ),
 ];

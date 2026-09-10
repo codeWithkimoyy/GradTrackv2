@@ -1,0 +1,22 @@
+{
+  "firestore": {
+    "rules": "backend/firestore.rules"
+  },
+  "functions": {
+    "source": "backend/functions"
+  },
+  "hosting": {
+    "public": "frontend/build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

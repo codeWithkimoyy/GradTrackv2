@@ -8,15 +8,66 @@ import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
 
-/// Shown to signed-in users whose account has not yet been approved by an
-/// administrator/coordinator. They cannot reach any app content until approved.
+/// Shown to students whose account has not yet been approved by an
+/// administrator. They cannot reach alumni content until approved.
 /// Watches the live profile so it automatically grants access the moment the
 /// account is approved.
 class PendingApprovalScreen extends ConsumerWidget {
   const PendingApprovalScreen({super.key});
 
+  Future<void> _checkApproval(BuildContext context, WidgetRef ref) async {
+    final profile = ref.read(currentUserProfileProvider).valueOrNull;
+    final uid = profile?.uid;
+    if (uid == null) {
+      showAppSnackBar(
+        context,
+        'Your profile is not available yet. Please sign out and try again.',
+      );
+      return;
+    }
+
+    try {
+      final fresh = await ref
+          .read(authServiceProvider)
+          .fetchUserProfile(uid);
+      if (!context.mounted) return;
+
+      if (fresh == null) {
+        showAppSnackBar(
+          context,
+          'Profile record not found. Please sign out and sign in again.',
+        );
+        return;
+      }
+
+      if (fresh.approved || fresh.role == UserRole.admin) {
+        showAppSnackBar(
+          context,
+          'Your account has been approved. Welcome to GradTrack!',
+          backgroundColor: AppColors.success,
+        );
+        context.go(dashboardForRole(fresh.role));
+        return;
+      }
+
+      showAppSnackBar(
+        context,
+        'Your account is still pending approval.',
+        backgroundColor: AppColors.warning,
+      );
+    } catch (e) {
+      if (context.mounted) {
+        showAppSnackBar(
+          context,
+          'Could not check approval: $e',
+          backgroundColor: AppColors.error,
+        );
+      }
+    }
+  }
+
   void _openAccount(BuildContext context, WidgetRef ref, UserModel? profile) {
-    if (profile != null && profile.approved) {
+    if (profile != null && (profile.approved || profile.role == UserRole.admin)) {
       final home = dashboardForRole(profile.role);
       showAppSnackBar(
         context,
@@ -37,10 +88,12 @@ class PendingApprovalScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<AsyncValue<UserModel?>>(currentUserProfileProvider, (previous, next) {
       final user = next.valueOrNull;
-      if (user != null && user.approved) {
+      if (user != null && (user.approved || user.role == UserRole.admin)) {
         showAppSnackBar(
           context,
-          'Your account has been approved! Welcome to GradTrack.',
+          user.role == UserRole.admin
+              ? 'Welcome back, Administrator.'
+              : 'Your account has been approved! Welcome to GradTrack.',
           backgroundColor: AppColors.success,
         );
         context.go(dashboardForRole(user.role));
@@ -50,9 +103,9 @@ class PendingApprovalScreen extends ConsumerWidget {
     final profileAsync = ref.watch(currentUserProfileProvider);
     final profile = profileAsync.valueOrNull;
 
-    if (profile != null && profile.approved) {
+    if (profile != null && (profile.approved || profile.role == UserRole.admin)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) _openAccount(context, ref, profile);
+        if (context.mounted) _checkApproval(context, ref);
       });
     }
 

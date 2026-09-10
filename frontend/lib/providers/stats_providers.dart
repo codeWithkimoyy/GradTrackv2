@@ -6,8 +6,8 @@ import 'role_providers.dart';
 final statsRepositoryProvider =
     Provider<StatsRepository>((ref) => StatsRepository());
 
-/// Live staff-facing aggregate stats (admin + coordinator).
-/// Admins see every role; coordinators are scoped to alumni and guests.
+/// Live staff-facing aggregate stats.
+/// Admins see every role; non-admins are scoped to alumni records.
 final staffStatsProvider =
     StreamProvider.autoDispose<DashboardStats>((ref) {
   final isAdmin = ref.watch(isAdminProvider);
@@ -31,6 +31,12 @@ final surveyProgressProvider =
   return ref.watch(statsRepositoryProvider).watchSurveyProgress(userId);
 });
 
+/// Live alumni list grouped by academic year graduated (newest batch first).
+final alumniBatchesProvider =
+    StreamProvider.autoDispose<List<AlumniBatch>>((ref) {
+  return ref.watch(statsRepositoryProvider).watchAlumniBatches();
+});
+
 /// Live announcement list (alumni view).
 final announcementsProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
@@ -46,8 +52,8 @@ final publicAnnouncementsProvider =
 });
 
 /// Live pending-approval queue for the admin dashboard (newest first).
-/// Users created by the auth flow default `approved` to false, so this
-/// stream is the admin's actionable work list.
+/// New registrations are auto-approved, so this stream only surfaces
+/// pre-approval-era accounts and anyone an admin manually un-approves.
 final pendingApprovalsProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(statsRepositoryProvider).watchPendingApprovals();

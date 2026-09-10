@@ -7,7 +7,7 @@ import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/role_providers.dart';
 
-/// Live survey responses for a specific survey. Staff (admin/coordinator)
+/// Live survey responses for a specific survey. Staff (admin)
 /// may read every response; alumni only see their own via
 /// `mySurveyResponsesProvider`.
 final surveyResponsesProvider = StreamProvider.autoDispose
@@ -18,9 +18,9 @@ final surveyResponsesProvider = StreamProvider.autoDispose
       .snapshots();
 });
 
-/// Alumni/guest user records so staff can attach names to responses. Admins
-/// read the whole users collection; coordinators are scoped to alumni/guest
-/// records by the security rules, so the same filter is applied here.
+/// Alumni user records so staff can attach names to responses. Admins read
+/// the whole users collection; non-admins are scoped to alumni records by
+/// the security rules, so the same filter is applied here.
 final staffUsersProvider = StreamProvider.autoDispose<
     QuerySnapshot<Map<String, dynamic>>>((ref) {
   final role = ref.watch(currentUserRoleProvider);
@@ -29,7 +29,7 @@ final staffUsersProvider = StreamProvider.autoDispose<
   if (role == UserRole.admin) {
     return query.snapshots();
   }
-  return query.where('role', whereIn: const ['alumni', 'guest']).snapshots();
+  return query.where('role', isEqualTo: 'alumni').snapshots();
 });
 
 /// Staff view of the alumni answers to one survey. Shows who answered,

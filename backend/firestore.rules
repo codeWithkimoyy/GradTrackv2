@@ -26,24 +26,16 @@ service cloud.firestore {
       return currentUserRole() == 'admin';
     }
 
-    function isCoordinator() {
-      return currentUserRole() == 'coordinator';
-    }
-
     function isStaff() {
-      return isAdmin() || isCoordinator();
+      return isAdmin();
     }
 
     function isAlumni() {
-      return isSignedIn() && currentUserRole() == 'alumni';
+      return isSignedIn() && currentUserRole() != 'admin';
     }
 
     function ownerOfResource() {
       return isSignedIn() && request.auth.uid == resource.data.userId;
-    }
-
-    function ownerOfRequest() {
-      return isSignedIn() && request.auth.uid == request.resource.data.userId;
     }
 
     function isPublicResource() {
@@ -51,8 +43,13 @@ service cloud.firestore {
     }
 
     function canPublishContent() {
-      return request.resource.data.keys().hasAll(['title']) &&
+      return (request.resource.data.keys().hasAll(['title']) ||
+              request.resource.data.keys().hasAll(['jobTitle'])) &&
              request.resource.data.visibility in ['public', 'private'];
+    }
+
+    function ownerOfJob() {
+      return isSignedIn() && request.auth.uid == resource.data.createdBy;
     }
 
     function canOwnUpdate() {
@@ -66,21 +63,52 @@ service cloud.firestore {
     // ---------- USERS ----------
     match /users/{userId} {
       allow read: if isAdmin() ||
-                    (isCoordinator() &&
-                     resource.data.role in ['alumni', 'guest']) ||
                     (isSignedIn() && request.auth.uid == userId);
       allow create: if isAdmin() ||
-                    (isSignedIn() && request.auth.uid == userId &&
-                      request.resource.data.role in ['alumni', 'guest']);
+      allow create: if isAdmin() ||
+                    (isSignedIn() &&
+                      request.auth.uid == userId &&
+                      request.resource.data.role in ['alumni', 'guest'] &&
+                      (request.resource.data.role != 'alumni' ||
+                       !('alumniId' in request.resource.data) ||
+                       exists(/databases/$(database)/documents/alumni_registry/$(request.resource.data.alumniId))));
       allow update: if isAdmin() ||
-                    (isCoordinator() &&
-                     resource.data.role in ['alumni', 'guest'] &&
-                     !request.resource.data.keys().hasAny(['role', 'disabled', 'email'])) ||
-                    (isSignedIn() && request.auth.uid == userId &&
-                     resource.data.role in ['alumni', 'guest'] &&
+                    (isSignedIn() &&
+                     request.auth.uid == userId &&
                      request.resource.data.role == resource.data.role &&
-                     !request.resource.data.keys().hasAny(['disabled', 'role']));
+                     request.resource.data.role == resource.data.role &&
+                     !request.resource.data
+                          .diff(resource.data)
+                          .affectedKeys()
+                          .hasAny(['disabled', 'role',
+                                   'approved', 'isVerified', 'alumniId']));
       allow delete: if isAdmin();
+    }
+
+    // ---------- ALUMNI REGISTRY (pre-registered Alumni IDs) ----------
+    // Created by admins as the whitelist of Alumni IDs that may register.
+    match /alumni_registry/{alumniId} {
+      // Allows the unauthenticated registration screen to verify an ID exists.
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+                    // Activation: an alumni may flip *only their own* record
+                    // from Pending to Active as part of creating their account
+                    // (server-side re-checked by the app; the linked users
+                    // document must already exist for the new account).
+                    (isSignedIn() &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid))
+                          .data.alumniId == alumniId &&
+                      resource.data.status == 'pending' &&
+                      request.resource.data.status == 'active' &&
+                      !request.resource.data
+                           .diff(resource.data)
+                           .affectedKeys()
+                           .hasAny([
+                             'alumniId', 'fullName', 'course',
+                             'graduationYear', 'createdAt',
+                           ]));
     }
 
     // ---------- ALUMNI PRIVATE RECORDS ----------
@@ -139,9 +167,11 @@ service cloud.firestore {
 
     match /jobs/{id} {
       allow read: if isPublicResource() || isAlumni() || isStaff();
-      allow create: if isStaff() && canPublishContent();
-      allow update: if isStaff() && canPublishContent();
-      allow delete: if isStaff();
+      allow create: if (isStaff() || isAlumni()) &&
+                          canPublishContent() &&
+                          isSignedIn() &&
+                          request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isStaff() || ownerOfJob();
     }
 
     match /event_registrations/{id} {

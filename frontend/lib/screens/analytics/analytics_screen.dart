@@ -94,9 +94,7 @@ class AnalyticsScreen extends ConsumerWidget {
   Widget _buildRoleChart(BuildContext context, DashboardStats stats) {
     final items = [
       ('Admin', stats.admins.toDouble(), AppColors.error),
-      ('Coordinator', stats.coordinators.toDouble(), AppColors.info),
       ('Alumni', stats.alumni.toDouble(), AppColors.primaryBlue),
-      ('Guest', stats.guests.toDouble(), AppColors.gold),
     ];
     return _ChartCard(
       title: 'Users by Role',

@@ -38,10 +38,11 @@ void main() {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
-            home: RegisterScreen(),
+            home: RegisterScreen(alumniId: 'BISU-2020-001'),
           ),
         ),
       );
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(tester.takeException(), isNull);

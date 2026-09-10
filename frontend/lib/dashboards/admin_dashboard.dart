@@ -10,19 +10,25 @@ import '../routes/app_router.dart';
 import '../widgets/pending_approvals_queue.dart';
 import 'dashboard_components.dart';
 
-class AdminDashboard extends ConsumerWidget {
+class AdminDashboard extends ConsumerStatefulWidget {
   const AdminDashboard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(staffStatsProvider).valueOrNull ?? DashboardStats.empty;
+  ConsumerState<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends ConsumerState<AdminDashboard> {
+  @override
+  Widget build(BuildContext context) {
+    final stats =
+        ref.watch(staffStatsProvider).valueOrNull ?? DashboardStats.empty;
     final unreadMessages = ref.watch(unreadAdminMessagesCountProvider);
 
     return DashboardPage(
       title: 'Admin Command Center',
       subtitle: 'Manage GradTrack users, content, analytics, and security.',
       icon: Icons.shield_outlined,
-      accent: AppColors.primaryBlue,
+      accent: AppColors.bisuBlue700,
       children: [
         if (unreadMessages > 0) ...[
           Container(
@@ -99,17 +105,15 @@ class AdminDashboard extends ConsumerWidget {
         DashboardMetricGrid(
           metrics: [
             DashboardMetric('Total Users', '${stats.totalUsers}',
-                Icons.people_outline_rounded, AppColors.primaryBlue),
+                Icons.people_outline_rounded, AppColors.bisuBlue700),
             DashboardMetric('Total Alumni', '${stats.alumni}',
-                Icons.school_outlined, AppColors.success),
-            DashboardMetric('Coordinators', '${stats.coordinators}',
-                Icons.badge_outlined, AppColors.gold),
-            DashboardMetric('Active Users', '${stats.verifiedAlumni}',
-                Icons.online_prediction_rounded, AppColors.warning),
+                Icons.school_outlined, AppColors.bisuBlue600),
+            DashboardMetric('Verified Alumni', '${stats.verifiedAlumni}',
+                Icons.online_prediction_rounded, AppColors.bisuBlue500),
             DashboardMetric('Total Surveys', '${stats.surveyCount}',
-                Icons.fact_check_outlined, AppColors.primaryBlue),
+                Icons.fact_check_outlined, AppColors.bisuBlue800),
             DashboardMetric('Completed Surveys', '${stats.responseCount}',
-                Icons.task_alt_rounded, AppColors.success),
+                Icons.task_alt_rounded, AppColors.bisuBlue400),
             DashboardMetric('Total Events', '${stats.eventCount}',
                 Icons.event_outlined, AppColors.gold),
             DashboardMetric('Announcements', '${stats.announcementCount}',
@@ -129,15 +133,14 @@ class AdminDashboard extends ConsumerWidget {
                 Icons.chat_bubble_outline_rounded,
                 () => context.push(AppRoutes.adminMessages),
               ),
-              DashboardAction('Alumni', Icons.school_outlined,
-                  () => context.go('${AppRoutes.staffUsers}?role=alumni')),
-              DashboardAction('Coordinators', Icons.badge_outlined,
-                  () =>
-                      context.go('${AppRoutes.staffUsers}?role=coordinator')),
+              DashboardAction('Alumni Management', Icons.badge_outlined,
+                  () => context.go(AppRoutes.adminAlumni)),
               DashboardAction('Surveys', Icons.fact_check_outlined,
                   () => context.go(AppRoutes.collectionData('surveys'))),
               DashboardAction('Reports', Icons.assessment_outlined,
                   () => context.go(AppRoutes.collectionData('reports'))),
+              DashboardAction('Employment', Icons.business_center_outlined,
+                  () => context.go(AppRoutes.collectionData('jobs'))),
               DashboardAction('Announcements', Icons.campaign_outlined,
                   () => context.go(
                       AppRoutes.collectionData('announcements'))),
@@ -145,6 +148,8 @@ class AdminDashboard extends ConsumerWidget {
                   () => context.go(AppRoutes.collectionData('events'))),
               DashboardAction('Analytics', Icons.insights_outlined,
                   () => context.go(AppRoutes.adminAnalytics)),
+              DashboardAction('Employment History', Icons.work_history_outlined,
+                  () => context.go(AppRoutes.adminEmploymentHistory)),
               DashboardAction('Audit Logs', Icons.history_rounded,
                   () => context.go(AppRoutes.collectionData('audit_logs'))),
             ],
