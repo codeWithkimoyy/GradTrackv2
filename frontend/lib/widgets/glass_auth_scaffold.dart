@@ -294,9 +294,13 @@ class _SecurityFooter extends StatelessWidget {
             const Icon(Icons.verified_user_outlined,
                 color: Color(0xFFFFC21A), size: 21),
             const SizedBox(width: 8),
-            Text(
-              'Secure. Trusted. Connected.',
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+            Flexible(
+              child: Text(
+                'Secure. Trusted. Connected.',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

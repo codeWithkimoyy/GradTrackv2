@@ -29,6 +29,11 @@ String displayAcademicYear(String? value) {
 int? academicYearStart(String? value) =>
     int.tryParse((value ?? '').split('-').first.trim());
 
+/// Academic-year pair label for a starting year, e.g. 2022 -> "2022–2023".
+/// Matches the display style used by [displayAcademicYear].
+String academicYearLabel(int startYear) =>
+    '$startYear\u2013${startYear + 1}';
+
 /// Human label for a graduation batch header, e.g. "S.Y. 2025–2026".
 /// Legacy alumni without an academic year are shown under
 /// "Academic Year Not Specified".
@@ -125,6 +130,7 @@ class UserModel {
   final UserRole role;
   final String? photoUrl;
   final String? studentNumber;
+  final String? alumniId;
   final String? gender;
   final DateTime? birthdate;
   final String? phoneNumber;
@@ -141,6 +147,8 @@ class UserModel {
   final bool emailVerified;
   final bool disabled;
   final bool approved;
+  final bool hasLoggedIn;
+  final DateTime? lastLoginAt;
   final double profileCompletion;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -151,7 +159,8 @@ class UserModel {
     required this.fullName,
     required this.role,
     this.photoUrl,
-    this.studentNumber,
+this.studentNumber,
+    this.alumniId,
     this.gender,
     this.birthdate,
     this.phoneNumber,
@@ -168,6 +177,8 @@ class UserModel {
         this.emailVerified = false,
         this.disabled = false,
         this.approved = true,
+        this.hasLoggedIn = false,
+        this.lastLoginAt,
         this.profileCompletion = 0.0,
     required this.createdAt,
     this.updatedAt,
@@ -182,6 +193,7 @@ class UserModel {
       role: role,
       photoUrl: map['photoUrl'],
       studentNumber: map['studentNumber'],
+      alumniId: map['alumniId'],
       gender: map['gender'],
       birthdate: (map['birthdate'] as Timestamp?)?.toDate(),
       phoneNumber: map['phoneNumber'],
@@ -199,6 +211,8 @@ class UserModel {
       emailVerified: map['emailVerified'] ?? false,
       disabled: map['disabled'] ?? false,
       approved: role == UserRole.admin ? true : (map['approved'] ?? true),
+      hasLoggedIn: map['hasLoggedIn'] ?? false,
+      lastLoginAt: (map['lastLoginAt'] as Timestamp?)?.toDate(),
       profileCompletion: (map['profileCompletion'] ?? 0.0).toDouble(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
@@ -214,6 +228,7 @@ class UserModel {
         'role': role.name,
         'photoUrl': photoUrl,
         'studentNumber': studentNumber,
+        'alumniId': alumniId,
         'gender': gender,
         'birthdate': birthdate != null ? Timestamp.fromDate(birthdate!) : null,
         'phoneNumber': phoneNumber,
@@ -230,6 +245,8 @@ class UserModel {
         'emailVerified': emailVerified,
         'disabled': disabled,
         'approved': approved,
+        'hasLoggedIn': hasLoggedIn,
+        if (lastLoginAt != null) 'lastLoginAt': Timestamp.fromDate(lastLoginAt!),
         'profileCompletion': profileCompletion,
         'createdAt': Timestamp.fromDate(createdAt),
         'updatedAt': Timestamp.now(),
@@ -244,6 +261,7 @@ class UserModel {
     String? fullName,
     String? photoUrl,
     String? studentNumber,
+    Object? alumniId = _unset,
     String? gender,
     DateTime? birthdate,
     String? phoneNumber,
@@ -259,6 +277,8 @@ class UserModel {
     bool? isVerified,
     bool? emailVerified,
     bool? approved,
+    bool? hasLoggedIn,
+    Object? lastLoginAt = _unset,
     double? profileCompletion,
   }) {
     return UserModel(
@@ -268,6 +288,7 @@ class UserModel {
       role: role,
       photoUrl: photoUrl ?? this.photoUrl,
       studentNumber: studentNumber ?? this.studentNumber,
+      alumniId: alumniId == _unset ? this.alumniId : alumniId as String?,
       gender: gender ?? this.gender,
       birthdate: birthdate ?? this.birthdate,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -285,6 +306,10 @@ class UserModel {
       isVerified: isVerified ?? this.isVerified,
       emailVerified: emailVerified ?? this.emailVerified,
       approved: approved ?? this.approved,
+      hasLoggedIn: hasLoggedIn ?? this.hasLoggedIn,
+      lastLoginAt: lastLoginAt == _unset
+          ? this.lastLoginAt
+          : lastLoginAt as DateTime?,
       profileCompletion: profileCompletion ?? this.profileCompletion,
       createdAt: createdAt,
       updatedAt: DateTime.now(),

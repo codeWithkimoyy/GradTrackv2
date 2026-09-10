@@ -44,6 +44,32 @@ void main() {
         );
       }
     });
+
+    test('admin can open a batch year details page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminBatchFor(2023),
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.admin,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('alumni cannot open a batch year details page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminBatchFor(2023),
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          approved: true,
+        ),
+        AppRoutes.alumniDashboard,
+      );
+    });
   });
 
   group('resolveRedirect - other roles', () {
@@ -89,6 +115,79 @@ void main() {
         approved: false,
       );
       expect(result, AppRoutes.pendingApproval);
+    });
+  });
+
+  group('resolveRedirect - alumni verification flow', () {
+    test('unauthenticated user can open the Verify Alumni ID page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.verifyAlumniId,
+          authLoading: notLoading,
+          loggedIn: false,
+          role: null,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('unauthenticated user can open a registration page for an Alumni ID', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.registerWith('BISU-2020-001'),
+          authLoading: notLoading,
+          loggedIn: false,
+          role: null,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('admin can open the Alumni Management module', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminAlumni,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.admin,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('alumni cannot open the Alumni Management module', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminAlumni,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          approved: true,
+        ),
+        AppRoutes.alumniDashboard,
+      );
+    });
+
+    test('signed-in user is sent home from the auth flow pages', () {
+      for (final path in [
+        AppRoutes.verifyAlumniId,
+        AppRoutes.registerWith('BISU-2020-001'),
+      ]) {
+        expect(
+          resolveRedirect(
+            location: path,
+            authLoading: notLoading,
+            loggedIn: loggedIn,
+            role: UserRole.alumni,
+            approved: true,
+          ),
+          AppRoutes.alumniDashboard,
+          reason: 'signed-in users must be redirected away from auth pages',
+        );
+      }
     });
   });
 }

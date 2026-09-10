@@ -39,28 +39,38 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   void _hydrate(UserModel user) {
     if (_initialized) return;
-    _nameController.text = user.fullName;
-    _studentNumberController.text = user.studentNumber ?? '';
-    _courseController.text =
-        user.course?.trim().isNotEmpty == true ? user.course! : AppStrings.defaultCourse;
-    _phoneController.text = user.phoneNumber ?? '';
-    _currentAddressController.text = user.currentAddress ?? '';
-    _permanentAddressController.text = user.permanentAddress ?? '';
-    _bioController.text = user.biography ?? '';
-    _academicYear = user.academicYearGraduated;
-    _linkedInController.text = user.socialLinks.linkedIn ?? '';
-    _githubController.text = user.socialLinks.github ?? '';
-    _initialized = true;
+    setState(() {
+      _nameController.text = user.fullName;
+      _studentNumberController.text = user.studentNumber ?? '';
+      _courseController.text = user.course?.trim().isNotEmpty == true
+          ? user.course!
+          : AppStrings.defaultCourse;
+      _phoneController.text = user.phoneNumber ?? '';
+      _currentAddressController.text = user.currentAddress ?? '';
+      _permanentAddressController.text = user.permanentAddress ?? '';
+      _bioController.text = user.biography ?? '';
+      _academicYear = user.academicYearGraduated;
+      _linkedInController.text = user.socialLinks.linkedIn ?? '';
+      _githubController.text = user.socialLinks.github ?? '';
+      _initialized = true;
+    });
     ref.read(profileEditControllerProvider.notifier).startEditing();
   }
 
   List<String> _academicYearOptions() {
+    final years = <String>{};
     final currentYear = DateTime.now().year;
-    final years = <String>[];
     for (var start = currentYear + 4; start >= currentYear - 10; start--) {
       years.add('$start-${start + 1}');
     }
-    return years;
+    // Always include the alumni's stored year so the dropdown can display it
+    // even when it falls outside the generated range.
+    final stored = _academicYear?.trim();
+    if (stored != null && stored.isNotEmpty) years.add(stored);
+    final list = years.toList()
+      ..sort((a, b) => (academicYearStart(b) ?? 0)
+          .compareTo(academicYearStart(a) ?? 0));
+    return list;
   }
 
   Future<void> _pickPhoto() async {

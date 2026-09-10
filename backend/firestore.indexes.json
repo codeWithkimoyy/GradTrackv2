@@ -12,6 +12,15 @@
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "graduationYear", "order": "ASCENDING" },
+        { "fieldPath": "hasLoggedIn", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "employmentStatus", "order": "ASCENDING" },
         { "fieldPath": "graduationYear", "order": "DESCENDING" }
       ]

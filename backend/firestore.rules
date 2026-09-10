@@ -38,10 +38,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == resource.data.userId;
     }
 
-    function ownerOfRequest() {
-      return isSignedIn() && request.auth.uid == request.resource.data.userId;
-    }
-
     function isPublicResource() {
       return resource.data.visibility == 'public';
     }
@@ -71,7 +67,8 @@ service cloud.firestore {
       allow create: if isAdmin() ||
                     (isSignedIn() &&
                       request.auth.uid == userId &&
-                      request.resource.data.role == 'alumni');
+                      request.resource.data.role == 'alumni' &&
+                      exists(/databases/$(database)/documents/alumni_registry/$(request.resource.data.alumniId)));
       allow update: if isAdmin() ||
                     (isSignedIn() &&
                      request.auth.uid == userId &&
@@ -80,8 +77,34 @@ service cloud.firestore {
                           .diff(resource.data)
                           .affectedKeys()
                           .hasAny(['disabled', 'role',
-                                   'approved', 'isVerified']));
+                                   'approved', 'isVerified', 'alumniId']));
       allow delete: if isAdmin();
+    }
+
+    // ---------- ALUMNI REGISTRY (pre-registered Alumni IDs) ----------
+    // Created by admins as the whitelist of Alumni IDs that may register.
+    match /alumni_registry/{alumniId} {
+      // Allows the unauthenticated registration screen to verify an ID exists.
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+                    // Activation: an alumni may flip *only their own* record
+                    // from Pending to Active as part of creating their account
+                    // (server-side re-checked by the app; the linked users
+                    // document must already exist for the new account).
+                    (isSignedIn() &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid))
+                          .data.alumniId == alumniId &&
+                      resource.data.status == 'pending' &&
+                      request.resource.data.status == 'active' &&
+                      !request.resource.data
+                           .diff(resource.data)
+                           .affectedKeys()
+                           .hasAny([
+                             'alumniId', 'fullName', 'course',
+                             'graduationYear', 'createdAt',
+                           ]));
     }
 
     // ---------- ALUMNI PRIVATE RECORDS ----------

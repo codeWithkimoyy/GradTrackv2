@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
+import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../services/password_reset_service.dart';
 import '../../utils/app_snack_bar.dart';
@@ -36,10 +37,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _loading = true);
     try {
-      await _service.sendResetCode(_emailController.text.trim());
+      final identifier = _emailController.text.trim();
+
+      // Alumni IDs (no "@") don't use email codes — password resets for
+      // alumni go through the Tracer Study Administrator.
+      if (!identifier.contains('@')) {
+        if (!mounted) return;
+        await _handleAlumniId(identifier);
+        return;
+      }
+
+      await _service.sendResetCode(identifier);
       if (!mounted) return;
       setState(() {
-        _email = _emailController.text.trim();
+        _email = identifier;
         _step = 1;
         _codeController.clear();
       });
@@ -56,6 +67,55 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _handleAlumniId(String alumniId) async {
+    final entry = await ref
+        .read(userRepositoryProvider)
+        .fetchRegistryEntry(alumniId.trim());
+    if (!mounted) return;
+
+    if (entry == null) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Alumni ID Not Found'),
+          content: const Text(
+              'We could not find this Alumni ID in the registry.\n\n'
+              'Please contact the Tracer Study Administrator.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Password Reset'),
+        content: Text(
+          'Alumni password resets are handled by the Tracer Study office.\n\n'
+          'Please contact the Tracer Study Administrator and ask them to '
+          'reset the password for Alumni ID "$alumniId".\n\n'
+          '(Administrators can reset any alumni password from the Alumni '
+          'Management module.)',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _verifyCode() async {
@@ -118,7 +178,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return GlassAuthScaffold(
       title: 'Reset Password',
       subtitle: switch (_step) {
-        0 => 'Enter your account email to receive a verification code',
+        0 => 'Alumni: enter your Alumni ID. Administrators: enter your email '
+            'to receive a verification code',
         1 => 'Enter the 6-digit code sent to $_email',
         _ => 'Choose a new password for your account',
       },
@@ -138,16 +199,26 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         children: [
           TextFormField(
             controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
             style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
             decoration: const InputDecoration(
-              hintText: 'Email Address',
-              prefixIcon: Icon(Icons.email_outlined),
+              hintText: 'Alumni ID or Email',
+              prefixIcon: Icon(Icons.badge_outlined),
             ),
-            validator: (v) =>
-                (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Enter your Alumni ID or email'
+                : null,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 6),
+          Text(
+            'Alumni IDs are verified against the registry; password resets '
+            'are processed by the administrator.',
+            style: GoogleFonts.poppins(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 11,
+                height: 1.4),
+          ),
+          const SizedBox(height: 14),
           ElevatedButton(
             onPressed: _loading ? null : _sendCode,
             style: ElevatedButton.styleFrom(
@@ -164,7 +235,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : Text('Send Verification Code',
+                : Text('Continue',
                     style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
           TextButton(

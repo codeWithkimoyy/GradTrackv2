@@ -139,4 +139,63 @@ void main() {
         currentYear);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+      'previously saved academic year is shown as selected and passes through save',
+      (tester) async {
+    final saved = <UserModel>[];
+    final returningUser = UserModel(
+      uid: 'alumni1',
+      email: 'alumni@example.com',
+      fullName: 'Ana Reyes',
+      role: UserRole.alumni,
+      academicYearGraduated: '2022-2023',
+      createdAt: DateTime.now(),
+    );
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentUserProfileProvider.overrideWith(
+            (ref) => Stream.value(returningUser),
+          ),
+          profileEditControllerProvider.overrideWith(
+            (ref) => _FakeProfileEditController(ref, saved),
+          ),
+        ],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const EditProfileScreen(),
+                    ),
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    // The stored year must pre-fill the dropdown; no "Select Academic Year"
+    // hint and no validation error when saving unchanged.
+    expect(find.text('Select Academic Year'), findsNothing);
+    expect(find.text(displayAcademicYear('2022-2023')), findsOneWidget);
+
+    await tester.tap(find.text('Save Profile Changes'));
+    await tester.pumpAndSettle();
+
+    expect(saved, hasLength(1));
+    expect(saved.single.academicYearGraduated, '2022-2023');
+    expect(tester.takeException(), isNull);
+  });
 }

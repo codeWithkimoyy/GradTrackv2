@@ -15,6 +15,7 @@ import '../screens/auth/onboarding_screen.dart';
 import '../screens/auth/pending_approval_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/splash_screen.dart';
+import '../screens/auth/verify_alumni_id_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/documents/certificate_gallery_screen.dart';
 import '../screens/documents/resume_upload_screen.dart';
@@ -23,7 +24,9 @@ import '../screens/employment/employment_history_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shared/collection_list_screen.dart';
+import '../screens/staff/alumni_management_screen.dart';
 import '../screens/staff/audit_log_screen.dart';
+import '../screens/staff/batch_alumni_screen.dart';
 import '../screens/staff/employment_history_screen.dart';
 import '../screens/staff/reports_screen.dart';
 import '../screens/staff/user_employment_screen.dart';
@@ -35,7 +38,10 @@ class AppRoutes {
   static const onboarding = '/onboarding';
   static const login = '/login';
   static const register = '/register';
+  static const registerPattern = '/register/:alumniId';
+  static const verifyAlumniId = '/verify-alumni-id';
   static const forgotPassword = '/forgot-password';
+  static String registerWith(String alumniId) => '$register/$alumniId';
   static const dashboard = '/dashboard';
   static const dashboardAlumni = '/dashboard/alumni';
   static const dashboardJobs = '/dashboard/jobs';
@@ -51,6 +57,10 @@ class AppRoutes {
   static const alumniDocuments = '/alumni/documents';
   static const adminDashboard = '/admin/dashboard';
   static const adminUsers = '/admin/users';
+  static const adminBatch = '/admin/users/batch';
+  static const adminBatchPattern = '/admin/users/batch/:year';
+  static String adminBatchFor(int year) => '$adminBatch/$year';
+  static const adminAlumni = '/admin/alumni';
   static const adminAnalytics = '/admin/analytics';
   static const adminAuditLogs = '/admin/audit-logs';
   static const adminEmploymentHistory = '/admin/employment-history';
@@ -107,7 +117,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashScreen()),
       GoRoute(path: AppRoutes.onboarding, builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
-      GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: AppRoutes.verifyAlumniId, builder: (_, __) => const VerifyAlumniIdScreen()),
+      GoRoute(
+        path: AppRoutes.registerPattern,
+        builder: (context, state) => RegisterScreen(
+          alumniId: state.pathParameters['alumniId'] ?? '',
+        ),
+      ),
       GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(
         path: AppRoutes.pendingApproval,
@@ -158,6 +174,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: AppRoutes.adminAnalytics, builder: (_, __) => const AnalyticsScreen(adminMode: true)),
           GoRoute(path: AppRoutes.adminEmploymentHistory, builder: (_, __) => const EmploymentHistoryAdminScreen()),
           GoRoute(path: AppRoutes.adminUsers, builder: (_, __) => const UserManagementScreen()),
+          GoRoute(
+            path: AppRoutes.adminBatchPattern,
+            builder: (context, state) {
+              final year = int.tryParse(
+                      state.pathParameters['year'] ?? '') ??
+                  DateTime.now().year;
+              return BatchAlumniScreen(batchYear: year);
+            },
+          ),
+          GoRoute(path: AppRoutes.adminAlumni, builder: (_, __) => const AlumniManagementScreen()),
           GoRoute(path: AppRoutes.adminAuditLogs, builder: (_, __) => const AuditLogScreen()),
           GoRoute(path: AppRoutes.adminProfile, builder: (_, __) => const ProfileScreen()),
         ],
@@ -185,14 +211,21 @@ String? resolveRedirect({
     AppRoutes.splash,
     AppRoutes.onboarding,
     AppRoutes.login,
+    AppRoutes.verifyAlumniId,
     AppRoutes.register,
     AppRoutes.forgotPassword,
   };
 
+  final isRegisterLocation = location.startsWith('${AppRoutes.register}/');
+
   if (authLoading) {
     return location == AppRoutes.splash ? null : AppRoutes.splash;
   }
-  if (!loggedIn) return authRoutes.contains(location) ? null : AppRoutes.login;
+  if (!loggedIn) {
+    return (authRoutes.contains(location) || isRegisterLocation)
+        ? null
+        : AppRoutes.login;
+  }
   if (role == null) return location == AppRoutes.splash ? null : AppRoutes.splash;
 
   // Approval is only enforced for alumni. Admins are credentialed staff
@@ -215,7 +248,7 @@ String? resolveRedirect({
     AppRoutes.dashboardProfile: role == UserRole.alumni ? AppRoutes.alumniProfile : home,
   };
   if (legacy.containsKey(location)) return legacy[location];
-  if (authRoutes.contains(location)) return home;
+  if (authRoutes.contains(location) || isRegisterLocation) return home;
 
   final collectionKey = location.startsWith(AppRoutes.staffData)
       ? location
@@ -246,6 +279,7 @@ String? resolveRedirect({
       AppRoutes.adminDashboard,
       AppRoutes.adminAnalytics,
       AppRoutes.adminUsers,
+      AppRoutes.adminAlumni,
       AppRoutes.adminAuditLogs,
       AppRoutes.adminEmploymentHistory,
       AppRoutes.adminProfile,

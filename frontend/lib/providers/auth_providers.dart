@@ -31,7 +31,7 @@ UserModel _localProfileFromAuth(User user) => UserModel(
       role: UserRole.alumni,
       photoUrl: user.photoURL,
       emailVerified: user.emailVerified,
-      approved: false,
+      approved: true,
       createdAt: DateTime.now(),
     );
 

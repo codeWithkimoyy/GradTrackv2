@@ -51,10 +51,13 @@ class DashboardShell extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 960;
-        final tablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+        // Crossover layout: admins always get the desktop web-style shell
+        // (sidebar + top bar), alumni always get the mobile app-style shell
+        // (bottom navigation) — regardless of viewport width.
+        final webStyle = role == UserRole.admin;
+        final compactSidebar = constraints.maxWidth < 700;
 
-        if (desktop || tablet) {
+        if (webStyle) {
           return Scaffold(
             backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             body: SafeArea(
@@ -64,12 +67,12 @@ class DashboardShell extends ConsumerWidget {
                     items: items,
                     selectedIndex: selected,
                     onSelected: navigate,
-                    isCompact: tablet,
+                    isCompact: compactSidebar,
                   ),
                   Expanded(
                     child: Column(
                       children: [
-                        const _DesktopTopBar(),
+                        _DesktopTopBar(compact: compactSidebar),
                         Expanded(
                           child: ColoredBox(
                             color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -322,6 +325,9 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
         _ShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Home',
             AppRoutes.adminDashboard, Color(0xFF2563EB),
             sticker: '\u{1F6E1}\u{FE0F}'),
+        _ShellNavItem(Icons.school_outlined, Icons.school_rounded,
+            'Alumni', AppRoutes.adminAlumni, Color(0xFFD97706),
+            sticker: '\u{1F393}'),
         _ShellNavItem(Icons.people_outline_rounded, Icons.people_rounded,
             'Users', AppRoutes.adminUsers, Color(0xFF0D9488),
             sticker: '\u{1F465}'),
@@ -692,7 +698,9 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 }
 
 class _DesktopTopBar extends ConsumerWidget {
-  const _DesktopTopBar();
+  const _DesktopTopBar({this.compact = false});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -703,7 +711,7 @@ class _DesktopTopBar extends ConsumerWidget {
 
     return Container(
       height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         border: Border(
@@ -716,54 +724,55 @@ class _DesktopTopBar extends ConsumerWidget {
       child: Row(
         children: [
           // Breadcrumb / Context Title
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Graduate Tracking System',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : AppColors.primaryNavy,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Row(
-                children: [
-                  Text(
-                    'Bohol Island State University',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
+          if (!compact)
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Graduate Tracking System',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AppColors.teal.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Bilar Campus',
+                ),
+                const SizedBox(height: 1),
+                Row(
+                  children: [
+                    Text(
+                      'Bohol Island State University',
                       style: GoogleFonts.poppins(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.teal,
+                        fontSize: 11,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.teal.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Bilar Campus',
+                        style: GoogleFonts.poppins(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.teal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           const Spacer(),
 
           // Notification Bell
           if (user != null) NotificationBell(userId: user.uid),
-          const SizedBox(width: 14),
+          if (!compact) const SizedBox(width: 14),
 
           // User Avatar & Profile Dropdown
           if (user != null)
@@ -772,7 +781,7 @@ class _DesktopTopBar extends ConsumerWidget {
                 cursor: SystemMouseCursors.click,
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      EdgeInsets.symmetric(horizontal: compact ? 4 : 10, vertical: compact ? 4 : 6),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.cardDark : Colors.white,
                     borderRadius: BorderRadius.circular(14),
@@ -807,37 +816,39 @@ class _DesktopTopBar extends ConsumerWidget {
                               )
                             : null,
                       ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            user.fullName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : AppColors.primaryNavy,
+                      if (!compact) ...[
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              user.fullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : AppColors.primaryNavy,
+                              ),
                             ),
-                          ),
-                          Text(
-                            user.role.label,
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: AppColors.teal,
-                              fontWeight: FontWeight.w600,
+                            Text(
+                              user.role.label,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: AppColors.teal,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                        size: 18,
-                      ),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          size: 18,
+                        ),
+                      ],
                     ],
                   ),
                 ),

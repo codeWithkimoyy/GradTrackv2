@@ -52,8 +52,8 @@ final publicAnnouncementsProvider =
 });
 
 /// Live pending-approval queue for the admin dashboard (newest first).
-/// Users created by the auth flow default `approved` to false, so this
-/// stream is the admin's actionable work list.
+/// New registrations are auto-approved, so this stream only surfaces
+/// pre-approval-era accounts and anyone an admin manually un-approves.
 final pendingApprovalsProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(statsRepositoryProvider).watchPendingApprovals();

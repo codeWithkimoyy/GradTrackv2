@@ -3,68 +3,125 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gradtracker/dashboards/dashboard_components.dart';
+import 'package:gradtracker/models/user_model.dart';
+import 'package:gradtracker/providers/auth_providers.dart';
 import 'package:gradtracker/screens/auth/login_screen.dart';
 import 'package:gradtracker/screens/dashboard/dashboard_screen.dart';
 
-void main() {
-  GoRouter createTestRouter(Widget child) {
-    return GoRouter(
-      initialLocation: '/dashboard',
-      routes: [
-        ShellRoute(
-          builder: (context, state, shellChild) =>
-              DashboardShell(child: shellChild),
-          routes: [
-            GoRoute(
-              path: '/dashboard',
-              builder: (context, state) => child,
-            ),
-          ],
-        ),
-      ],
+UserModel _buildUser(UserRole role) => UserModel(
+      uid: 'test-uid',
+      email: 'test@bisutest.edu.ph',
+      fullName: 'Test User',
+      role: role,
+      createdAt: DateTime(2026, 1, 1),
     );
-  }
 
-  testWidgets('DashboardShell renders bottom navigation on mobile viewport',
+Widget _buildShell(Widget child, {required UserRole role}) {
+  final router = GoRouter(
+    initialLocation: '/dashboard',
+    routes: [
+      ShellRoute(
+        builder: (context, state, shellChild) =>
+            DashboardShell(child: shellChild),
+        routes: [
+          GoRoute(
+            path: '/dashboard',
+            builder: (context, state) => child,
+          ),
+        ],
+      ),
+    ],
+  );
+
+  return ProviderScope(
+    overrides: [
+      currentUserProfileProvider.overrideWith(
+        (ref) => Stream.value(_buildUser(role)),
+      ),
+    ],
+    child: MaterialApp.router(
+      routerConfig: router,
+    ),
+  );
+}
+
+bool _hasBottomNavigation(WidgetTester tester) {
+  final scaffolds = tester.widgetList<Scaffold>(find.byType(Scaffold));
+  return scaffolds.any((s) => s.bottomNavigationBar != null);
+}
+
+void main() {
+  testWidgets('alumni gets the app-style bottom nav on a mobile viewport',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(375, 812));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final router = createTestRouter(
-      const Scaffold(body: Center(child: Text('Dashboard Content'))),
-    );
-
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp.router(
-          routerConfig: router,
-        ),
+      _buildShell(
+        const Scaffold(body: Center(child: Text('Alumni Mobile Content'))),
+        role: UserRole.alumni,
       ),
     );
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(tester.takeException(), isNull);
+    expect(_hasBottomNavigation(tester), isTrue);
+    expect(find.text('NAVIGATION'), findsNothing);
   });
 
-  testWidgets('DashboardShell renders desktop sidebar on wide web viewport',
+  testWidgets('alumni keeps the app-style bottom nav on a wide web viewport',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1440, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final router = createTestRouter(
-      const Scaffold(body: Center(child: Text('Desktop Web Content'))),
-    );
-
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp.router(
-          routerConfig: router,
-        ),
+      _buildShell(
+        const Scaffold(body: Center(child: Text('Alumni Web Content'))),
+        role: UserRole.alumni,
       ),
     );
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(tester.takeException(), isNull);
+    expect(_hasBottomNavigation(tester), isTrue);
+    expect(find.text('NAVIGATION'), findsNothing);
+  });
+
+  testWidgets('admin gets the web-style sidebar on a wide viewport',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _buildShell(
+        const Scaffold(body: Center(child: Text('Admin Dashboard'))),
+        role: UserRole.admin,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull);
+    expect(_hasBottomNavigation(tester), isFalse);
+    expect(find.text('NAVIGATION'), findsOneWidget);
+  });
+
+  testWidgets('admin keeps the web-style shell even on a narrow viewport',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(375, 812));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _buildShell(
+        const Scaffold(body: Center(child: Text('Admin Mobile Web'))),
+        role: UserRole.admin,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull);
+    // Compact shell: still the sidebar (rail with tooltips), never bottom nav.
+    expect(_hasBottomNavigation(tester), isFalse);
+    expect(find.byType(Tooltip), findsWidgets);
   });
 
   testWidgets('Auth forms do not overflow across dynamic heights',

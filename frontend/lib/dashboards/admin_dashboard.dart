@@ -26,7 +26,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
       title: 'Admin Command Center',
       subtitle: 'Manage GradTrack users, content, analytics, and security.',
       icon: Icons.shield_outlined,
-      accent: AppColors.primaryBlue,
+      accent: AppColors.bisuBlue700,
       children: [
         PendingApprovalsQueue(
           onViewAll: () => context.go('${AppRoutes.staffUsers}?pending=1'),
@@ -35,15 +35,15 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         DashboardMetricGrid(
           metrics: [
             DashboardMetric('Total Users', '${stats.totalUsers}',
-                Icons.people_outline_rounded, AppColors.primaryBlue),
+                Icons.people_outline_rounded, AppColors.bisuBlue700),
             DashboardMetric('Total Alumni', '${stats.alumni}',
-                Icons.school_outlined, AppColors.success),
+                Icons.school_outlined, AppColors.bisuBlue600),
             DashboardMetric('Verified Alumni', '${stats.verifiedAlumni}',
-                Icons.online_prediction_rounded, AppColors.warning),
+                Icons.online_prediction_rounded, AppColors.bisuBlue500),
             DashboardMetric('Total Surveys', '${stats.surveyCount}',
-                Icons.fact_check_outlined, AppColors.primaryBlue),
+                Icons.fact_check_outlined, AppColors.bisuBlue800),
             DashboardMetric('Completed Surveys', '${stats.responseCount}',
-                Icons.task_alt_rounded, AppColors.success),
+                Icons.task_alt_rounded, AppColors.bisuBlue400),
             DashboardMetric('Total Events', '${stats.eventCount}',
                 Icons.event_outlined, AppColors.gold),
             DashboardMetric('Announcements', '${stats.announcementCount}',
@@ -58,8 +58,8 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
             actions: [
               DashboardAction('Users', Icons.people_outline_rounded,
                   () => context.go(AppRoutes.staffUsers)),
-              DashboardAction('Alumni', Icons.school_outlined,
-                  () => context.go('${AppRoutes.staffUsers}?role=alumni&approved=1')),
+              DashboardAction('Alumni Management', Icons.badge_outlined,
+                  () => context.go(AppRoutes.adminAlumni)),
               DashboardAction('Surveys', Icons.fact_check_outlined,
                   () => context.go(AppRoutes.collectionData('surveys'))),
               DashboardAction('Reports', Icons.assessment_outlined,

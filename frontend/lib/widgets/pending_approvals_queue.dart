@@ -97,7 +97,7 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: (queue == null || queue.isEmpty)
-              ? AppColors.primaryBlue.withValues(alpha: .10)
+              ? AppColors.bisuBlue700.withValues(alpha: .10)
               : AppColors.warning.withValues(alpha: .35),
           width: (queue == null || queue.isEmpty) ? 1 : 1.2,
         ),
@@ -116,7 +116,7 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
             children: [
               Icon(Icons.hourglass_top_rounded,
                   color: (queue?.isEmpty ?? true)
-                      ? AppColors.primaryBlue
+                      ? AppColors.bisuBlue700
                       : AppColors.warning,
                   size: 21),
               const SizedBox(width: 9),

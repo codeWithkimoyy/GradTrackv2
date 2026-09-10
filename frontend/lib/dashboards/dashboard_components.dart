@@ -222,7 +222,7 @@ class DashboardSectionCard extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppColors.primaryBlue.withValues(alpha: .10),
+          color: AppColors.bisuBlue700.withValues(alpha: .10),
         ),
         boxShadow: const [
           BoxShadow(
@@ -237,7 +237,7 @@ class DashboardSectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.primaryBlue, size: 21),
+              Icon(icon, color: AppColors.bisuBlue700, size: 21),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
@@ -293,7 +293,7 @@ class DashboardActionGrid extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppColors.primaryBlue.withValues(alpha: .12),
+                      color: AppColors.bisuBlue700.withValues(alpha: .12),
                     ),
                   ),
                   child: Column(
@@ -303,11 +303,11 @@ class DashboardActionGrid extends StatelessWidget {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryBlue.withValues(alpha: .11),
+                          color: AppColors.bisuBlue700.withValues(alpha: .11),
                           borderRadius: BorderRadius.circular(13),
                         ),
                         child: Icon(action.icon,
-                            color: AppColors.primaryBlue, size: 22),
+                            color: AppColors.bisuBlue700, size: 22),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -343,7 +343,7 @@ class DashboardAction {
 Widget profileAvatar(UserModel user, {double radius = 25}) {
   return CircleAvatar(
     radius: radius,
-    backgroundColor: AppColors.primaryBlue.withValues(alpha: .14),
+    backgroundColor: AppColors.bisuBlue700.withValues(alpha: .14),
     backgroundImage: user.photoUrl == null
         ? null
         : avatarProvider(user.photoUrl!),
@@ -351,7 +351,7 @@ Widget profileAvatar(UserModel user, {double radius = 25}) {
         ? Text(
             user.fullName.isEmpty ? '?' : user.fullName[0].toUpperCase(),
             style: TextStyle(
-              color: AppColors.primaryBlue,
+              color: AppColors.bisuBlue700,
               fontWeight: FontWeight.w700,
               fontSize: radius * .72,
             ),

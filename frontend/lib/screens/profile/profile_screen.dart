@@ -165,8 +165,13 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.email_outlined,
                   label: 'Email Address',
                   value: user.email),
+              if ((user.alumniId?.trim().isNotEmpty ?? false))
+                _InfoTile(
+                    icon: Icons.badge_outlined,
+                    label: 'Alumni ID',
+                    value: user.alumniId!),
               _InfoTile(
-                  icon: Icons.badge_outlined,
+                  icon: Icons.school_outlined,
                   label: 'Student Number',
                   value: user.studentNumber ?? 'Not provided'),
               _InfoTile(

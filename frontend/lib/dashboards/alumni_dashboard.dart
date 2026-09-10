@@ -34,7 +34,7 @@ class AlumniDashboard extends ConsumerWidget {
       title: 'Welcome back, ${user.fullName}',
       subtitle: 'Your personal graduate success dashboard.',
       icon: Icons.verified_user_outlined,
-      accent: AppColors.primaryBlue,
+      accent: AppColors.bisuBlue700,
       children: [
         DashboardSectionCard(
           title: 'Graduate Profile',
@@ -79,7 +79,7 @@ class AlumniDashboard extends ConsumerWidget {
                   Text(
                     '$completion%',
                     style: const TextStyle(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.bisuBlue700,
                       fontSize: 21,
                       fontWeight: FontWeight.w700,
                     ),
@@ -91,9 +91,9 @@ class AlumniDashboard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
                   value: completion / 100,
-                  backgroundColor: AppColors.borderLight.withValues(alpha: 0.5),
+                  backgroundColor: AppColors.bisuBlue100.withValues(alpha: 0.6),
                   valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryBlue),
+                      AppColors.bisuBlue700),
                   minHeight: 6,
                 ),
               ),
@@ -107,25 +107,25 @@ class AlumniDashboard extends ConsumerWidget {
               'Profile Completion',
               '$completion%',
               Icons.account_circle_outlined,
-              AppColors.primaryBlue,
+              AppColors.bisuBlue700,
             ),
             DashboardMetric(
               'Survey Progress',
               surveyLabel,
               Icons.fact_check_outlined,
-              AppColors.success,
+              AppColors.bisuBlue600,
             ),
             DashboardMetric(
               'Employment Status',
               user.employmentStatus.label,
               Icons.work_outline_rounded,
-              AppColors.gold,
+              AppColors.bisuBlue500,
             ),
             DashboardMetric(
               'Notifications',
               unreadCount == 0 ? 'All read' : '$unreadCount new',
               Icons.notifications_none_rounded,
-              AppColors.warning,
+              AppColors.bisuBlue400,
             ),
           ],
         ),
