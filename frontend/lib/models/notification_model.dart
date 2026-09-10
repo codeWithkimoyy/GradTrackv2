@@ -122,18 +122,25 @@ class AppNotification {
     );
   }
 
+  static DateTime _parseDate(dynamic val) {
+    if (val is Timestamp) return val.toDate();
+    if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return DateTime.now();
+  }
+
   factory AppNotification.fromMap(Map<String, dynamic> map, String id) {
     return AppNotification(
       id: id,
-      userId: map['userId'] as String? ?? '',
-      type: NotificationType.fromString(map['type'] as String? ?? 'system'),
-      title: map['title'] as String? ?? '',
-      description: map['description'] as String? ?? '',
+      userId: map['userId']?.toString() ?? '',
+      type: NotificationType.fromString(map['type']?.toString() ?? 'system'),
+      title: map['title']?.toString() ?? '',
+      description: map['description']?.toString() ?? '',
       priority:
-          NotificationPriority.fromString(map['priority'] as String? ?? 'medium'),
-      isRead: map['isRead'] as bool? ?? false,
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      link: map['link'] as String?,
+          NotificationPriority.fromString(map['priority']?.toString() ?? 'medium'),
+      isRead: map['isRead'] == true,
+      createdAt: _parseDate(map['createdAt']),
+      link: map['link']?.toString(),
     );
   }
 

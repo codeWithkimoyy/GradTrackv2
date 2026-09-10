@@ -8,6 +8,7 @@ import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/execution_trace_provider.dart';
+import '../../providers/messaging_providers.dart';
 import '../../providers/notification_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
@@ -105,7 +106,7 @@ class DashboardShell extends ConsumerWidget {
   }
 }
 
-class _PremiumBottomNavigation extends StatelessWidget {
+class _PremiumBottomNavigation extends ConsumerWidget {
   const _PremiumBottomNavigation({
     required this.items,
     required this.selectedIndex,
@@ -117,10 +118,14 @@ class _PremiumBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inactiveColor =
         isDark ? Colors.white.withValues(alpha: .68) : const Color(0xFF667085);
+    final user = ref.watch(currentUserProfileProvider).valueOrNull;
+    final unreadCount = user != null
+        ? ref.watch(unreadCountProvider(user.uid))
+        : 0;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -204,17 +209,43 @@ class _PremiumBottomNavigation extends StatelessWidget {
                                       duration:
                                           const Duration(milliseconds: 250),
                                       curve: Curves.easeInOutCubic,
-                                      child: Icon(
-                                        selected
-                                            ? item.activeIcon
-                                            : item.icon,
-                                        size: selected ? 28 : 24,
-                                        color: selected
-                                            ? Colors.white
-                                            : inactiveColor,
-                                      ),
-                                    ),
-                                    if (selected && item.sticker.isNotEmpty)
+                                       child: Icon(
+                                         selected
+                                             ? item.activeIcon
+                                             : item.icon,
+                                         size: selected ? 28 : 24,
+                                         color: selected
+                                             ? Colors.white
+                                             : inactiveColor,
+                                       ),
+                                     ),
+                                     if (item.path == AppRoutes.alumniNotifications && unreadCount > 0)
+                                       Positioned(
+                                         right: -8,
+                                         top: -6,
+                                         child: Container(
+                                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                                           decoration: BoxDecoration(
+                                             color: AppColors.error,
+                                             borderRadius: BorderRadius.circular(10),
+                                             border: Border.all(
+                                               color: isDark ? const Color(0xFF171B24) : Colors.white,
+                                               width: 1.5,
+                                             ),
+                                           ),
+                                           constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                           child: Text(
+                                             unreadCount > 99 ? '99+' : '$unreadCount',
+                                             style: const TextStyle(
+                                               color: Colors.white,
+                                               fontSize: 9,
+                                               fontWeight: FontWeight.w700,
+                                             ),
+                                             textAlign: TextAlign.center,
+                                           ),
+                                         ),
+                                       ),
+                                     if (selected && item.sticker.isNotEmpty)
                                       Positioned(
                                         right: -10,
                                         top: -11,
@@ -354,15 +385,12 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
       ],
     };
 
-Color _darken(Color color, [double amount = 0.3]) =>
-    Color.lerp(color, Colors.black, amount)!;
-
 int _selectedIndex(String location, List<_ShellNavItem> items) {
   final index = items.lastIndexWhere((item) => location.startsWith(item.path));
   return index < 0 ? 0 : index;
 }
 
-class _DesktopSidebar extends StatelessWidget {
+class _DesktopSidebar extends ConsumerWidget {
   const _DesktopSidebar({
     required this.items,
     required this.selectedIndex,
@@ -376,8 +404,12 @@ class _DesktopSidebar extends StatelessWidget {
   final bool isCompact;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = ref.watch(currentUserProfileProvider).valueOrNull;
+    final unreadCount = user != null
+        ? ref.watch(unreadCountProvider(user.uid))
+        : 0;
 
     return Container(
       width: isCompact ? 76 : 260,
@@ -507,6 +539,7 @@ class _DesktopSidebar extends StatelessWidget {
                   activeColor: item.color,
                   onTap: () => onSelected(index),
                   isCompact: isCompact,
+                  badgeCount: item.path == AppRoutes.alumniNotifications ? unreadCount : null,
                 );
               },
             ),
@@ -602,6 +635,7 @@ class _SidebarMenuItem extends StatefulWidget {
   final Color activeColor;
   final VoidCallback onTap;
   final bool isCompact;
+  final int? badgeCount;
 
   const _SidebarMenuItem({
     required this.icon,
@@ -610,6 +644,7 @@ class _SidebarMenuItem extends StatefulWidget {
     required this.activeColor,
     required this.onTap,
     this.isCompact = false,
+    this.badgeCount,
   });
 
   @override
@@ -641,6 +676,8 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
         : (_isHovered
             ? widget.activeColor
             : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)));
+
+    final hasBadge = widget.badgeCount != null && widget.badgeCount! > 0;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -676,7 +713,38 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
               ? Tooltip(
                   message: widget.label,
                   child: Center(
-                    child: Icon(widget.icon, color: iconColor, size: 22),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(widget.icon, color: iconColor, size: 22),
+                        if (hasBadge)
+                          Positioned(
+                            right: -6,
+                            top: -4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              constraints: const BoxConstraints(
+                                  minWidth: 14, minHeight: 14),
+                              child: Text(
+                                widget.badgeCount! > 99
+                                    ? '99+'
+                                    : '${widget.badgeCount}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 )
               : Row(
@@ -694,6 +762,27 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
                         ),
                       ),
                     ),
+                    if (hasBadge) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          widget.badgeCount! > 99
+                              ? '99+'
+                              : '${widget.badgeCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
                     if (widget.selected)
                       Container(
                         width: 6,
@@ -780,6 +869,12 @@ class _DesktopTopBar extends ConsumerWidget {
             ],
           ),
           const Spacer(),
+
+          // Messages / Chat Button
+          if (user != null) ...[
+            _TopBarChatButton(user: user),
+            const SizedBox(width: 8),
+          ],
 
           // Notification Bell
           if (user != null) NotificationBell(userId: user.uid),
@@ -875,6 +970,59 @@ String _desktopInitials(String name) {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
   return name.isEmpty ? 'U' : name[0].toUpperCase();
+}
+
+class _TopBarChatButton extends ConsumerWidget {
+  final UserModel user;
+
+  const _TopBarChatButton({required this.user});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAdmin = user.role == UserRole.admin || user.role == UserRole.coordinator;
+    final unreadCount = isAdmin
+        ? ref.watch(unreadAdminMessagesCountProvider)
+        : ref.watch(unreadAlumniMessagesCountProvider(user.uid));
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chat_bubble_outline_rounded),
+          tooltip: isAdmin ? 'Alumni Inquiries' : 'Message Admin',
+          onPressed: () {
+            if (isAdmin) {
+              context.push(AppRoutes.adminMessages);
+            } else {
+              context.push(AppRoutes.messages);
+            }
+          },
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 4,
+            top: 4,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              child: Text(
+                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class DashboardHomeTab extends ConsumerWidget {

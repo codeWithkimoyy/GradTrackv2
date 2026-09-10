@@ -49,6 +49,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
   String? _salaryRange;
   WorkSetup _workSetup = WorkSetup.onSite;
   DateTime _dateHired = DateTime.now();
+  DateTime? _endDate;
   bool _isCurrent = true;
   bool _saving = false;
 
@@ -56,7 +57,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _dateHired,
-      firstDate: DateTime(1990),
+      firstDate: DateTime(1970),
       lastDate: DateTime.now(),
       builder: (context, child) {
         return Theme(
@@ -71,6 +72,27 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
       },
     );
     if (picked != null) setState(() => _dateHired = picked);
+  }
+
+  Future<void> _pickEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? DateTime.now(),
+      firstDate: _dateHired,
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primaryBlue,
+              surface: AppColors.cardDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) setState(() => _endDate = picked);
   }
 
   Future<void> _submit() async {
@@ -89,6 +111,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
       employmentType: _employmentType,
       salaryRange: _salaryRange,
       dateHired: _dateHired,
+      endDate: _isCurrent ? null : _endDate,
       country: _countryController.text.trim(),
       province: _provinceController.text.trim().isEmpty
           ? null
@@ -165,8 +188,20 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
                     color: isDark ? Colors.white : AppColors.primaryNavy,
                   ),
                 ),
+                subtitle: Text(
+                  _isCurrent
+                      ? 'Ongoing / Present (No end date required)'
+                      : 'Past job or completed contract',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
                 value: _isCurrent,
-                onChanged: (v) => setState(() => _isCurrent = v),
+                onChanged: (v) => setState(() {
+                  _isCurrent = v;
+                  if (v) _endDate = null;
+                }),
               ),
             ),
             const SizedBox(height: 20),
@@ -221,7 +256,7 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Date Hired',
+                            'Start Date / Date Hired',
                             style: GoogleFonts.poppins(
                               fontSize: 11.5,
                               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -244,6 +279,65 @@ class _AddEmploymentScreenState extends ConsumerState<AddEmploymentScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            if (!_isCurrent) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.cardDark : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: _pickEndDate,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'End Date (Optional - leave blank if ongoing)',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11.5,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _endDate != null
+                                  ? DateFormat.yMMMd().format(_endDate!)
+                                  : 'No end date set (Ongoing / Current)',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: _endDate != null
+                                    ? (isDark ? Colors.white : AppColors.primaryNavy)
+                                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (_endDate != null)
+                      IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 18),
+                        onPressed: () => setState(() => _endDate = null),
+                        tooltip: 'Clear End Date',
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_month_rounded, color: AppColors.teal, size: 20),
+                      onPressed: _pickEndDate,
+                      tooltip: 'Select End Date',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [

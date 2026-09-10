@@ -9,6 +9,7 @@ import '../dashboards/guest_dashboard.dart';
 import '../models/user_model.dart';
 import '../providers/auth_providers.dart';
 import '../screens/about/about_screen.dart';
+import '../screens/alumni/alumni_chat_screen.dart';
 import '../screens/alumni/notifications_screen.dart';
 import '../screens/alumni/survey_screen.dart';
 import '../screens/analytics/analytics_screen.dart';
@@ -26,6 +27,7 @@ import '../screens/employment/employment_history_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shared/collection_list_screen.dart';
+import '../screens/staff/admin_messages_screen.dart';
 import '../screens/staff/audit_log_screen.dart';
 import '../screens/staff/reports_screen.dart';
 import '../screens/staff/user_management_screen.dart';
@@ -63,6 +65,8 @@ class AppRoutes {
   static const adminAnalytics = '/admin/analytics';
   static const adminAuditLogs = '/admin/audit-logs';
   static const adminProfile = '/admin/profile';
+  static const adminMessages = '/admin/messages';
+  static const messages = '/messages';
 
   static const staffUsers = '/staff/users';
   static String collectionData(String key) => '/staff/data/$key';
@@ -171,6 +175,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: AppRoutes.adminUsers, builder: (_, __) => const UserManagementScreen()),
           GoRoute(path: AppRoutes.adminAuditLogs, builder: (_, __) => const AuditLogScreen()),
           GoRoute(path: AppRoutes.adminProfile, builder: (_, __) => const ProfileScreen()),
+          GoRoute(path: AppRoutes.adminMessages, builder: (_, __) => const AdminMessagesScreen()),
         ],
       ),
       GoRoute(path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
@@ -179,6 +184,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: AppRoutes.addEmployment, builder: (_, __) => const AddEmploymentScreen()),
       GoRoute(path: AppRoutes.resume, builder: (_, __) => const ResumeUploadScreen()),
       GoRoute(path: AppRoutes.certificates, builder: (_, __) => const CertificateGalleryScreen()),
+      GoRoute(path: AppRoutes.messages, builder: (_, __) => const AlumniChatScreen()),
     ],
   );
 });
@@ -255,6 +261,7 @@ String? resolveRedirect({
       AppRoutes.addEmployment,
       AppRoutes.resume,
       AppRoutes.certificates,
+      AppRoutes.messages,
       if (collectionExists) location,
     },
     UserRole.coordinator: {
@@ -267,6 +274,7 @@ String? resolveRedirect({
       AppRoutes.coordinatorSurveys,
       AppRoutes.coordinatorReports,
       AppRoutes.coordinatorEvents,
+      AppRoutes.adminMessages,
       if (collectionExists) location,
     },
     UserRole.admin: {
@@ -275,6 +283,8 @@ String? resolveRedirect({
       AppRoutes.adminUsers,
       AppRoutes.adminAuditLogs,
       AppRoutes.adminProfile,
+      AppRoutes.adminMessages,
+      AppRoutes.messages,
       AppRoutes.editProfile,
       AppRoutes.staffUsers,
       if (collectionExists) location,

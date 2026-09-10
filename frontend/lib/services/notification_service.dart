@@ -13,50 +13,62 @@ class NotificationService {
     return firestore
         .collection(FirestoreCollections.notifications)
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => AppNotification.fromMap(doc.data(), doc.id))
-            .toList());
+        .map((snapshot) {
+      final list = snapshot.docs
+          .map((doc) => AppNotification.fromMap(doc.data(), doc.id))
+          .toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    });
   }
 
   Future<int> getUnreadCount(String userId) async {
     final firestore = _firestore;
     if (firestore == null) return 0;
-    final snapshot = await firestore
-        .collection(FirestoreCollections.notifications)
-        .where('userId', isEqualTo: userId)
-        .where('isRead', isEqualTo: false)
-        .count()
-        .get();
-    return snapshot.count ?? 0;
+    try {
+      final snapshot = await firestore
+          .collection(FirestoreCollections.notifications)
+          .where('userId', isEqualTo: userId)
+          .get();
+      return snapshot.docs
+          .where((doc) => doc.data()['isRead'] != true)
+          .length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<void> markAsRead(String notificationId) async {
     final firestore = _firestore;
     if (firestore == null) return;
-    await firestore
-        .collection(FirestoreCollections.notifications)
-        .doc(notificationId)
-        .update({'isRead': true});
+    try {
+      await firestore
+          .collection(FirestoreCollections.notifications)
+          .doc(notificationId)
+          .update({'isRead': true});
+    } catch (_) {}
   }
 
   Future<void> markAllAsRead(String userId) async {
     final firestore = _firestore;
     if (firestore == null) return;
-    final snapshot = await firestore
-        .collection(FirestoreCollections.notifications)
-        .where('userId', isEqualTo: userId)
-        .where('isRead', isEqualTo: false)
-        .get();
+    try {
+      final snapshot = await firestore
+          .collection(FirestoreCollections.notifications)
+          .where('userId', isEqualTo: userId)
+          .get();
 
-    if (snapshot.docs.isEmpty) return;
+      final unreadDocs =
+          snapshot.docs.where((doc) => doc.data()['isRead'] != true);
+      if (unreadDocs.isEmpty) return;
 
-    final batch = firestore.batch();
-    for (final doc in snapshot.docs) {
-      batch.update(doc.reference, {'isRead': true});
-    }
-    await batch.commit();
+      final batch = firestore.batch();
+      for (final doc in unreadDocs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      await batch.commit();
+    } catch (_) {}
   }
 
   Future<void> deleteNotification(String notificationId) async {

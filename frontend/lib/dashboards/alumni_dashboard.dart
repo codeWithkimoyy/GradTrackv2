@@ -36,6 +36,74 @@ class AlumniDashboard extends ConsumerWidget {
       icon: Icons.verified_user_outlined,
       accent: AppColors.primaryBlue,
       children: [
+        if (unreadCount > 0) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primaryBlue.withValues(alpha: 0.15),
+                  AppColors.secondaryBlue.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primaryBlue.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryBlue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.notifications_active_rounded,
+                      color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'You have $unreadCount unread notification${unreadCount > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      const Text(
+                        'Stay updated with announcements and tracer activity.',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => context.go(AppRoutes.alumniNotifications),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('View', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
         DashboardSectionCard(
           title: 'Graduate Profile',
           icon: Icons.person_outline_rounded,
@@ -108,24 +176,28 @@ class AlumniDashboard extends ConsumerWidget {
               '$completion%',
               Icons.account_circle_outlined,
               AppColors.primaryBlue,
+              onTap: () => context.go(AppRoutes.alumniProfile),
             ),
             DashboardMetric(
               'Survey Progress',
               surveyLabel,
               Icons.fact_check_outlined,
               AppColors.success,
+              onTap: () => context.go(AppRoutes.alumniSurvey),
             ),
             DashboardMetric(
               'Employment Status',
               user.employmentStatus.label,
               Icons.work_outline_rounded,
               AppColors.gold,
+              onTap: () => context.push(AppRoutes.employment),
             ),
             DashboardMetric(
               'Notifications',
               unreadCount == 0 ? 'All read' : '$unreadCount new',
               Icons.notifications_none_rounded,
               AppColors.warning,
+              onTap: () => context.go(AppRoutes.alumniNotifications),
             ),
           ],
         ),
@@ -139,8 +211,12 @@ class AlumniDashboard extends ConsumerWidget {
                   () => context.go(AppRoutes.alumniProfile)),
               DashboardAction('Tracer Survey', Icons.fact_check_outlined,
                   () => context.go(AppRoutes.alumniSurvey)),
-              DashboardAction('Employment', Icons.work_outline_rounded,
-                  () => context.go(AppRoutes.alumniJobs)),
+              DashboardAction('Employment History', Icons.work_outline_rounded,
+                  () => context.push(AppRoutes.employment)),
+              DashboardAction('Message Admin', Icons.chat_outlined,
+                  () => context.push('/messages')),
+              DashboardAction('Notifications', Icons.notifications_none_rounded,
+                  () => context.go(AppRoutes.alumniNotifications)),
               DashboardAction('Job Opportunities', Icons.business_center_outlined,
                   () => context.go(AppRoutes.collectionData('jobs'))),
               DashboardAction('Events', Icons.event_outlined,

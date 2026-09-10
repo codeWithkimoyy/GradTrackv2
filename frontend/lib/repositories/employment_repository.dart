@@ -25,64 +25,78 @@ class EmploymentRepository {
   Stream<List<EmploymentRecord>> watchRecords(String userId) {
     return _records
         .where('userId', isEqualTo: userId)
-        .orderBy('dateHired', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(EmploymentRecord.fromDoc).toList());
+        .map((snap) {
+          final list = snap.docs.map(EmploymentRecord.fromDoc).toList();
+          list.sort((a, b) => b.dateHired.compareTo(a.dateHired));
+          return list;
+        });
   }
 
   Stream<List<CareerMilestone>> watchMilestones(String userId) {
     return _milestones
         .where('userId', isEqualTo: userId)
-        .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(CareerMilestone.fromDoc).toList());
+        .map((snap) {
+          final list = snap.docs.map(CareerMilestone.fromDoc).toList();
+          list.sort((a, b) => b.date.compareTo(a.date));
+          return list;
+        });
   }
 
   Future<void> addRecord(EmploymentRecord record) async {
-    final batch = _firestore.batch();
     final docRef = _records.doc();
-    batch.set(docRef, record.toMap());
+    // 1. Primary write: Save the employment record document
+    await docRef.set(record.toMap()).timeout(const Duration(seconds: 15));
 
-    // If this is the current job, unset isCurrent on any previous ones
-    // and update the user's employmentStatus field so dashboards stay in sync.
+    // 2. Secondary syncs: Unset previous current jobs, update profile status & milestone
     if (record.isCurrent) {
-      final existingCurrent = await _records
-          .where('userId', isEqualTo: record.userId)
-          .where('isCurrent', isEqualTo: true)
-          .get()
-          .timeout(const Duration(seconds: 10));
-      for (final doc in existingCurrent.docs) {
-        batch.update(doc.reference, {'isCurrent': false});
-      }
-      batch.set(
-        _users.doc(record.userId),
-        {'employmentStatus': EmploymentStatus.employed.name},
-        SetOptions(merge: true),
-      );
+      try {
+        final existingCurrent = await _records
+            .where('userId', isEqualTo: record.userId)
+            .get()
+            .timeout(const Duration(seconds: 10));
+        final batch = _firestore.batch();
+        bool hasBatchUpdates = false;
+        for (final doc in existingCurrent.docs) {
+          if (doc.id != docRef.id && doc.data()['isCurrent'] == true) {
+            batch.update(doc.reference, {'isCurrent': false});
+            hasBatchUpdates = true;
+          }
+        }
+        if (hasBatchUpdates) {
+          await batch.commit().timeout(const Duration(seconds: 10));
+        }
+      } catch (_) {}
 
-      // Auto-log a "first job" milestone if the user has no milestones yet.
-      final milestoneSnap = await _milestones
-          .where('userId', isEqualTo: record.userId)
-          .limit(1)
-          .get()
-          .timeout(const Duration(seconds: 10));
-      if (milestoneSnap.docs.isEmpty) {
-        final milestoneRef = _milestones.doc();
-        batch.set(
-          milestoneRef,
-          CareerMilestone(
-            id: milestoneRef.id,
-            userId: record.userId,
-            type: MilestoneType.firstJob,
-            title: 'Started at ${record.company}',
-            description: record.position,
-            date: record.dateHired,
-          ).toMap(),
-        );
-      }
+      try {
+        await _users.doc(record.userId).set(
+          {'employmentStatus': EmploymentStatus.employed.name},
+          SetOptions(merge: true),
+        ).timeout(const Duration(seconds: 10));
+      } catch (_) {}
+
+      try {
+        final milestoneSnap = await _milestones
+            .where('userId', isEqualTo: record.userId)
+            .limit(1)
+            .get()
+            .timeout(const Duration(seconds: 10));
+        if (milestoneSnap.docs.isEmpty) {
+          final milestoneRef = _milestones.doc();
+          await milestoneRef.set(
+            CareerMilestone(
+              id: milestoneRef.id,
+              userId: record.userId,
+              type: MilestoneType.firstJob,
+              title: 'Started at ${record.company}',
+              description: record.position,
+              date: record.dateHired,
+            ).toMap(),
+          ).timeout(const Duration(seconds: 10));
+        }
+      } catch (_) {}
     }
-
-    await batch.commit().timeout(const Duration(seconds: 15));
   }
 
   Future<void> updateRecord(String recordId, Map<String, dynamic> changes) {
