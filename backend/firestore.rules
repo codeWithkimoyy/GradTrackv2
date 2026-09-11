@@ -4,8 +4,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isNotDisabled(uid) {
-      let data = get(/databases/$(database)/documents/users/$(uid)).data;
-      return !('disabled' in data) || !data.disabled;
+      let doc = get(/databases/$(database)/documents/users/$(uid));
+      return !doc.exists || !('disabled' in doc.data) || !doc.data.disabled;
     }
 
     function isSignedIn() {
@@ -13,7 +13,8 @@ service cloud.firestore {
     }
 
     function getUserRole(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+      let doc = get(/databases/$(database)/documents/users/$(uid));
+      return doc.exists ? doc.data.role : null;
     }
 
     function currentUserRole() {
@@ -179,8 +180,14 @@ service cloud.firestore {
     // ---------- NOTIFICATIONS ----------
     match /notifications/{id} {
       allow read: if isStaff() || ownerOfResource();
-      allow create: if isStaff() || canOwnCreate();
-      allow update: if canOwnUpdate();
+      // Alumni may address a notification to the admins as a role broadcast
+      // (e.g. an alert when they send the alumni office a message).
+      allow create: if isStaff() || canOwnCreate() ||
+                    (isSignedIn() &&
+                     request.resource.data.userId == '' &&
+                     request.resource.data.recipientRole == 'admin');
+      allow update: if canOwnUpdate() ||
+                    (isStaff() && resource.data.recipientRole == 'admin');
       allow delete: if isStaff() || ownerOfResource();
     }
 

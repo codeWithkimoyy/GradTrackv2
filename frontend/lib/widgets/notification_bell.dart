@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -348,6 +349,8 @@ class _NotificationPanel extends ConsumerWidget {
               ref.read(notificationServiceProvider).markAsRead(n.id);
             }
             onClose();
+            final link = n.link;
+            if (link != null && link.isNotEmpty) context.go(link);
           },
           onDelete: () {
             ref.read(notificationServiceProvider).deleteNotification(n.id);

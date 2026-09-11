@@ -7,13 +7,15 @@ void main() {
   const notLoading = false;
 
   group('resolveRedirect - admin navigation', () {
-    test('all five admin tabs are allowed (return null)', () {
+    test('all admin tabs are allowed (return null)', () {
       const adminTabs = [
         AppRoutes.adminDashboard, // Overview
         AppRoutes.adminUsers, // Users
         AppRoutes.adminAnalytics, // Analytics
         AppRoutes.adminAuditLogs, // Audit Logs
-        AppRoutes.adminProfile, // Profile
+        AppRoutes.adminMessages, // Messages
+        AppRoutes.adminProfile, // Legacy Profile
+        AppRoutes.adminSettings, // Settings
       ];
 
       for (final path in adminTabs) {
@@ -68,6 +70,58 @@ void main() {
           approved: true,
         ),
         AppRoutes.alumniDashboard,
+      );
+    });
+
+    test('alumni cannot open the admin Settings page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminSettings,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          approved: true,
+        ),
+        AppRoutes.alumniDashboard,
+      );
+    });
+
+    test('alumni cannot open the admin Messages page', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.adminMessages,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          approved: true,
+        ),
+        AppRoutes.alumniDashboard,
+      );
+    });
+
+    test('alumni can open the Message Admin form', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.alumniMessageAdmin,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('admin cannot reach the alumni Message Admin form', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.alumniMessageAdmin,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.admin,
+          approved: true,
+        ),
+        AppRoutes.adminDashboard,
       );
     });
   });

@@ -337,9 +337,12 @@ List<_ShellNavItem> _navItemsForRole(UserRole role) => switch (role) {
         _ShellNavItem(Icons.history_rounded, Icons.history_rounded,
             'Audit Logs', AppRoutes.adminAuditLogs, Color(0xFFA855F7),
             sticker: '\u{1F4DC}'),
-        _ShellNavItem(Icons.person_outline_rounded, Icons.person_rounded,
-            'Profile', AppRoutes.adminProfile, Color(0xFF06B6D4),
-            sticker: '\u{1F464}'),
+        _ShellNavItem(Icons.mail_outline_rounded, Icons.mail_rounded,
+            'Messages', AppRoutes.adminMessages, Color(0xFFF43F5E),
+            sticker: '\u{1F4E9}'),
+        _ShellNavItem(Icons.settings_outlined, Icons.settings_rounded,
+            'Settings', AppRoutes.adminSettings, Color(0xFF06B6D4),
+            sticker: '\u{2699}\u{FE0F}'),
       ],
     };
 

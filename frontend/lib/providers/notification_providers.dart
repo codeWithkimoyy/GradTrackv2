@@ -1,13 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
+import 'role_providers.dart';
 
 final notificationServiceProvider =
     Provider<NotificationService>((ref) => NotificationService());
 
 final notificationsProvider =
     StreamProvider.family<List<AppNotification>, String>((ref, userId) {
-  return ref.read(notificationServiceProvider).watchNotifications(userId);
+  final isAdmin = ref.watch(isAdminProvider);
+  return ref.read(notificationServiceProvider).watchNotifications(
+        userId,
+        includeRoleBroadcasts: isAdmin,
+      );
 });
 
 final unreadCountProvider = Provider.family<int, String>((ref, userId) {

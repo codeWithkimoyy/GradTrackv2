@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../constants/app_constants.dart';
@@ -74,11 +75,13 @@ class NotificationsScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               ...notifications.map((n) => _NotificationCard(
                     notification: n,
-                    onRead: n.isRead
-                        ? null
-                        : () async {
-                            await service.markAsRead(n.id);
-                          },
+                    onOpen: () {
+                      if (!n.isRead) {
+                        service.markAsRead(n.id);
+                      }
+                      final link = n.link;
+                      if (link != null && link.isNotEmpty) context.go(link);
+                    },
                     onDelete: () async {
                       await service.deleteNotification(n.id);
                     },
@@ -102,12 +105,12 @@ class NotificationsScreen extends ConsumerWidget {
 
 class _NotificationCard extends StatelessWidget {
   final AppNotification notification;
-  final VoidCallback? onRead;
+  final VoidCallback onOpen;
   final VoidCallback onDelete;
 
   const _NotificationCard({
     required this.notification,
-    required this.onRead,
+    required this.onOpen,
     required this.onDelete,
   });
 
@@ -116,7 +119,7 @@ class _NotificationCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
-        onTap: onRead,
+        onTap: onOpen,
         leading: CircleAvatar(
           backgroundColor: notification.priority.color.withValues(alpha: .22),
           child: Icon(notification.type.icon,

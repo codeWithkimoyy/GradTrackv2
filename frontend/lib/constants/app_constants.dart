@@ -110,7 +110,7 @@ class AppStrings {
   static final RegExp alumniIdPattern = RegExp(r'^[A-Za-z0-9_\-]+$');
 
   /// Build tag shown on the login screen so deployments/caches are verifiable.
-  static const String buildId = 'b-2026-0909-10';
+  static const String buildId = 'b-2026-0909-16';
 }
 
 /// Firestore collection names, centralized to avoid typos across the app.

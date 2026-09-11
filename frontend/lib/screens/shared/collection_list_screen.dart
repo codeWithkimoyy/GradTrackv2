@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/notification_model.dart';
-import '../../models/user_model.dart';
 import '../../providers/audit_log_providers.dart';
+import '../../providers/notification_providers.dart';
 import '../../providers/role_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_snack_bar.dart';
@@ -1117,7 +1117,7 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
     for (final f in widget.content.fields) {
       if (f.type == ContentFieldType.choice) continue;
       if (f.type == ContentFieldType.toggle) continue;
-      if (f.name == 'endDate' && isCurrent) continue;
+      if (f.name == 'endDate') continue;
       if (_controllers[f.name]!.text.trim().isEmpty) {
         showAppSnackBar(context, '${f.label} is required.',
             backgroundColor: AppColors.error);
@@ -1164,15 +1164,13 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
         await FirebaseFirestore.instance
             .collection(widget.content.collection)
             .add(data);
-        if (widget.content.collection == FirestoreCollections.announcements) {
-          try {
-            await _notifyAlumniOfAnnouncement(data);
-          } catch (e) {
-            if (mounted) {
-              showAppSnackBar(context,
-                  'Announcement saved, but notifying alumni failed: $e',
-                  backgroundColor: AppColors.warning);
-            }
+        try {
+          await _notifyAlumniForCreatedContent(widget.content, data);
+        } catch (e) {
+          if (mounted) {
+            showAppSnackBar(context,
+                'Saved, but alerting alumni failed: $e',
+                backgroundColor: AppColors.warning);
           }
         }
       }
@@ -1185,42 +1183,53 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
     }
   }
 
-  /// Creates an in-app notification for every alumni user so they see the
-  /// new announcement in their notification bell.
-  Future<void> _notifyAlumniOfAnnouncement(
-      Map<String, dynamic> announcementData) async {
-    final firestore = FirebaseFirestore.instance;
-    final alumni = await firestore
-        .collection(FirestoreCollections.users)
-        .where('role', isEqualTo: UserRole.alumni.name)
-        .get();
-
-    if (alumni.docs.isEmpty) return;
-
-    final batch = firestore.batch();
-    final now = DateTime.now();
-    for (final doc in alumni.docs) {
-      if (doc.data()['disabled'] == true) continue;
-      final notification = AppNotification(
-        id: '',
-        userId: doc.id,
-        type: NotificationType.announcement,
-        title: 'New announcement: ${announcementData['title']}',
-        description: (announcementData['description'] as String? ?? '')
-            .trim()
-            .isEmpty
-            ? 'A new announcement has been posted.'
-            : announcementData['description'] as String,
-        priority: NotificationPriority.medium,
-        createdAt: now,
-        link: AppRoutes.collectionData('announcements'),
-      );
-      batch.set(
-        firestore.collection(FirestoreCollections.notifications).doc(),
-        notification.toMap(),
-      );
+  /// Sends a bell alert to every alumni when new public content is created
+  /// (announcements, events, jobs) so they are notified right away.
+  Future<void> _notifyAlumniForCreatedContent(
+      ContentCollection content, Map<String, dynamic> data) async {
+    final service = ref.read(notificationServiceProvider);
+    switch (content.collection) {
+      case FirestoreCollections.announcements:
+        final title = data['title']?.toString() ?? 'new announcement';
+        await service.notifyAllAlumni(
+          type: NotificationType.announcement,
+          title: 'New announcement: $title',
+          description:
+              (data['description']?.toString().trim() ?? '').isEmpty
+                  ? 'A new announcement has been posted.'
+                  : data['description'].toString(),
+          link: AppRoutes.collectionData('announcements'),
+        );
+      case FirestoreCollections.events:
+        final title = data['title']?.toString() ?? 'new event';
+        await service.notifyAllAlumni(
+          type: NotificationType.event,
+          title: 'New event: $title',
+          description: (data['location']?.toString().trim() ?? '').isEmpty
+              ? 'A new event has been posted.'
+              : 'At ${data['location']}',
+          link: AppRoutes.collectionData('events'),
+        );
+      case FirestoreCollections.jobs:
+        final title =
+            data['jobTitle']?.toString() ?? data['title']?.toString() ?? 'job';
+        final detail = [data['company'], data['location']]
+            .whereType<String>()
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .join(' · ');
+        await service.notifyAllAlumni(
+          type: NotificationType.employment,
+          title: 'New job: $title',
+          description: detail.isEmpty
+              ? 'A new job opportunity has been posted.'
+              : detail,
+          priority: NotificationPriority.medium,
+          link: AppRoutes.collectionData('jobs'),
+        );
+      default:
+        break;
     }
-    await batch.commit();
   }
 
   @override

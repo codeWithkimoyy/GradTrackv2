@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../constants/app_constants.dart';
+import '../models/alumni_message.dart';
 import '../models/user_model.dart';
+import '../routes/app_router.dart';
 
 /// One month bucket in a 12-month trend series.
 class TrendPoint {
@@ -409,5 +412,69 @@ class StatsRepository {
     }
     return query.orderBy('createdAt', descending: true).snapshots().map(
         (snap) => snap.docs.map((d) => d.data()).toList());
+  }
+
+  /// Sends an alumni -> admin message, typically sharing a hiring
+  /// opportunity or requesting an announcement. Also raises an in-app
+  /// notification so admins are alerted on the notification bell.
+  Future<void> sendMessage({
+    required String senderId,
+    required String senderName,
+    String? senderAlumniId,
+    String? senderEmail,
+    required MessageSubject subject,
+    String? company,
+    String? position,
+    required String details,
+  }) async {
+    await _col(FirestoreCollections.messages).add({
+      'senderId': senderId,
+      'userId': senderId,
+      'recipientRole': 'admin',
+      'senderName': senderName,
+      'senderAlumniId': senderAlumniId,
+      'senderEmail': senderEmail,
+      'subject': subject.name,
+      'company': company,
+      'position': position,
+      'message': details,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    final mention = [if (company != null) company, if (position != null) position]
+        .join(' · ');
+    try {
+      await _col(FirestoreCollections.notifications).add({
+        'userId': '',
+        'recipientRole': 'admin',
+        'type': switch (subject) {
+          MessageSubject.hiring => 'employment',
+          MessageSubject.announcement => 'announcement',
+          MessageSubject.inquiry => 'system',
+        },
+        'title': subject.label,
+        'description': mention.isEmpty
+            ? 'New message from $senderName'
+            : '$senderName — $mention',
+        'priority': subject == MessageSubject.inquiry ? 'medium' : 'high',
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+        'link': AppRoutes.adminMessages,
+      });
+    } catch (e) {
+      // The message is already saved above — a failed bell alert must never
+      // turn a successfully sent message into a failure for the alumni.
+      debugPrint('sendMessage: admin alert notification failed: $e');
+    }
+  }
+
+  /// Live alumni-to-admin messages for the admin inbox (newest first).
+  Stream<List<AlumniMessage>> watchMessages() {
+    return _col(FirestoreCollections.messages)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => AlumniMessage.fromMap(d.data(), d.id))
+            .toList());
   }
 }
