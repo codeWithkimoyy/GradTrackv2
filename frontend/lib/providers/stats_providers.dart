@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/user_model.dart';
 import '../repositories/stats_repository.dart';
+import 'auth_providers.dart';
 import 'role_providers.dart';
 
-final statsRepositoryProvider =
-    Provider<StatsRepository>((ref) => StatsRepository());
+final statsRepositoryProvider = Provider<StatsRepository>(
+    (ref) => StatsRepository(api: ref.watch(apiClientProvider)));
 
 /// Live staff-facing aggregate stats.
 /// Admins see every role; non-admins are scoped to alumni records.
@@ -51,10 +53,10 @@ final publicAnnouncementsProvider =
       .watchAnnouncements(publicOnly: true);
 });
 
-/// Live pending-approval queue for the admin dashboard (newest first).
+/// Pending-approval queue for the admin dashboard (newest first).
 /// New registrations are auto-approved, so this stream only surfaces
 /// pre-approval-era accounts and anyone an admin manually un-approves.
 final pendingApprovalsProvider =
-    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+    StreamProvider.autoDispose<List<UserModel>>((ref) {
   return ref.watch(statsRepositoryProvider).watchPendingApprovals();
 });

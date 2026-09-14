@@ -22,6 +22,7 @@ after(async () => {
   await new Promise((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
   });
+  await require('../src/config/mysql').close();
 });
 
 test('POST /api/auth/forgot-password rejects a malformed email', async () => {
@@ -74,4 +75,43 @@ test('POST /api/auth/reset-password validates the code shape', async () => {
 
   assert.equal(response.status, 400);
   assert.equal(body.error, 'invalid_code');
+});
+
+test('POST /api/auth/google requires an ID token', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/google`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(body.error, 'missing_token');
+});
+
+test('POST /api/auth/google rejects a forged ID token', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/google`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ idToken: 'forged-token' }),
+  });
+  const body = await response.json();
+
+  assert.ok([401, 502, 503].includes(response.status));
+  assert.ok(typeof body.error === 'string' && body.error.length > 0);
+});
+
+test('POST /api/auth/login rejects unknown accounts without leaking why', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      identifier: 'nobody-xyz-123@example.com',
+      password: 'whatever123',
+    }),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 401);
+  assert.equal(body.error, 'invalid_credentials');
 });

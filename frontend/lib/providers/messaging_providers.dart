@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/message_model.dart';
 import '../services/messaging_service.dart';
+import 'auth_providers.dart';
 
-final messagingServiceProvider =
-    Provider<MessagingService>((ref) => MessagingService());
+final messagingServiceProvider = Provider<MessagingService>(
+    (ref) => MessagingService(api: ref.watch(apiClientProvider)));
 
 /// Live messages stream for a specific conversation ID.
 final messagesStreamProvider =

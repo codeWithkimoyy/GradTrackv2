@@ -10,8 +10,8 @@ import '../../models/document_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/document_providers.dart';
 import '../../services/storage_service.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
-import '../../utils/firebase_error_message.dart';
 import '../../widgets/empty_state_widget.dart';
 
 class ResumeUploadScreen extends ConsumerStatefulWidget {
@@ -29,11 +29,10 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: StorageService.resumeExtensions,
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
+    if (result.isEmpty) return;
 
-    final picked = result.files.single;
+    final picked = result.single;
     final user = ref.read(currentUserProfileProvider).value;
     if (user == null) return;
 
@@ -43,10 +42,11 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
     });
 
     try {
+      final bytes = await picked.readAsBytes();
       final uploaded = await ref.read(storageServiceProvider).uploadResume(
             userId: user.uid,
             fileName: picked.name,
-            bytes: picked.bytes,
+            bytes: bytes,
             onProgress: (p) => setState(() => _progress = p),
           );
 
@@ -56,7 +56,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
               fileUrl: uploaded.url,
               storagePath: uploaded.path,
               fileName: picked.name,
-              sizeBytes: picked.size,
+              sizeBytes: bytes.length,
               uploadedAt: DateTime.now(),
             ),
           );
@@ -67,7 +67,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, friendlyFirebaseError(e),
+        showAppSnackBar(context, AuthService.friendlyError(e),
             backgroundColor: AppColors.error);
       }
     } finally {
@@ -83,7 +83,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
       await ref.read(documentRepositoryProvider).deleteResumeMetadata(user.uid);
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, friendlyFirebaseError(e),
+        showAppSnackBar(context, AuthService.friendlyError(e),
             backgroundColor: AppColors.error);
       }
     }

@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user_model.dart' show parseApiDate;
 
 class ChatMessage {
   final String id;
@@ -22,16 +22,12 @@ class ChatMessage {
   });
 
   static DateTime _parseDate(dynamic val) {
-    if (val is Timestamp) return val.toDate();
-    if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
-    return DateTime.now();
+    return parseApiDate(val) ?? DateTime.now();
   }
 
-  factory ChatMessage.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
+  factory ChatMessage.fromJson(Map<String, dynamic> data, String id) {
     return ChatMessage(
-      id: doc.id,
+      id: id,
       conversationId: data['conversationId']?.toString() ?? '',
       senderId: data['senderId']?.toString() ?? '',
       senderName: data['senderName']?.toString() ?? 'User',
@@ -48,7 +44,7 @@ class ChatMessage {
         'senderName': senderName,
         'senderRole': senderRole,
         'text': text,
-        'timestamp': Timestamp.fromDate(timestamp),
+        'timestamp': timestamp.toIso8601String(),
         'isRead': isRead,
       };
 }
@@ -83,22 +79,17 @@ class ChatConversation {
   });
 
   static DateTime _parseDate(dynamic val) {
-    if (val is Timestamp) return val.toDate();
-    if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
-    return DateTime.now();
+    return parseApiDate(val) ?? DateTime.now();
   }
 
-  factory ChatConversation.fromDoc(
-      DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
+  factory ChatConversation.fromJson(Map<String, dynamic> data, String id) {
     final pIds = (data['participantIds'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         [];
 
     return ChatConversation(
-      id: doc.id,
+      id: id,
       alumniId: data['alumniId']?.toString() ?? '',
       alumniName: data['alumniName']?.toString() ?? 'Alumni',
       alumniEmail: data['alumniEmail']?.toString() ?? '',
@@ -120,10 +111,10 @@ class ChatConversation {
         'alumniCourse': alumniCourse,
         'participantIds': participantIds,
         'lastMessage': lastMessage,
-        'lastMessageTime': Timestamp.fromDate(lastMessageTime),
+        'lastMessageTime': lastMessageTime.toIso8601String(),
         'lastSenderId': lastSenderId,
         'unreadCountForAdmin': unreadCountForAdmin,
         'unreadCountForAlumni': unreadCountForAlumni,
-        'createdAt': Timestamp.fromDate(createdAt),
+        'createdAt': createdAt.toIso8601String(),
       };
 }

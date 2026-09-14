@@ -113,9 +113,11 @@ class AppStrings {
   static const String buildId = 'b-2026-0909-16';
 }
 
-/// Firestore collection names, centralized to avoid typos across the app.
-class FirestoreCollections {
-  FirestoreCollections._();
+/// Backend content-collection names, centralized to avoid typos across the
+/// app. These keys address `GET|POST|PATCH|DELETE /api/content/:collection`
+/// (and the dedicated survey/audit endpoints) on the MySQL backend.
+class ApiCollections {
+  ApiCollections._();
   static const String users = 'users';
   static const String alumniRegistry = 'alumni_registry';
   static const String employment = 'employment_records';

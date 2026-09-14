@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gradtracker/repositories/user_repository.dart';
 import 'package:gradtracker/screens/auth/login_screen.dart';
 import 'package:gradtracker/screens/auth/register_screen.dart';
+
+import 'test_doubles.dart';
 
 void main() {
   final viewports = <String, Size>{
@@ -36,8 +39,19 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            // Pending registry entry so the registration form renders.
+            userRepositoryProvider.overrideWithValue(
+              FakeUserRepository(
+                registryResult: const AlumniRegistryEntry(
+                  alumniId: 'BISU-2020-001',
+                  fullName: 'Test Alumni',
+                ),
+              ),
+            ),
+          ],
+          child: const MaterialApp(
             home: RegisterScreen(alumniId: 'BISU-2020-001'),
           ),
         ),

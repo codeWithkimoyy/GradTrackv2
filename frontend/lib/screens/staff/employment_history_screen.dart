@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,28 +5,27 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/employment_model.dart';
+import '../../models/user_model.dart';
+import '../../providers/auth_providers.dart';
+import '../../providers/employment_providers.dart';
 import '../../widgets/employment_record_card.dart';
 import '../../widgets/empty_state_widget.dart';
 
-/// All employment records across every alumnus, newest first.
+/// All employment records across every alumnus, newest first. Reads the
+/// unified employment store (legacy records + the shared `jobs` collection),
+/// so whatever alumni add in the Employment tab shows up here.
 final allEmploymentRecordsProvider = StreamProvider<
     List<EmploymentRecord>>((ref) {
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.employment)
-      .snapshots()
-      .map((snap) => snap.docs
-          .map(EmploymentRecord.fromDoc)
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+  return ref
+      .watch(employmentRepositoryProvider)
+      .watchAllRecords();
 });
 
-/// Brief user profiles (id -> data) used to label records with alumnus names.
-final usersBriefProvider = StreamProvider<Map<String, Map<String, dynamic>>>(
-    (ref) {
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.users)
-      .snapshots()
-      .map((snap) => {for (final d in snap.docs) d.id: d.data()});
+/// Brief user profiles (id -> profile) used to label records with alumnus names.
+final usersBriefProvider =
+    StreamProvider<Map<String, UserModel>>((ref) {
+  return ref.watch(userRepositoryProvider).watchUsers(limit: 500).map(
+      (users) => {for (final u in users) u.uid: u});
 });
 
 /// Admin aggregate view of all alumni employment history — read-only. Alumni
@@ -50,8 +48,8 @@ class EmploymentHistoryAdminScreen extends ConsumerWidget {
     }
     final entries = grouped.entries.toList()
       ..sort((a, b) {
-        final na = (users[a.key]?['fullName'] ?? '').toString().toLowerCase();
-        final nb = (users[b.key]?['fullName'] ?? '').toString().toLowerCase();
+        final na = (users[a.key]?.fullName ?? '').toLowerCase();
+        final nb = (users[b.key]?.fullName ?? '').toLowerCase();
         return na.compareTo(nb);
       });
 
@@ -113,7 +111,7 @@ class EmploymentHistoryAdminScreen extends ConsumerWidget {
 }
 
 class _AlumnusSection extends StatelessWidget {
-  final Map<String, dynamic>? user;
+  final UserModel? user;
   final List<EmploymentRecord> records;
   const _AlumnusSection({required this.user, required this.records});
 
@@ -126,9 +124,9 @@ class _AlumnusSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final name = user?['fullName']?.toString() ?? 'Unknown alumnus';
-    final email = user?['email']?.toString() ?? '';
-    final rawCourse = user?['course']?.toString() ?? '';
+    final name = (user?.fullName.isEmpty ?? true) ? 'Unknown alumnus' : user!.fullName;
+    final email = user?.email ?? '';
+    final rawCourse = user?.course ?? '';
     final course = rawCourse.trim().isEmpty ? AppStrings.defaultCourse : rawCourse;
 
     return Column(

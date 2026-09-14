@@ -1,16 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/notification_model.dart';
+import '../../models/user_model.dart' show parseApiDate;
 import '../../providers/audit_log_providers.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/notification_providers.dart';
 import '../../providers/role_providers.dart';
+import '../../repositories/content_repository.dart';
 import '../../routes/app_router.dart';
+import '../../services/survey_service.dart';
 import '../../utils/app_snack_bar.dart';
+import '../employment/employment_form_screen.dart';
 import '../staff/survey_editor_screen.dart';
 import '../staff/survey_responses_screen.dart';
 
@@ -46,7 +49,7 @@ class ContentCollection {
 /// route segment used for `/staff/data/:collection`.
 final Map<String, ContentCollection> contentCollections = {
   'announcements': const ContentCollection(
-    collection: FirestoreCollections.announcements,
+    collection: ApiCollections.announcements,
     title: 'Announcements',
     icon: Icons.campaign_outlined,
     fields: [
@@ -56,40 +59,52 @@ final Map<String, ContentCollection> contentCollections = {
     ],
   ),
   'events': const ContentCollection(
-    collection: FirestoreCollections.events,
+    collection: ApiCollections.events,
     title: 'Events',
     icon: Icons.event_outlined,
     fields: [
       ContentField('title', 'Title'),
       ContentField('description', 'Description', type: ContentFieldType.longText),
-      ContentField('date', 'Date', type: ContentFieldType.date),
+      ContentField('eventDate', 'Date', type: ContentFieldType.date),
       ContentField('location', 'Location'),
       ContentField('visibility', 'Visibility', type: ContentFieldType.choice, options: ['public', 'private']),
     ],
   ),
   'jobs': const ContentCollection(
-    collection: FirestoreCollections.jobs,
+    collection: ApiCollections.jobs,
     title: 'Employment',
     icon: Icons.business_center_outlined,
     fields: [
-      ContentField('jobTitle', 'Job Title'),
-      ContentField('company', 'Company / Organization'),
+      ContentField('jobTitle', 'Job Title / Position'),
+      ContentField('company', 'Company / Employer'),
+      ContentField('industry', 'Industry Sector'),
       ContentField('employmentType', 'Employment Type',
           type: ContentFieldType.choice,
           options: [
             'Full-time',
             'Part-time',
-            'Internship',
-            'Freelance',
             'Contract',
-            'Self-employed',
+            'Internship',
+            'Project-based',
           ]),
+      ContentField('salary', 'Salary Range',
+          type: ContentFieldType.choice,
+          options: [
+            'Below ₱15,000',
+            '₱15,000 - ₱25,000',
+            '₱25,001 - ₱40,000',
+            '₱40,001 - ₱60,000',
+            '₱60,001 - ₱100,000',
+            'Above ₱100,000',
+          ]),
+      ContentField('workSetup', 'Work Setup',
+          type: ContentFieldType.choice,
+          options: ['On-site', 'Hybrid', 'Remote']),
       ContentField('startDate', 'Start Date', type: ContentFieldType.monthYear),
       ContentField('endDate', 'End Date', type: ContentFieldType.monthYear),
       ContentField('isCurrent', 'Currently Working Here',
           type: ContentFieldType.toggle),
-      ContentField('salary', 'Salary'),
-      ContentField('location', 'Location'),
+      ContentField('location', 'City / Location'),
       ContentField('description', 'Description / Responsibilities',
           type: ContentFieldType.longText),
       ContentField('visibility', 'Visibility',
@@ -97,7 +112,7 @@ final Map<String, ContentCollection> contentCollections = {
     ],
   ),
   'surveys': const ContentCollection(
-    collection: FirestoreCollections.surveys,
+    collection: ApiCollections.surveys,
     title: 'Surveys',
     icon: Icons.fact_check_outlined,
     fields: [
@@ -116,7 +131,7 @@ final Map<String, ContentCollection> contentCollections = {
     ],
   ),
   'audit_logs': const ContentCollection(
-    collection: FirestoreCollections.auditLogs,
+    collection: ApiCollections.auditLogs,
     title: 'Audit Logs',
     icon: Icons.history_rounded,
     canAdd: false,
@@ -140,22 +155,29 @@ final Map<String, ContentCollection> contentCollections = {
 ContentCollection? lookupCollection(String key) =>
     contentCollections[key];
 
-/// Live Riverpod snapshot of a collection's docs. Unknown roles
+/// Role-aware list of a collection's items. Unknown roles
 /// are limited to `visibility == 'public'` records, staff see everything.
+/// Surveys, audit logs and system settings are served by their dedicated
+/// endpoints; everything else goes through the generic content API.
 final collectionContentsProvider = StreamProvider.autoDispose
-    .family<QuerySnapshot<Map<String, dynamic>>, ContentCollection>(
-        (ref, content) {
+    .family<List<Map<String, dynamic>>, ContentCollection>((ref, content) {
   final role = ref.watch(currentUserRoleProvider);
   final publicOnly = role == null;
-  Query<Map<String, dynamic>> query =
-      FirebaseFirestore.instance.collection(content.collection);
-  if (publicOnly) {
-    query = query.where('visibility', isEqualTo: 'public');
+  if (content.collection == ApiCollections.surveys) {
+    return ref.watch(surveyServiceProvider).watchSurveys();
   }
-  return query.snapshots();
+  if (content.collection == ApiCollections.auditLogs) {
+    return ref.watch(auditLogServiceProvider).watchLogs();
+  }
+  if (content.collection == ApiCollections.systemSettings) {
+    return ref.watch(contentRepositoryProvider).watchSettings();
+  }
+  return ref
+      .watch(contentRepositoryProvider)
+      .watchCollection(content.collection, publicOnly: publicOnly);
 });
 
-/// Live, role-aware list + CRUD screen for a Firestore collection.
+/// Live, role-aware list + CRUD screen for a backend content collection.
 /// Staff (admin) can add, edit and delete records; alumni can browse.
 /// Unknown roles only ever see public records.
 class CollectionListScreen extends ConsumerStatefulWidget {
@@ -176,11 +198,11 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
     return role == null;
   }
 
-  Future<void> _openEditor([DocumentSnapshot<Map<String, dynamic>>? doc]) async {
-    if (widget.content.collection == FirestoreCollections.surveys) {
+  Future<void> _openEditor([Map<String, dynamic>? item]) async {
+    if (widget.content.collection == ApiCollections.surveys) {
       final saved = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(builder: (_) => SurveyEditorScreen(existing: doc)),
+        MaterialPageRoute(builder: (_) => SurveyEditorScreen(existing: item)),
       );
       if (saved == true && mounted) {
         showAppSnackBar(context, 'Survey saved successfully.',
@@ -189,11 +211,37 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
       if (saved == true) {
         await logAudit(
           ref,
-          action: doc == null ? 'create' : 'update',
-          title: doc == null ? 'Survey created' : 'Survey updated',
+          action: item == null ? 'create' : 'update',
+          title: item == null ? 'Survey created' : 'Survey updated',
           description:
-              '${doc == null ? 'Created' : 'Updated'} the ${widget.content.title} "${_recordTitle(doc)}".',
-          targetId: doc?.id,
+              '${item == null ? 'Created' : 'Updated'} the ${widget.content.title} "${_recordTitle(item)}".',
+          targetId: item?['id']?.toString(),
+          targetType: widget.content.title.toLowerCase(),
+        );
+      }
+      return;
+    }
+
+    // Employment records use a dedicated full-page form (not a pop-up) so
+    // every field has room on screen.
+    if (widget.content.collection == ApiCollections.jobs) {
+      final saved = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+            builder: (_) => EmploymentFormScreen(existing: item)),
+      );
+      if (saved == true && mounted) {
+        showAppSnackBar(context, 'Employment saved successfully.',
+            backgroundColor: AppColors.success);
+      }
+      if (saved == true) {
+        await logAudit(
+          ref,
+          action: item == null ? 'create' : 'update',
+          title: item == null ? 'Employment created' : 'Employment updated',
+          description:
+              '${item == null ? 'Created' : 'Updated'} the ${widget.content.title} record "${_recordTitle(item)}".',
+          targetId: item?['id']?.toString(),
           targetType: widget.content.title.toLowerCase(),
         );
       }
@@ -204,44 +252,46 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
       context: context,
       builder: (_) => _ContentEditorDialog(
         content: widget.content,
-        existing: doc,
+        existing: item,
       ),
     );
     if (!mounted || canEdit == null || !canEdit) return;
     await logAudit(
       ref,
-      action: doc == null ? 'create' : 'update',
-      title: doc == null
+      action: item == null ? 'create' : 'update',
+      title: item == null
           ? '${widget.content.title} created'
           : '${widget.content.title} updated',
-      description: '${doc == null ? 'Created' : 'Updated'} a ${widget.content.title.toLowerCase()} record "${_recordTitle(doc)}".',
-      targetId: doc?.id,
+      description: '${item == null ? 'Created' : 'Updated'} a ${widget.content.title.toLowerCase()} record "${_recordTitle(item)}".',
+      targetId: item?['id']?.toString(),
       targetType: widget.content.title.toLowerCase(),
     );
   }
 
-  String _recordTitle(DocumentSnapshot<Map<String, dynamic>>? doc) {
-    if (doc == null) return '(new)';
-    final data = doc.data();
+  String _recordTitle(Map<String, dynamic>? item) {
+    if (item == null) return '(new)';
     final title =
-        data?['jobTitle']?.toString() ?? data?['title']?.toString();
-    return title != null && title.isNotEmpty ? title : doc.id;
+        item['jobTitle']?.toString() ?? item['title']?.toString();
+    return title != null && title.isNotEmpty
+        ? title
+        : (item['id']?.toString() ?? '(new)');
   }
 
-  void _openResponses(DocumentSnapshot<Map<String, dynamic>> doc) {
+  void _openResponses(Map<String, dynamic> item) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => SurveyResponsesScreen(survey: doc)),
+      MaterialPageRoute(builder: (_) => SurveyResponsesScreen(survey: item)),
     );
   }
 
-  Future<void> _delete(DocumentSnapshot<Map<String, dynamic>> doc) async {
+  Future<void> _delete(Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete record?'),
         content: Text(
-            'This "${widget.content.title}" record will be permanently removed from Firebase.'),
+            'This "${widget.content.title}" record will be permanently removed from the system.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -255,9 +305,15 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
       ),
     );
     if (!mounted || confirmed != true) return;
-    final title = _recordTitle(doc);
+    final title = _recordTitle(item);
     try {
-      await doc.reference.delete();
+      if (widget.content.collection == ApiCollections.surveys) {
+        await ref.read(surveyServiceProvider).deleteSurvey(id);
+      } else {
+        await ref
+            .read(contentRepositoryProvider)
+            .deleteItem(widget.content.collection, id);
+      }
       if (mounted) {
         showAppSnackBar(context, 'Deleted successfully.',
             backgroundColor: AppColors.success);
@@ -268,7 +324,7 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
         title: '${widget.content.title} deleted',
         description:
             'Deleted ${widget.content.title.toLowerCase()} record "$title".',
-        targetId: doc.id,
+        targetId: id,
         targetType: widget.content.title.toLowerCase(),
       );
     } catch (e) {
@@ -279,7 +335,15 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
     }
   }
 
-  bool get _isJobs => widget.content.collection == FirestoreCollections.jobs;
+  bool get _isJobs => widget.content.collection == ApiCollections.jobs;
+
+  /// Audit logs are append-only and read-only in the UI.
+  bool get _isReadOnly =>
+      widget.content.collection == ApiCollections.auditLogs;
+
+  /// System settings are edited through the settings API (no delete).
+  bool get _isSettings =>
+      widget.content.collection == ApiCollections.systemSettings;
 
   bool _matchesQuery(Map<String, dynamic> data) {
     final q = _query.trim().toLowerCase();
@@ -296,16 +360,20 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
 
   /// Staff can manage every record; alumni can manage the employment
   /// records they created themselves. Unknown roles never mutate content.
-  bool _canManageDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  /// Audit logs are read-only for everyone.
+  bool _canManageDoc(Map<String, dynamic> item) {
     if (_publicOnly) return false;
+    if (widget.content.collection == ApiCollections.auditLogs) {
+      return false;
+    }
     if (ref.read(isStaffProvider)) return true;
     if (!_isJobs) return false;
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    return uid != null && doc.data()?['createdBy'] == uid;
+    final uid = ref.read(authStateProvider).valueOrNull?.uid;
+    return uid != null && item['createdBy']?.toString() == uid;
   }
 
   Future<void> _openEmploymentDetails(
-    DocumentSnapshot<Map<String, dynamic>> doc, {
+    Map<String, dynamic> item, {
     required bool canManage,
     VoidCallback? onEdit,
     VoidCallback? onDelete,
@@ -314,7 +382,7 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => _EmploymentDetailsSheet(
-        doc: doc,
+        item: item,
         canManage: canManage,
         onEdit: () {
           Navigator.pop(sheetCtx);
@@ -368,7 +436,7 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
     final isStaff = ref.watch(isStaffProvider);
     final publicOnly = _publicOnly;
     final canAddRecords = isStaff ||
-        widget.content.collection == FirestoreCollections.jobs;
+        widget.content.collection == ApiCollections.jobs;
 
     return Scaffold(
       appBar: AppBar(
@@ -386,18 +454,18 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
           ? FloatingActionButton.extended(
               onPressed: () => _openEditor(),
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Add'),
+              label: Text('Add ${widget.content.title}'),
             )
           : null,
       body: ref.watch(collectionContentsProvider(widget.content)).when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _buildListError(e),
-        data: (snapshot) {
-          final docs = snapshot.docs;
-          final filtered =
-              _query.isEmpty ? docs : docs.where((d) => _matchesQuery(d.data())).toList();
+        data: (items) {
+          final filtered = _query.isEmpty
+              ? items
+              : items.where((d) => _matchesQuery(d)).toList();
 
-          if (docs.isEmpty) {
+          if (items.isEmpty) {
             if (_isJobs) {
               return Center(
                 child: Padding(
@@ -479,42 +547,45 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
               Row(
                 children: [
                   Text(
-                    '${filtered.length} of ${docs.length} records',
+                    '${filtered.length} of ${items.length} records',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              ...filtered.map((doc) {
-                final canManage = _canManageDoc(doc);
+              ...filtered.map((item) {
+                final canManage = _canManageDoc(item);
                 if (_isJobs) {
                   return _EmploymentRecordCard(
-                    doc: doc,
+                    item: item,
                     onView: () => _openEmploymentDetails(
-                      doc,
+                      item,
                       canManage: canManage,
-                      onEdit: canManage ? () => _openEditor(doc) : null,
-                      onDelete: canManage ? () => _delete(doc) : null,
+                      onEdit: canManage ? () => _openEditor(item) : null,
+                      onDelete: canManage ? () => _delete(item) : null,
                     ),
-                    onEdit: canManage ? () => _openEditor(doc) : null,
-                    onDelete: canManage ? () => _delete(doc) : null,
+                    onEdit: canManage ? () => _openEditor(item) : null,
+                    onDelete: canManage ? () => _delete(item) : null,
                   );
                 }
                 return _RecordCard(
-                  doc: doc,
+                  item: item,
                   icon: widget.content.icon,
                   onResponses:
                       widget.content.collection ==
-                              FirestoreCollections.surveys &&
+                                  ApiCollections.surveys &&
+                              isStaff &&
+                              !publicOnly
+                          ? () => _openResponses(item)
+                          : null,
+                  onEdit: !_isReadOnly && isStaff && !publicOnly
+                      ? () => _openEditor(item)
+                      : null,
+                  onDelete: !_isReadOnly &&
+                          !_isSettings &&
                           isStaff &&
                           !publicOnly
-                          ? () => _openResponses(doc)
-                          : null,
-                  onEdit: isStaff && !publicOnly
-                      ? () => _openEditor(doc)
-                      : null,
-                  onDelete: isStaff && !publicOnly
-                      ? () => _delete(doc)
+                      ? () => _delete(item)
                       : null,
                 );
               }),
@@ -527,14 +598,14 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
 }
 
 class _RecordCard extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final Map<String, dynamic> item;
   final IconData icon;
   final VoidCallback? onResponses;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const _RecordCard({
-    required this.doc,
+    required this.item,
     required this.icon,
     this.onResponses,
     this.onEdit,
@@ -543,15 +614,15 @@ class _RecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = doc.data() ?? {};
+    final data = item;
     final entries = data.entries
         .where((e) =>
             e.value != null &&
+            e.key != 'id' &&
             e.key != 'createdBy' &&
             e.key != 'updatedAt' &&
             e.key != 'createdAt' &&
-            (e.value is String || e.value is num || e.value is bool ||
-                e.value is Timestamp))
+            (e.value is String || e.value is num || e.value is bool))
         .take(5)
         .toList();
 
@@ -568,7 +639,7 @@ class _RecordCard extends StatelessWidget {
         ),
         title: Text(
           entries.isEmpty
-              ? doc.id
+              ? (data['id']?.toString() ?? '')
               : entries.first.value.toString(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -621,42 +692,43 @@ class _RecordCard extends StatelessWidget {
 }
 
 class _EmploymentRecordCard extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final Map<String, dynamic> item;
   final VoidCallback? onView;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const _EmploymentRecordCard({
-    required this.doc,
+    required this.item,
     this.onView,
     this.onEdit,
     this.onDelete,
   });
 
   static String? _monthYear(Object? value) {
-    if (value is Timestamp) return DateFormat.yMMM().format(value.toDate());
-    return null;
+    final parsed = parseApiDate(value);
+    if (parsed == null) return null;
+    return DateFormat.yMMM().format(parsed);
   }
 
   String _range(Map<String, dynamic> data) {
     final start = _monthYear(data['startDate']);
-    final current = data['isCurrent'] == true;
+    final current = data['isCurrent'] == true || data['isCurrent'] == 1;
     if (start == null) return current ? 'Present' : '';
-    if (current) return '$start \u2013 Present';
+    if (current) return '$start – Present';
     final end = _monthYear(data['endDate']);
-    return end == null ? start : '$start \u2013 $end';
+    return end == null ? start : '$start – $end';
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = doc.data() ?? {};
+    final data = item;
     final jobTitle =
         data['jobTitle']?.toString() ?? data['title']?.toString() ?? 'Untitled';
     final company = data['company']?.toString() ?? '';
     final type = data['employmentType']?.toString() ?? '';
     final location = data['location']?.toString() ?? '';
     final salary = data['salary']?.toString() ?? '';
-    final isCurrent = data['isCurrent'] == true;
+    final isCurrent = data['isCurrent'] == true || data['isCurrent'] == 1;
     final description = data['description']?.toString() ?? '';
     final range = _range(data);
 
@@ -797,13 +869,13 @@ class _EmploymentRecordCard extends StatelessWidget {
 }
 
 class _EmploymentDetailsSheet extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final Map<String, dynamic> item;
   final bool canManage;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const _EmploymentDetailsSheet({
-    required this.doc,
+    required this.item,
     required this.canManage,
     this.onEdit,
     this.onDelete,
@@ -812,10 +884,11 @@ class _EmploymentDetailsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final data = doc.data() ?? {};
+    final data = item;
     final jobTitle =
         data['jobTitle']?.toString() ?? data['title']?.toString() ?? 'Untitled';
     final description = data['description']?.toString() ?? '';
+    final isCurrent = data['isCurrent'] == true || data['isCurrent'] == 1;
 
     return Container(
       decoration: BoxDecoration(
@@ -853,10 +926,10 @@ class _EmploymentDetailsSheet extends StatelessWidget {
                 ('Employment Type', data['employmentType']?.toString()),
                 ('Salary', data['salary']?.toString()),
                 ('Status',
-                    data['isCurrent'] == true ? 'Currently working here' : null),
+                    isCurrent ? 'Currently working here' : null),
                 ('Start Date',
                     _EmploymentRecordCard._monthYear(data['startDate'])),
-                ('End Date', data['isCurrent'] == true
+                ('End Date', isCurrent
                     ? 'Present'
                     : _EmploymentRecordCard._monthYear(data['endDate'])),
                 ('Location', data['location']?.toString()),
@@ -1017,7 +1090,7 @@ class _MonthYearPickerDialogState extends State<_MonthYearPickerDialog> {
 
 class _ContentEditorDialog extends ConsumerStatefulWidget {
   final ContentCollection content;
-  final DocumentSnapshot<Map<String, dynamic>>? existing;
+  final Map<String, dynamic>? existing;
 
   const _ContentEditorDialog({required this.content, this.existing});
 
@@ -1038,14 +1111,13 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
   @override
   void initState() {
     super.initState();
-    final data = widget.existing?.data() ?? {};
+    final data = widget.existing ?? {};
     _controllers = {
       for (final f in widget.content.fields) f.name: TextEditingController(
         text: switch (f.type) {
           ContentFieldType.date => _formatDate(data[f.name]) ?? '',
-          ContentFieldType.monthYear => data[f.name] is Timestamp
-              ? DateFormat.yMMM().format((data[f.name] as Timestamp).toDate())
-              : '',
+          ContentFieldType.monthYear =>
+            _formatMonthYear(data[f.name]) ?? '',
           _ => data[f.name]?.toString() ?? '',
         },
       ),
@@ -1059,22 +1131,25 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
     _months = {
       for (final f in widget.content.fields)
         if (f.type == ContentFieldType.monthYear)
-          f.name: data[f.name] is Timestamp
-              ? (data[f.name] as Timestamp).toDate()
-              : null,
+          f.name: parseApiDate(data[f.name]),
     };
     _toggles = {
       for (final f in widget.content.fields)
-        if (f.type == ContentFieldType.toggle) f.name: data[f.name] == true,
+        if (f.type == ContentFieldType.toggle)
+          f.name: data[f.name] == true || data[f.name] == 1,
     };
   }
 
   String? _formatDate(Object? value) {
-    if (value is Timestamp) {
-      final d = value.toDate();
-      return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    }
-    return null;
+    final d = parseApiDate(value);
+    if (d == null) return null;
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
+
+  String? _formatMonthYear(Object? value) {
+    final d = parseApiDate(value);
+    if (d == null || (value is String && value.trim().isEmpty)) return null;
+    return DateFormat.yMMM().format(d);
   }
 
   @override
@@ -1125,17 +1200,19 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
       }
     }
 
-    final data = <String, dynamic>{'updatedAt': FieldValue.serverTimestamp()};
+    String dateOnly(DateTime d) =>
+        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final data = <String, dynamic>{};
     for (final f in widget.content.fields) {
       switch (f.type) {
         case ContentFieldType.choice:
           data[f.name] = _choices[f.name];
         case ContentFieldType.date:
-          data[f.name] = Timestamp.fromDate(
-              DateTime.tryParse(_controllers[f.name]!.text) ?? DateTime.now());
+          final parsed = DateTime.tryParse(_controllers[f.name]!.text);
+          data[f.name] = dateOnly(parsed ?? DateTime.now());
         case ContentFieldType.monthYear:
           final m = _months[f.name];
-          if (m != null) data[f.name] = Timestamp.fromDate(m);
+          if (m != null) data[f.name] = dateOnly(DateTime(m.year, m.month, 1));
         case ContentFieldType.toggle:
           data[f.name] = _toggles[f.name] ?? false;
         case ContentFieldType.text:
@@ -1143,27 +1220,33 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
           data[f.name] = _controllers[f.name]!.text.trim();
       }
     }
-    if (!_isEdit) {
-      data['createdAt'] = FieldValue.serverTimestamp();
-    }
     final isJobs =
-        widget.content.collection == FirestoreCollections.jobs;
+        widget.content.collection == ApiCollections.jobs;
+    final isSettings =
+        widget.content.collection == ApiCollections.systemSettings;
     if (isJobs) {
       if (isCurrent) {
-        data['endDate'] = FieldValue.delete();
-      }
-      if (!_isEdit) {
-        data['createdBy'] = FirebaseAuth.instance.currentUser?.uid ?? '';
+        data.remove('endDate');
       }
     }
 
     try {
-      if (_isEdit) {
-        await widget.existing!.reference.update(data);
+      if (isSettings) {
+        final name = widget.existing?['name']?.toString() ??
+            _controllers['name']?.text.trim() ??
+            '';
+        await ref
+            .read(contentRepositoryProvider)
+            .saveSetting(name, _controllers['value']?.text ?? '');
+      } else if (_isEdit) {
+        await ref.read(contentRepositoryProvider).updateItem(
+            widget.content.collection,
+            widget.existing!['id']?.toString() ?? '',
+            data);
       } else {
-        await FirebaseFirestore.instance
-            .collection(widget.content.collection)
-            .add(data);
+        await ref
+            .read(contentRepositoryProvider)
+            .createItem(widget.content.collection, data);
         try {
           await _notifyAlumniForCreatedContent(widget.content, data);
         } catch (e) {
@@ -1189,7 +1272,7 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
       ContentCollection content, Map<String, dynamic> data) async {
     final service = ref.read(notificationServiceProvider);
     switch (content.collection) {
-      case FirestoreCollections.announcements:
+      case ApiCollections.announcements:
         final title = data['title']?.toString() ?? 'new announcement';
         await service.notifyAllAlumni(
           type: NotificationType.announcement,
@@ -1200,7 +1283,7 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
                   : data['description'].toString(),
           link: AppRoutes.collectionData('announcements'),
         );
-      case FirestoreCollections.events:
+      case ApiCollections.events:
         final title = data['title']?.toString() ?? 'new event';
         await service.notifyAllAlumni(
           type: NotificationType.event,
@@ -1210,7 +1293,7 @@ class _ContentEditorDialogState extends ConsumerState<_ContentEditorDialog> {
               : 'At ${data['location']}',
           link: AppRoutes.collectionData('events'),
         );
-      case FirestoreCollections.jobs:
+      case ApiCollections.jobs:
         final title =
             data['jobTitle']?.toString() ?? data['title']?.toString() ?? 'job';
         final detail = [data['company'], data['location']]

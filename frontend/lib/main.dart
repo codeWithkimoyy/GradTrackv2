@@ -1,6 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 import 'config/app_theme.dart';
-import 'config/firebase_options.dart';
 import 'constants/app_constants.dart';
+import 'providers/auth_providers.dart';
 import 'providers/execution_trace_provider.dart';
 import 'providers/theme_provider.dart';
 import 'routes/app_router.dart';
+import 'services/api_client.dart';
+import 'services/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,21 +25,19 @@ Future<void> main() async {
       // Gracefully continue even if .env is missing
     }
   }
-  final firebaseInitialized = DefaultFirebaseOptions.isConfigured
-      ? await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        ).then((_) => true).timeout(
-          const Duration(seconds: 4),
-          onTimeout: () => false,
-        ).catchError((_) => false)
-      : false;
 
-  if (firebaseInitialized && kIsWeb) {
-    try {
-      FirebaseFirestore.instance.settings = const Settings(
-        webExperimentalForceLongPolling: true,
-      );
-    } catch (_) {}
+  // The backend (MySQL) needs no SDK init; just restore the persisted
+  // session so returning users land straight in the app.
+  final api = ApiClient();
+  final authService = AuthService(api: api);
+  try {
+    await authService.restoreSession().timeout(
+      const Duration(seconds: 8),
+      onTimeout: () => null,
+    );
+  } catch (_) {
+    // Offline / unreachable backend: the app still boots and the auth
+    // screens surface the connection error on sign-in.
   }
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -61,16 +58,18 @@ Future<void> main() async {
     );
   };
 
-  if (!kDebugMode && firebaseInitialized && !kIsWeb) {
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
+  if (!kDebugMode) {
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
     };
   }
 
   runApp(ProviderScope(
     observers: [ExecutionTraceObserver()],
+    overrides: [
+      apiClientProvider.overrideWithValue(api),
+      authServiceProvider.overrideWithValue(authService),
+    ],
     child: const GradTrackApp(),
   ));
 }

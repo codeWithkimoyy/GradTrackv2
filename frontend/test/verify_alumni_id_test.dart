@@ -3,13 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gradtracker/screens/auth/verify_alumni_id_screen.dart';
 
+import 'test_doubles.dart';
+
 void main() {
   group('VerifyAlumniIdScreen', () {
     testWidgets('shows the "not found / contact administrator" dialog for an '
         'unknown Alumni ID', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: VerifyAlumniIdScreen()),
+        ProviderScope(
+          overrides: [
+            // Unknown ID: the registry lookup returns null.
+            userRepositoryProvider
+                .overrideWithValue(FakeUserRepository()),
+          ],
+          child: const MaterialApp(home: VerifyAlumniIdScreen()),
         ),
       );
       await tester.pump(const Duration(milliseconds: 400));

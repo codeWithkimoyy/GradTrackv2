@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -154,6 +153,7 @@ void showChangePasswordDialog(BuildContext context, WidgetRef ref) {
             Navigator.of(ctx).pop();
             try {
               await _changePassword(
+                ref,
                 currentPassword: currentPwdCtrl.text,
                 newPassword: newPwdCtrl.text,
               );
@@ -177,21 +177,19 @@ void showChangePasswordDialog(BuildContext context, WidgetRef ref) {
   );
 }
 
-Future<void> _changePassword({
+Future<void> _changePassword(
+  WidgetRef ref, {
   required String currentPassword,
   required String newPassword,
 }) async {
-  final auth = FirebaseAuth.instance;
-  final user = auth.currentUser;
-  if (user == null || user.email == null) {
+  final session = ref.read(authStateProvider).valueOrNull;
+  if (session == null) {
     throw StateError('You must be signed in to change your password.');
   }
-  final credential = EmailAuthProvider.credential(
-    email: user.email!,
-    password: currentPassword,
-  );
-  await user.reauthenticateWithCredential(credential);
-  await user.updatePassword(newPassword);
+  await ref.read(userRepositoryProvider).changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
 }
 
 class _HelpItem extends StatelessWidget {

@@ -12,8 +12,17 @@ import '../../utils/app_snack_bar.dart';
 
 class AdminMessagesScreen extends ConsumerStatefulWidget {
   final String? initialAlumniId;
+  final String? initialAlumniName;
+  final String? initialAlumniEmail;
+  final String? initialAlumniCourse;
 
-  const AdminMessagesScreen({super.key, this.initialAlumniId});
+  const AdminMessagesScreen({
+    super.key,
+    this.initialAlumniId,
+    this.initialAlumniName,
+    this.initialAlumniEmail,
+    this.initialAlumniCourse,
+  });
 
   @override
   ConsumerState<AdminMessagesScreen> createState() =>
@@ -35,6 +44,9 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
   void initState() {
     super.initState();
     _selectedAlumniId = widget.initialAlumniId;
+    _selectedAlumniName = widget.initialAlumniName;
+    _selectedAlumniEmail = widget.initialAlumniEmail;
+    _selectedAlumniCourse = widget.initialAlumniCourse;
     _searchController.addListener(() => setState(() {}));
   }
 

@@ -1,33 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../constants/app_constants.dart';
 import '../../providers/auth_providers.dart';
+import '../../services/auth_service.dart';
+import '../../services/survey_service.dart';
 import '../../utils/app_snack_bar.dart';
-
-/// Live snapshot of published surveys (newest first).
-final surveysProvider = StreamProvider.autoDispose<
-    QuerySnapshot<Map<String, dynamic>>>((ref) {
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.surveys)
-      .orderBy('createdAt', descending: true)
-      .snapshots();
-});
-
-/// Maps surveyId -> the signed-in user's saved response document.
-final mySurveyResponsesProvider = FutureProvider.autoDispose<
-    Map<String, DocumentSnapshot<Map<String, dynamic>>>>((ref) async {
-  final userUid = ref.watch(currentUserProfileProvider).valueOrNull?.uid;
-  if (userUid == null) return {};
-  final snap = await FirebaseFirestore.instance
-      .collection(FirestoreCollections.surveyResponses)
-      .where('userId', isEqualTo: userUid)
-      .get();
-  return {
-    for (final d in snap.docs) (d.data()['surveyId'] as String? ?? ''): d,
-  };
-});
 
 /// Alumni tracer survey center: browse published surveys, answer them and
 /// review previously submitted answers. Responses are stored under the
@@ -64,9 +42,8 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
             ),
           ),
         ),
-        data: (snapshot) {
-          final docs = snapshot.docs;
-          if (docs.isEmpty) {
+        data: (surveys) {
+          if (surveys.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
@@ -100,21 +77,30 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                 ),
               ),
             ),
-            data: (myMap) => ListView(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              children: [
-                Text(
-                  'Answer published surveys to help BISU track graduate outcomes. Your responses are private.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ...docs.map((doc) => _SurveyCard(
-                      survey: doc,
-                      responseDoc: myMap[doc.id],
-                      onAnswer: () => _openSurvey(doc, myMap[doc.id]),
-                    )),
-              ],
-            ),
+            data: (responses) {
+              final myMap = {
+                for (final r in responses)
+                  r['surveyId']?.toString() ?? '': r,
+              };
+              return ListView(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                children: [
+                  Text(
+                    'Answer published surveys to help BISU track graduate outcomes. Your responses are private.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ...surveys.map((survey) {
+                    final id = survey['id']?.toString() ?? '';
+                    return _SurveyCard(
+                      survey: survey,
+                      response: myMap[id],
+                      onAnswer: () => _openSurvey(survey, myMap[id]),
+                    );
+                  }),
+                ],
+              );
+            },
           );
         },
       ),
@@ -122,45 +108,38 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
   }
 
   Future<void> _openSurvey(
-    DocumentSnapshot<Map<String, dynamic>> survey,
-    DocumentSnapshot<Map<String, dynamic>>? existing,
+    Map<String, dynamic> survey,
+    Map<String, dynamic>? existing,
   ) async {
-    final data = survey.data() ?? {};
     final saved = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
         builder: (_) => _AnswerSurveyPage(
-          surveyId: survey.id,
-          title: data['title']?.toString() ?? 'Survey',
-          description: data['description']?.toString(),
-          questions: _decodeQuestions(data['questions']),
+          surveyId: survey['id']?.toString() ?? '',
+          title: survey['title']?.toString() ?? 'Survey',
+          description: survey['description']?.toString(),
+          questions: _decodeQuestions(survey['questions']),
           existingAnswers:
-              existing?.data()?['answers'] as Map<String, dynamic>?,
+              (existing?['answers'] as Map?)?.map((k, v) => MapEntry('$k', v)),
         ),
       ),
     );
     if (saved == null || !mounted) return;
 
     try {
-      final user = ref.read(currentUserProfileProvider).valueOrNull;
-      if (user == null) return;
-      final responseRef = existing?.reference ??
-          FirebaseFirestore.instance
-              .collection(FirestoreCollections.surveyResponses)
-              .doc();
-      await responseRef.set({
-        'userId': user.uid,
-        'surveyId': survey.id,
-        'answers': saved,
-        'completedAt': FieldValue.serverTimestamp(),
-      });
+      await ref.read(surveyServiceProvider).submitResponse(
+            survey['id']?.toString() ?? '',
+            saved,
+          );
+      ref.invalidate(mySurveyResponsesProvider);
       if (mounted) {
         showAppSnackBar(context, 'Survey submitted. Thank you!',
             backgroundColor: AppColors.success);
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Could not save your answers: $e',
+        showAppSnackBar(
+            context, 'Could not save your answers: ${AuthService.friendlyError(e)}',
             backgroundColor: AppColors.error);
       }
     }
@@ -176,20 +155,19 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
 }
 
 class _SurveyCard extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> survey;
-  final DocumentSnapshot<Map<String, dynamic>>? responseDoc;
+  final Map<String, dynamic> survey;
+  final Map<String, dynamic>? response;
   final VoidCallback onAnswer;
 
   const _SurveyCard({
     required this.survey,
-    required this.responseDoc,
+    required this.response,
     required this.onAnswer,
   });
 
   @override
   Widget build(BuildContext context) {
-    final data = survey.data() ?? {};
-    final answered = responseDoc != null;
+    final answered = response != null;
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Padding(
@@ -215,16 +193,16 @@ class _SurveyCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    data['title']?.toString() ?? survey.id,
+                    survey['title']?.toString() ?? 'Survey',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ],
             ),
-            if (data['description'] != null) ...[
+            if (survey['description'] != null) ...[
               const SizedBox(height: 8),
-              Text(data['description'].toString(),
+              Text(survey['description'].toString(),
                   style: const TextStyle(color: Colors.black54)),
             ],
             const SizedBox(height: 12),

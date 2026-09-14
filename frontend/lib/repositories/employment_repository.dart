@@ -1,130 +1,99 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../constants/app_constants.dart';
 import '../models/employment_model.dart';
 import '../models/user_model.dart';
+import '../services/api_client.dart';
 
-/// Encapsulates all Firestore reads/writes for employment records and
+/// Encapsulates all backend reads/writes for employment records and
 /// career milestones. Screens/providers should go through this rather
-/// than touching FirebaseFirestore directly.
+/// than touching the API directly.
 class EmploymentRepository {
-  final FirebaseFirestore _firestore;
+  EmploymentRepository({ApiClient? api}) : _api = api ?? ApiClient();
 
-  EmploymentRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  final ApiClient _api;
 
-  CollectionReference<Map<String, dynamic>> get _records =>
-      _firestore.collection(FirestoreCollections.employment);
+  static const Duration pollInterval = Duration(seconds: 30);
 
-  CollectionReference<Map<String, dynamic>> get _milestones =>
-      _firestore.collection(FirestoreCollections.careerMilestones);
+  List<EmploymentRecord> _parseRecords(dynamic raw) {
+    final list = (raw as List).cast<Map<String, dynamic>>();
+    final records = list
+        .map((m) => EmploymentRecord.fromJson(m, m['id']?.toString() ?? ''))
+        .toList()
+      ..sort((x, y) => y.dateHired.compareTo(x.dateHired));
+    return records;
+  }
 
-  CollectionReference<Map<String, dynamic>> get _users =>
-      _firestore.collection(FirestoreCollections.users);
-
-  /// Live stream of a user's employment records, most recent first.
+  /// Employment history for a user (admins may pass another user's id),
+  /// most recent first.
   Stream<List<EmploymentRecord>> watchRecords(String userId) {
-    return _records
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map((snap) {
-          final list = snap.docs.map(EmploymentRecord.fromDoc).toList();
-          list.sort((a, b) => b.dateHired.compareTo(a.dateHired));
-          return list;
-        });
+    return _api.poll(() => fetchRecords(userId), interval: pollInterval);
+  }
+
+  Future<List<EmploymentRecord>> fetchRecords(String userId) async {
+    if (_api.currentUid == null || _api.currentUid == userId) {
+      return _parseRecords(await _api.get('/api/employment/mine'));
+    }
+    return _parseRecords(await _api.get('/api/employment/user/$userId'));
+  }
+
+  /// Every employment record across every alumnus, newest first. Powers the
+  /// admin's aggregate Employment History view.
+  Stream<List<EmploymentRecord>> watchAllRecords() {
+    return _api.poll(fetchAllRecords, interval: pollInterval);
+  }
+
+  Future<List<EmploymentRecord>> fetchAllRecords() async {
+    return _parseRecords(await _api.get('/api/employment/all'));
   }
 
   Stream<List<CareerMilestone>> watchMilestones(String userId) {
-    return _milestones
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map((snap) {
-          final list = snap.docs.map(CareerMilestone.fromDoc).toList();
-          list.sort((a, b) => b.date.compareTo(a.date));
-          return list;
-        });
+    return _api.poll(() => fetchMilestones(userId), interval: pollInterval);
   }
 
-  Future<void> addRecord(EmploymentRecord record) async {
-    final docRef = _records.doc();
-    // 1. Primary write: Save the employment record document
-    await docRef.set(record.toMap()).timeout(const Duration(seconds: 15));
+  Future<List<CareerMilestone>> fetchMilestones(String userId) async {
+    final raw = await _api
+        .get('/api/employment/milestones', query: {'userId': userId});
+    final list = (raw as List).cast<Map<String, dynamic>>();
+    final milestones = list
+        .map((m) => CareerMilestone.fromJson(m, m['id']?.toString() ?? ''))
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return milestones;
+  }
 
-    // 2. Secondary syncs: Unset previous current jobs, update profile status & milestone
-    if (record.isCurrent) {
-      try {
-        final existingCurrent = await _records
-            .where('userId', isEqualTo: record.userId)
-            .get()
-            .timeout(const Duration(seconds: 10));
-        final batch = _firestore.batch();
-        bool hasBatchUpdates = false;
-        for (final doc in existingCurrent.docs) {
-          if (doc.id != docRef.id && doc.data()['isCurrent'] == true) {
-            batch.update(doc.reference, {'isCurrent': false});
-            hasBatchUpdates = true;
-          }
-        }
-        if (hasBatchUpdates) {
-          await batch.commit().timeout(const Duration(seconds: 10));
-        }
-      } catch (_) {}
-
-      try {
-        await _users.doc(record.userId).set(
-          {'employmentStatus': EmploymentStatus.employed.name},
-          SetOptions(merge: true),
-        ).timeout(const Duration(seconds: 10));
-      } catch (_) {}
-
-      try {
-        final milestoneSnap = await _milestones
-            .where('userId', isEqualTo: record.userId)
-            .limit(1)
-            .get()
-            .timeout(const Duration(seconds: 10));
-        if (milestoneSnap.docs.isEmpty) {
-          final milestoneRef = _milestones.doc();
-          await milestoneRef.set(
-            CareerMilestone(
-              id: milestoneRef.id,
-              userId: record.userId,
-              type: MilestoneType.firstJob,
-              title: 'Started at ${record.company}',
-              description: record.position,
-              date: record.dateHired,
-            ).toMap(),
-          ).timeout(const Duration(seconds: 10));
-        }
-      } catch (_) {}
-    }
+  /// Creates a record; the backend demotes previous current jobs, syncs the
+  /// profile employment status and adds the first-job milestone as needed.
+  Future<EmploymentRecord> addRecord(EmploymentRecord record) async {
+    final raw = await _api.post('/api/employment', body: record.toMap());
+    final map = Map<String, dynamic>.from(raw);
+    return EmploymentRecord.fromJson(map, map['id']?.toString() ?? '');
   }
 
   Future<void> updateRecord(String recordId, Map<String, dynamic> changes) {
-    return _records
-        .doc(recordId)
-        .update(changes)
-        .timeout(const Duration(seconds: 10));
+    return _api.patch('/api/employment/$recordId', body: changes);
   }
 
   Future<void> deleteRecord(String recordId) {
-    return _records.doc(recordId).delete().timeout(const Duration(seconds: 10));
+    return _api.delete('/api/employment/$recordId');
   }
 
-  Future<void> addMilestone(CareerMilestone milestone) {
-    final ref = milestone.id.isEmpty
-        ? _milestones.doc()
-        : _milestones.doc(milestone.id);
-    return ref.set(milestone.toMap()).timeout(const Duration(seconds: 10));
+  Future<CareerMilestone> addMilestone(CareerMilestone milestone) async {
+    final raw =
+        await _api.post('/api/employment/milestones', body: milestone.toMap());
+    final map = Map<String, dynamic>.from(raw);
+    return CareerMilestone.fromJson(map, map['id']?.toString() ?? '');
   }
 
   Future<void> deleteMilestone(String id) {
-    return _milestones.doc(id).delete().timeout(const Duration(seconds: 10));
+    return _api.delete('/api/employment/milestones/$id');
   }
 
-  Future<void> setEmploymentStatus(String userId, EmploymentStatus status) {
-    return _users.doc(userId).set(
-      {'employmentStatus': status.name},
-      SetOptions(merge: true),
-    ).timeout(const Duration(seconds: 10));
+  Future<void> setEmploymentStatus(
+      String userId, EmploymentStatus status) async {
+    if (_api.currentUid == null || _api.currentUid == userId) {
+      await _api.patch('/api/employment/status/self',
+          body: {'employmentStatus': status.name});
+    } else {
+      await _api.patch('/api/alumni/users/$userId',
+          body: {'employmentStatus': status.name});
+    }
   }
 }

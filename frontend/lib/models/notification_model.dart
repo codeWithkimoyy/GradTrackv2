@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'user_model.dart' show parseApiDate;
 
 enum NotificationType {
   system,
@@ -123,13 +123,10 @@ class AppNotification {
   }
 
   static DateTime _parseDate(dynamic val) {
-    if (val is Timestamp) return val.toDate();
-    if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
-    return DateTime.now();
+    return parseApiDate(val) ?? DateTime.now();
   }
 
-  factory AppNotification.fromMap(Map<String, dynamic> map, String id) {
+  factory AppNotification.fromJson(Map<String, dynamic> map, String id) {
     return AppNotification(
       id: id,
       userId: map['userId']?.toString() ?? '',
@@ -144,7 +141,7 @@ class AppNotification {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
       'userId': userId,
       'type': type.name,
@@ -152,8 +149,11 @@ class AppNotification {
       'description': description,
       'priority': priority.name,
       'isRead': isRead,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.toIso8601String(),
       'link': link,
     };
   }
+
+  /// Backwards-compatible alias (the REST API uses [toJson]).
+  Map<String, dynamic> toMap() => toJson();
 }

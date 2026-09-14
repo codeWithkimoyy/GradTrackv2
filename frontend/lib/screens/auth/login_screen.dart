@@ -73,6 +73,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _submitGoogle() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authServiceProvider).signInWithGoogle();
+      if (_rememberMe) {
+        final user = ref.read(authServiceProvider).currentUser;
+        if (user != null) {
+          await _secureStorage.write(
+              key: 'remembered_email', value: user.email);
+        }
+      }
+      if (mounted) context.go(AppRoutes.dashboard);
+    } catch (e) {
+      _showError(AuthService.friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   void _showError(String message) {
     if (!mounted) return;
     showAppSnackBar(context, message,
@@ -409,6 +428,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 loading: _loading,
                 onPressed: _loading ? null : _submit,
                 label: 'Sign In',
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'or',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _loading ? null : _submitGoogle,
+                icon: const Text(
+                  'G',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF4285F4),
+                  ),
+                ),
+                label: Text(
+                  'Continue with Google',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  side: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.35),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
               ),
               const SizedBox(height: 18),
               Center(

@@ -22,6 +22,7 @@ after(async () => {
   await new Promise((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
   });
+  await require('../src/config/mysql').close();
 });
 
 test('GET /health reports a healthy service', async () => {
@@ -32,6 +33,8 @@ test('GET /health reports a healthy service', async () => {
   assert.equal(body.status, 'ok');
   assert.equal(body.service, 'gradtrack-backend');
   assert.equal(typeof body.firebaseConfigured, 'boolean');
+  assert.equal(body.database, 'MySQL');
+  assert.equal(typeof body.mysqlConfigured, 'boolean');
 });
 
 test('unknown routes return JSON 404', async () => {

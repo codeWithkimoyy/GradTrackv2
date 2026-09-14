@@ -1,12 +1,16 @@
+// Admin-only dashboard building blocks. This library is owned by the
+// admin dashboard; the alumni dashboard has its own copy under
+// dashboards/alumni. Do not import alumni components here.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../constants/app_constants.dart';
-import '../models/user_model.dart';
-import '../utils/avatar_utils.dart';
+import '../../constants/app_constants.dart';
+import '../../models/user_model.dart';
+import '../../utils/avatar_utils.dart';
 
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({
+class AdminDashboardPage extends StatelessWidget {
+  const AdminDashboardPage({
     super.key,
     required this.title,
     required this.subtitle,
@@ -86,10 +90,10 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-class DashboardMetricGrid extends StatelessWidget {
-  const DashboardMetricGrid({super.key, required this.metrics});
+class AdminMetricGrid extends StatelessWidget {
+  const AdminMetricGrid({super.key, required this.metrics});
 
-  final List<DashboardMetric> metrics;
+  final List<AdminMetric> metrics;
 
   @override
   Widget build(BuildContext context) {
@@ -108,15 +112,15 @@ class DashboardMetricGrid extends StatelessWidget {
             mainAxisSpacing: 12,
             mainAxisExtent: 126,
           ),
-          itemBuilder: (context, index) => _MetricCard(metric: metrics[index]),
+          itemBuilder: (context, index) => _AdminMetricCard(metric: metrics[index]),
         );
       },
     );
   }
 }
 
-class DashboardMetric {
-  const DashboardMetric(this.label, this.value, this.icon, this.color, {this.onTap});
+class AdminMetric {
+  const AdminMetric(this.label, this.value, this.icon, this.color, {this.onTap});
 
   final String label;
   final String value;
@@ -125,10 +129,10 @@ class DashboardMetric {
   final VoidCallback? onTap;
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.metric});
+class _AdminMetricCard extends StatelessWidget {
+  const _AdminMetricCard({required this.metric});
 
-  final DashboardMetric metric;
+  final AdminMetric metric;
 
   @override
   Widget build(BuildContext context) {
@@ -224,8 +228,8 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
-class DashboardSectionCard extends StatelessWidget {
-  const DashboardSectionCard({
+class AdminSectionCard extends StatelessWidget {
+  const AdminSectionCard({
     super.key,
     required this.title,
     required this.icon,
@@ -284,10 +288,10 @@ class DashboardSectionCard extends StatelessWidget {
   }
 }
 
-class DashboardActionGrid extends StatelessWidget {
-  const DashboardActionGrid({super.key, required this.actions});
+class AdminActionGrid extends StatelessWidget {
+  const AdminActionGrid({super.key, required this.actions});
 
-  final List<DashboardAction> actions;
+  final List<AdminAction> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -357,15 +361,15 @@ class DashboardActionGrid extends StatelessWidget {
   }
 }
 
-class DashboardAction {
-  const DashboardAction(this.label, this.icon, this.onTap);
+class AdminAction {
+  const AdminAction(this.label, this.icon, this.onTap);
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
 }
 
-Widget profileAvatar(UserModel user, {double radius = 25}) {
+Widget adminAvatar(UserModel user, {double radius = 25}) {
   return CircleAvatar(
     radius: radius,
     backgroundColor: AppColors.bisuBlue700.withValues(alpha: .14),

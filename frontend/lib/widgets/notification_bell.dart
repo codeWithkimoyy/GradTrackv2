@@ -10,8 +10,13 @@ import '../utils/app_snack_bar.dart';
 
 class NotificationBell extends ConsumerStatefulWidget {
   final String userId;
+  final bool isAdmin;
 
-  const NotificationBell({super.key, required this.userId});
+  const NotificationBell({
+    super.key,
+    required this.userId,
+    this.isAdmin = false,
+  });
 
   @override
   ConsumerState<NotificationBell> createState() => _NotificationBellState();
@@ -48,6 +53,10 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
   }
 
   void _openPanel() {
+    if (widget.isAdmin) {
+      _openModal();
+      return;
+    }
     _overlayEntry = OverlayEntry(
       builder: (context) => _NotificationPanel(
         userId: widget.userId,
@@ -63,6 +72,27 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
     );
     Overlay.of(context).insert(_overlayEntry!);
     _isOpen = true;
+  }
+
+  void _openModal() {
+    final bellContext = context;
+    _isOpen = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _NotificationModal(
+        userId: widget.userId,
+        typeFilter: _typeFilter,
+        readFilter: _readFilter,
+        searchQuery: _searchController.text,
+        onTypeFilterChanged: (t) => setState(() => _typeFilter = t),
+        onReadFilterChanged: (r) => setState(() => _readFilter = r),
+        searchController: _searchController,
+        onOpenLink: (link) {
+          if (link != null && link.isNotEmpty) bellContext.go(link);
+        },
+      ),
+    ).whenComplete(() => _isOpen = false);
   }
 
   void _closePanel() {
@@ -148,18 +178,6 @@ class _NotificationPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filter = NotificationFilter(
-      userId: userId,
-      type: typeFilter,
-      readFilter: readFilter == 'all'
-          ? ReadFilter.all
-          : readFilter == 'unread'
-              ? ReadFilter.unread
-              : ReadFilter.read,
-      query: searchQuery.isNotEmpty ? searchQuery : null,
-    );
-    final notifications = ref.watch(filteredNotificationsProvider(filter));
-
     return GestureDetector(
       onTap: () {},
       child: CompositedTransformFollower(
@@ -183,17 +201,127 @@ class _NotificationPanel extends ConsumerWidget {
                     .withValues(alpha: 0.3),
               ),
             ),
-            child: Column(
-              children: [
-                _buildHeader(context, ref),
-                _buildFilters(context),
-                _buildActionBar(context, ref),
-                Expanded(child: _buildList(context, ref, notifications)),
-              ],
+            child: _NotificationPanelBody(
+              userId: userId,
+              typeFilter: typeFilter,
+              readFilter: readFilter,
+              searchQuery: searchQuery,
+              onTypeFilterChanged: onTypeFilterChanged,
+              onReadFilterChanged: onReadFilterChanged,
+              searchController: searchController,
+              onClose: onClose,
+              onTapNotification: (link) {
+                if (link != null && link.isNotEmpty) context.go(link);
+                onClose();
+              },
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _NotificationModal extends ConsumerWidget {
+  final String userId;
+  final NotificationType? typeFilter;
+  final String readFilter;
+  final String searchQuery;
+  final ValueChanged<NotificationType?> onTypeFilterChanged;
+  final ValueChanged<String> onReadFilterChanged;
+  final TextEditingController searchController;
+  final ValueChanged<String?> onOpenLink;
+
+  const _NotificationModal({
+    required this.userId,
+    required this.typeFilter,
+    required this.readFilter,
+    required this.searchQuery,
+    required this.onTypeFilterChanged,
+    required this.onReadFilterChanged,
+    required this.searchController,
+    required this.onOpenLink,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 56),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      clipBehavior: Clip.antiAlias,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+      child: Container(
+        width: 520,
+        height: 620,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+          ),
+        ),
+        child: _NotificationPanelBody(
+          userId: userId,
+          typeFilter: typeFilter,
+          readFilter: readFilter,
+          searchQuery: searchQuery,
+          onTypeFilterChanged: onTypeFilterChanged,
+          onReadFilterChanged: onReadFilterChanged,
+          searchController: searchController,
+          onClose: () => Navigator.of(context).pop(),
+          onTapNotification: (link) {
+            Navigator.of(context).pop();
+            onOpenLink(link);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationPanelBody extends ConsumerWidget {
+  final String userId;
+  final NotificationType? typeFilter;
+  final String readFilter;
+  final String searchQuery;
+  final ValueChanged<NotificationType?> onTypeFilterChanged;
+  final ValueChanged<String> onReadFilterChanged;
+  final TextEditingController searchController;
+  final VoidCallback onClose;
+  final ValueChanged<String?> onTapNotification;
+
+  const _NotificationPanelBody({
+    required this.userId,
+    required this.typeFilter,
+    required this.readFilter,
+    required this.searchQuery,
+    required this.onTypeFilterChanged,
+    required this.onReadFilterChanged,
+    required this.searchController,
+    required this.onClose,
+    required this.onTapNotification,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = NotificationFilter(
+      userId: userId,
+      type: typeFilter,
+      readFilter: readFilter == 'all'
+          ? ReadFilter.all
+          : readFilter == 'unread'
+              ? ReadFilter.unread
+              : ReadFilter.read,
+      query: searchQuery.isNotEmpty ? searchQuery : null,
+    );
+    final notifications = ref.watch(filteredNotificationsProvider(filter));
+
+    return Column(
+      children: [
+        _buildHeader(context, ref),
+        _buildFilters(context),
+        _buildActionBar(context, ref),
+        Expanded(child: _buildList(context, ref, notifications)),
+      ],
     );
   }
 
@@ -348,9 +476,7 @@ class _NotificationPanel extends ConsumerWidget {
             if (!n.isRead) {
               ref.read(notificationServiceProvider).markAsRead(n.id);
             }
-            onClose();
-            final link = n.link;
-            if (link != null && link.isNotEmpty) context.go(link);
+            onTapNotification(n.link);
           },
           onDelete: () {
             ref.read(notificationServiceProvider).deleteNotification(n.id);

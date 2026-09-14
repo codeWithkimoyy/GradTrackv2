@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,7 +5,9 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../constants/app_constants.dart';
 import '../models/notification_model.dart';
+import '../models/user_model.dart';
 import '../providers/audit_log_providers.dart';
+import '../providers/auth_providers.dart';
 import '../providers/notification_providers.dart';
 import '../providers/stats_providers.dart';
 import '../utils/app_snack_bar.dart';
@@ -29,19 +30,15 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
 
   bool get _isBusy => _busy.isNotEmpty;
 
-  Future<void> _setApproved(Map<String, dynamic> user, bool approved) async {
-    final uid = user['id'] as String;
+  Future<void> _setApproved(UserModel user, bool approved) async {
+    final uid = user.uid;
     setState(() => _busy.add(uid));
     try {
-      await FirebaseFirestore.instance
-          .collection(FirestoreCollections.users)
-          .doc(uid)
-          .set({
+      await ref.read(userRepositoryProvider).updateUser(uid, {
         'approved': approved,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      });
 
-      final name = user['fullName']?.toString() ?? uid;
+      final name = user.fullName;
       if (mounted) {
         showAppSnackBar(
           context,
@@ -189,7 +186,7 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
             for (final user in queue.take(5)) ...[
               _PendingUserTile(
                 user: user,
-                busy: _busy.contains(user['id'] as String),
+                busy: _busy.contains(user.uid),
                 onApprove:
                     _isBusy ? null : () => _setApproved(user, true),
                 onReject:
@@ -221,7 +218,7 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
 }
 
 class _PendingUserTile extends StatelessWidget {
-  final Map<String, dynamic> user;
+  final UserModel user;
   final bool busy;
   final VoidCallback? onApprove;
   final VoidCallback? onReject;
@@ -243,10 +240,10 @@ class _PendingUserTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = user['fullName']?.toString() ?? 'Unknown';
-    final email = user['email']?.toString() ?? '';
-    final role = user['role']?.toString() ?? 'guest';
-    final createdAt = (user['createdAt'] as Timestamp?)?.toDate();
+    final name = user.fullName;
+    final email = user.email;
+    final role = user.role.label;
+    final createdAt = user.createdAt;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -288,8 +285,7 @@ class _PendingUserTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$email · ${role.toUpperCase()}'
-                  '${createdAt != null ? ' · ${timeago.format(createdAt)}' : ''}',
+                  '$email · ${role.toUpperCase()} · ${timeago.format(createdAt)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

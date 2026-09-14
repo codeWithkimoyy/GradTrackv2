@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../constants/app_constants.dart';
-import '../models/user_model.dart';
-import '../providers/notification_providers.dart';
-import '../providers/stats_providers.dart';
-import '../routes/app_router.dart';
-import 'dashboard_components.dart';
+import '../../constants/app_constants.dart';
+import '../../models/user_model.dart';
+import '../../providers/messaging_providers.dart';
+import '../../providers/notification_providers.dart';
+import '../../providers/stats_providers.dart';
+import '../../routes/app_router.dart';
+import 'alumni_components.dart';
 
 class AlumniDashboard extends ConsumerWidget {
   const AlumniDashboard({super.key, required this.user});
@@ -18,6 +19,8 @@ class AlumniDashboard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final completion = UserModel.computeCompletion(user).round();
     final unreadCount = ref.watch(unreadCountProvider(user.uid));
+    final unreadMessages =
+        ref.watch(unreadAlumniMessagesCountProvider(user.uid));
     final surveyProgress =
         ref.watch(surveyProgressProvider(user.uid)).valueOrNull;
     final announcements = ref
@@ -30,7 +33,7 @@ class AlumniDashboard extends ConsumerWidget {
             ? 'None yet'
             : '${surveyProgress.completed}/${surveyProgress.total}';
 
-    return DashboardPage(
+    return AlumniDashboardPage(
       title: 'Welcome back, ${user.fullName}',
       subtitle: 'Your personal graduate success dashboard.',
       icon: Icons.verified_user_outlined,
@@ -104,7 +107,7 @@ class AlumniDashboard extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
         ],
-        DashboardSectionCard(
+        AlumniSectionCard(
           title: 'Graduate Profile',
           icon: Icons.person_outline_rounded,
           action: Container(
@@ -135,7 +138,7 @@ class AlumniDashboard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  profileAvatar(user, radius: 31),
+                  alumniAvatar(user, radius: 31),
                   const SizedBox(width: 13),
                   Expanded(
                     child: Text(
@@ -169,67 +172,72 @@ class AlumniDashboard extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 14),
-        DashboardMetricGrid(
+        AlumniMetricGrid(
           metrics: [
-            DashboardMetric(
+            AlumniMetric(
               'Profile Completion',
               '$completion%',
               Icons.account_circle_outlined,
               AppColors.bisuBlue700,
               onTap: () => context.go(AppRoutes.alumniProfile),
             ),
-            DashboardMetric(
+            AlumniMetric(
               'Survey Progress',
               surveyLabel,
               Icons.fact_check_outlined,
               AppColors.bisuBlue600,
               onTap: () => context.go(AppRoutes.alumniSurvey),
             ),
-            DashboardMetric(
+            AlumniMetric(
               'Employment Status',
               user.employmentStatus.label,
               Icons.work_outline_rounded,
               AppColors.bisuBlue500,
               onTap: () => context.push(AppRoutes.employment),
             ),
-            DashboardMetric(
+            AlumniMetric(
               'Notifications',
               unreadCount == 0 ? 'All read' : '$unreadCount new',
               Icons.notifications_none_rounded,
               AppColors.bisuBlue400,
               onTap: () => context.go(AppRoutes.alumniNotifications),
             ),
+            AlumniMetric(
+              'Messages',
+              unreadMessages == 0 ? 'No unread' : '$unreadMessages unread',
+              Icons.chat_outlined,
+              AppColors.teal,
+              onTap: () => context.push(AppRoutes.messages),
+            ),
           ],
         ),
         const SizedBox(height: 14),
-        DashboardSectionCard(
+        AlumniSectionCard(
           title: 'Quick Actions',
           icon: Icons.bolt_outlined,
-          child: DashboardActionGrid(
+          child: AlumniActionGrid(
             actions: [
-              DashboardAction('My Profile', Icons.person_outline_rounded,
+              AlumniAction('My Profile', Icons.person_outline_rounded,
                   () => context.go(AppRoutes.alumniProfile)),
-              DashboardAction('Tracer Survey', Icons.fact_check_outlined,
+              AlumniAction('Tracer Survey', Icons.fact_check_outlined,
                   () => context.go(AppRoutes.alumniSurvey)),
-              DashboardAction('Employment History', Icons.work_outline_rounded,
+              AlumniAction('Employment History', Icons.work_outline_rounded,
                   () => context.push(AppRoutes.employment)),
-              DashboardAction('Message Admin', Icons.chat_outlined,
+              AlumniAction('Message Admin', Icons.chat_outlined,
                   () => context.push(AppRoutes.messages)),
-              DashboardAction('Notifications', Icons.notifications_none_rounded,
+              AlumniAction('Notifications', Icons.notifications_none_rounded,
                   () => context.go(AppRoutes.alumniNotifications)),
-              DashboardAction('Job Opportunities', Icons.business_center_outlined,
-                  () => context.go(AppRoutes.collectionData('jobs'))),
-              DashboardAction('Events', Icons.event_outlined,
+              AlumniAction('Employment', Icons.business_center_outlined,
+                  () => context.go(AppRoutes.alumniJobs)),
+              AlumniAction('Events', Icons.event_outlined,
                   () => context.go(AppRoutes.collectionData('events'))),
-              DashboardAction('Certificates', Icons.workspace_premium_outlined,
+              AlumniAction('Certificates', Icons.workspace_premium_outlined,
                   () => context.go(AppRoutes.alumniDocuments)),
-              DashboardAction('Message Admin', Icons.mark_email_unread_outlined,
-                  () => context.push(AppRoutes.messages)),
             ],
           ),
         ),
         const SizedBox(height: 14),
-        DashboardSectionCard(
+        AlumniSectionCard(
           title: 'Recent Announcements',
           icon: Icons.campaign_outlined,
           action: TextButton(

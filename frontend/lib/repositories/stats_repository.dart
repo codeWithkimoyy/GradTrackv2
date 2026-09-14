@@ -1,9 +1,5 @@
-import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../constants/app_constants.dart';
 import '../models/user_model.dart';
+import '../services/api_client.dart';
 
 /// One month bucket in a 12-month trend series.
 class TrendPoint {
@@ -11,6 +7,13 @@ class TrendPoint {
   final int count;
 
   const TrendPoint(this.month, this.count);
+
+  factory TrendPoint.fromJson(Map<String, dynamic> map) {
+    return TrendPoint(
+      parseApiDate(map['month']) ?? DateTime.now(),
+      (map['count'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 /// Employment outcome for a single graduation-year batch.
@@ -21,11 +24,18 @@ class YearEmployment {
 
   const YearEmployment(this.year, this.employedCount, this.total);
 
+  factory YearEmployment.fromJson(Map<String, dynamic> map) {
+    return YearEmployment(
+      (map['year'] as num?)?.toInt() ?? 0,
+      (map['employedCount'] as num?)?.toInt() ?? 0,
+      (map['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   double get rate => total == 0 ? 0 : (employedCount / total) * 100;
 }
 
-/// Live aggregate counts for staff dashboards, derived from real Firestore
-/// documents (users, surveys, survey responses, events, announcements).
+/// Aggregate counts for staff dashboards, computed server-side from MySQL.
 class DashboardStats {
   final int totalUsers;
   final int admins;
@@ -74,6 +84,43 @@ class DashboardStats {
 
   static const empty = DashboardStats();
 
+  factory DashboardStats.fromJson(Map<String, dynamic> map) {
+    int getInt(String key) => (map[key] as num?)?.toInt() ?? 0;
+    List<TrendPoint> trends(String key) {
+      final raw = map[key];
+      if (raw is! List) return const [];
+      return raw
+          .whereType<Map<String, dynamic>>()
+          .map(TrendPoint.fromJson)
+          .toList();
+    }
+
+    return DashboardStats(
+      totalUsers: getInt('totalUsers'),
+      admins: getInt('admins'),
+      alumni: getInt('alumni'),
+      verifiedAlumni: getInt('verifiedAlumni'),
+      pendingAlumni: getInt('pendingAlumni'),
+      employed: getInt('employed'),
+      selfEmployed: getInt('selfEmployed'),
+      freelance: getInt('freelance'),
+      unemployed: getInt('unemployed'),
+      studying: getInt('studying'),
+      surveyCount: getInt('surveyCount'),
+      responseCount: getInt('responseCount'),
+      eventCount: getInt('eventCount'),
+      announcementCount: getInt('announcementCount'),
+      signupTrend: trends('signupTrend'),
+      responseTrend: trends('responseTrend'),
+      employmentByYear: (map['employmentByYear'] is List)
+          ? (map['employmentByYear'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map(YearEmployment.fromJson)
+              .toList()
+          : const [],
+    );
+  }
+
   double get employmentRate {
     final working = employed + selfEmployed + freelance;
     final total = working + unemployed + studying;
@@ -98,6 +145,13 @@ class AlumniBatch {
   final int count;
 
   const AlumniBatch({required this.academicYear, required this.count});
+
+  factory AlumniBatch.fromJson(Map<String, dynamic> map) {
+    return AlumniBatch(
+      academicYear: map['academicYear']?.toString() ?? '',
+      count: (map['count'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 /// How many published surveys an alumni has already answered.
@@ -107,158 +161,58 @@ class SurveyProgress {
 
   const SurveyProgress({this.completed = 0, this.total = 0});
 
+  factory SurveyProgress.fromJson(Map<String, dynamic> map) {
+    return SurveyProgress(
+      completed: (map['completed'] as num?)?.toInt() ?? 0,
+      total: (map['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   bool get hasSurveys => total > 0;
   bool get fullyAnswered => hasSurveys && completed >= total;
   double get rate => total == 0 ? 0 : completed / total;
 }
 
-/// Merges multiple live query streams: whenever any source emits, the latest
-/// snapshot of every source is combined and emitted downstream.
-class StreamCombiner {
-  final List<Stream<QuerySnapshot<Map<String, dynamic>>>> _sources;
-  final List<QuerySnapshot<Map<String, dynamic>>?> _latest;
-  StreamController<dynamic>? _controller;
-  final List<StreamSubscription<dynamic>> _subs = [];
-
-  StreamCombiner(this._sources)
-      : _latest = List<QuerySnapshot<Map<String, dynamic>>?>.filled(
-            _sources.length, null);
-
-  Stream<T> bind<T>(T Function(List<QuerySnapshot<Map<String, dynamic>>>) fn) {
-    if (_controller != null) {
-      throw StateError('Combiner already bound');
-    }
-    final controller = StreamController<T>();
-    _controller = controller;
-    controller.onCancel = () {
-      _dispose();
-    };
-    for (var i = 0; i < _sources.length; i++) {
-      _subs.add(_sources[i].listen((snap) {
-        _latest[i] = snap;
-        if (_latest.every((s) => s != null) && !controller.isClosed) {
-          controller.add(fn(
-              _latest.cast<QuerySnapshot<Map<String, dynamic>>>().toList()));
-        }
-      }));
-    }
-    return controller.stream;
-  }
-
-  void _dispose() {
-    for (final sub in _subs) {
-      sub.cancel();
-    }
-    _controller?.close();
-  }
-}
-
 class StatsRepository {
-  final FirebaseFirestore _firestore;
+  StatsRepository({ApiClient? api}) : _api = api ?? ApiClient();
 
-  StatsRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  final ApiClient _api;
 
-  CollectionReference<Map<String, dynamic>> get _users =>
-      _firestore.collection(FirestoreCollections.users);
+  static const Duration pollInterval = Duration(seconds: 30);
 
-  CollectionReference<Map<String, dynamic>> _col(String name) =>
-      _firestore.collection(name);
-
-  /// Live combined stats for staff dashboards and analytics.
-  /// Reads the user list plus survey, response, event and announcement
-  /// collections. Admins may list every user; non-admin staff are scoped to
-  /// alumni records.
+  /// Staff-facing aggregate stats, refreshed on a short poll.
+  /// Admins see every role; non-admins are scoped to alumni records.
   Stream<DashboardStats> watchStaffStats({bool adminScope = true}) {
-    final userQuery = adminScope
-        ? _users.snapshots()
-        : _users.where('role', isEqualTo: 'alumni').snapshots();
-    final users = userQuery;
-    final surveys = _col(FirestoreCollections.surveys).snapshots();
-    final responses = _col(FirestoreCollections.surveyResponses).snapshots();
-    final events = _col(FirestoreCollections.events).snapshots();
-    final announcements = _col(FirestoreCollections.announcements).snapshots();
-
-    final combiner = StreamCombiner(
-        [users, surveys, responses, events, announcements]);
-    return combiner.bind((snaps) {
-      final userDocs = snaps[0].docs;
-      final surveysSnap = snaps[1];
-      final responsesSnap = snaps[2];
-
-      int countRole(String role) =>
-          userDocs.where((d) => d.data()['role'] == role).length;
-
-      final alumniDocs =
-          userDocs.where((d) => d.data()['role'] == 'alumni').toList();
-      final verified =
-          alumniDocs.where((d) => d.data()['isVerified'] == true).length;
-
-      int countStatus(String status) => alumniDocs
-          .where((d) =>
-              (d.data()['employmentStatus'] as String? ?? 'unemployed') ==
-              status)
-          .length;
-
-      return DashboardStats(
-        totalUsers: userDocs.length,
-        admins: countRole('admin'),
-        alumni: alumniDocs.length,
-        verifiedAlumni: verified,
-        pendingAlumni: alumniDocs.length - verified,
-        employed: countStatus('employed'),
-        selfEmployed: countStatus('selfEmployed'),
-        freelance: countStatus('freelance'),
-        unemployed: countStatus('unemployed'),
-        studying: countStatus('studying'),
-        surveyCount: surveysSnap.docs.length,
-        responseCount: responsesSnap.docs.length,
-        eventCount: snaps[3].docs.length,
-        announcementCount: snaps[4].docs.length,
-        signupTrend: _monthlyTrend(
-          userDocs.map((d) => (d.data()['createdAt'] as Timestamp?)?.toDate()),
-        ),
-        responseTrend: _monthlyTrend(
-          responsesSnap.docs
-              .map((d) => (d.data()['completedAt'] as Timestamp?)?.toDate()),
-        ),
-        employmentByYear: _employmentByYear(alumniDocs),
-      );
-    });
+    return _api.poll(() => fetchAggregatedStaffStats(adminScope: adminScope),
+        interval: pollInterval);
   }
 
-/// Live alumni list grouped by graduation batch (newest batch first,
+  /// Alumni list grouped by graduation batch (newest batch first,
   /// legacy records that have neither academic year nor graduation year last).
   Stream<List<AlumniBatch>> watchAlumniBatches() {
-    return _users.where('role', isEqualTo: 'alumni').snapshots().map((snap) {
-      final counts = <String, int>{};
-      for (final doc in snap.docs) {
-        final data = doc.data();
-        final key = graduationBatchKey(
-          academicYearGraduated: data['academicYearGraduated']?.toString(),
-          graduationYear: (data['graduationYear'] as num?)?.toInt(),
-        );
-        counts[key] = (counts[key] ?? 0) + 1;
-      }
-      final batches = [
-        for (final entry in counts.entries)
-          AlumniBatch(academicYear: entry.key, count: entry.value),
-      ]..sort((a, b) {
-          final (aYear, _) = graduationBatchInfo(a.academicYear);
-          final (bYear, _) = graduationBatchInfo(b.academicYear);
-          if (aYear != null && bYear != null) return bYear.compareTo(aYear);
-          if (aYear == null) return 1;
-          if (bYear == null) return -1;
-          return 0;
-        });
-      return batches;
-    });
+    return _api.poll(fetchAlumniBatches, interval: pollInterval);
+  }
+
+  Future<List<AlumniBatch>> fetchAlumniBatches() async {
+    final raw = await _api.get('/api/stats/batches');
+    final batches = (raw as List)
+        .whereType<Map<String, dynamic>>()
+        .map(AlumniBatch.fromJson)
+        .toList()
+      ..sort((a, b) {
+        final (aYear, _) = graduationBatchInfo(a.academicYear);
+        final (bYear, _) = graduationBatchInfo(b.academicYear);
+        if (aYear != null && bYear != null) return bYear.compareTo(aYear);
+        if (aYear == null) return 1;
+        if (bYear == null) return -1;
+        return 0;
+      });
+    return batches;
   }
 
   /// Buckets [dates] into the last 12 calendar months (oldest first).
   /// Null/missing timestamps are skipped; future dates are ignored.
-  static List<TrendPoint> _monthlyTrend(
-      Iterable<DateTime?> dates) {
+  static List<TrendPoint> monthlyTrend(Iterable<DateTime?> dates) {
     final now = DateTime.now();
     final months = List<int>.filled(12, 0);
     final startMonth = DateTime(now.year, now.month - 11);
@@ -276,138 +230,70 @@ class StatsRepository {
     ];
   }
 
-  /// Groups alumni docs by graduation year and counts working alumni
-  /// (employed / self-employed / freelance) per batch. Years without a
-  /// value are skipped; sorted ascending.
-  static List<YearEmployment> _employmentByYear(
-      List<QueryDocumentSnapshot<Map<String, dynamic>>> alumniDocs) {
-    final byYear = <int, (int, int)>{};
-    for (final doc in alumniDocs) {
-      final data = doc.data();
-      final year = data['graduationYear'];
-      if (year is! int) continue;
-      final status = data['employmentStatus'] as String? ?? 'unemployed';
-      final working =
-          status == 'employed' || status == 'selfEmployed' || status == 'freelance';
-      final tally = byYear[year] ?? (0, 0);
-      byYear[year] = (
-        tally.$1 + (working ? 1 : 0),
-        tally.$2 + 1,
-      );
-    }
-    final entries = byYear.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    return [
-      for (final e in entries) YearEmployment(e.key, e.value.$1, e.value.$2),
-    ];
+  /// List of users whose account is awaiting admin approval
+  /// (approved == false), newest registration first.
+  Stream<List<UserModel>> watchPendingApprovals({int limit = 20}) {
+    return _api.poll(() => fetchPendingApprovals(limit: limit),
+        interval: pollInterval);
   }
 
-  /// Live list of users whose account is awaiting admin approval
-  /// (approved == false), newest registration first. Admins only —
-  /// the security rules scope this query to the admin role.
-  ///
-  /// Query uses only a single equality filter with no Firestore orderBy
-  /// clause so it requires ZERO composite indexes. Sorting by [createdAt]
-  /// and [limit] are applied in-memory on the client stream.
-  Stream<List<Map<String, dynamic>>> watchPendingApprovals({int limit = 20}) {
-    return _users
-        .where('approved', isEqualTo: false)
-        .snapshots()
-        .map((snap) {
-      final list = snap.docs.map((d) => {...d.data(), 'id': d.id}).toList();
-      list.sort((a, b) {
-        final aDate = (a['createdAt'] as Timestamp?)?.toDate();
-        final bDate = (b['createdAt'] as Timestamp?)?.toDate();
-        if (aDate == null && bDate == null) return 0;
-        if (aDate == null) return 1;
-        if (bDate == null) return -1;
-        return bDate.compareTo(aDate);
-      });
-      if (limit > 0 && list.length > limit) {
-        return list.sublist(0, limit);
-      }
-      return list;
+  Future<List<UserModel>> fetchPendingApprovals({int limit = 20}) async {
+    final raw = await _api
+        .get('/api/stats/pending-approvals', query: {'limit': '$limit'});
+    final list = (raw as List).cast<Map<String, dynamic>>();
+    list.sort((a, b) {
+      final aDate = parseApiDate(a['createdAt']);
+      final bDate = parseApiDate(b['createdAt']);
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
     });
+    final items =
+        list.map((m) => UserModel.fromJson(m, m['uid']?.toString() ?? ''));
+    if (limit > 0 && list.length > limit) {
+      return items.take(limit).toList();
+    }
+    return items.toList();
   }
 
-  /// High-performance server-side aggregation using Firestore count() queries.
-  Future<DashboardStats> fetchAggregatedStaffStats({bool adminScope = true}) async {
+  /// Server-side aggregation for staff dashboards and analytics.
+  Future<DashboardStats> fetchAggregatedStaffStats(
+      {bool adminScope = true}) async {
     try {
-      final totalQuery = adminScope
-          ? _users
-          : _users.where('role', isEqualTo: 'alumni');
-
-      final results = await Future.wait([
-        totalQuery.count().get(),
-        _users.where('role', isEqualTo: 'admin').count().get(),
-        _users.where('role', isEqualTo: 'alumni').count().get(),
-        _users
-            .where('role', isEqualTo: 'alumni')
-            .where('isVerified', isEqualTo: true)
-            .count()
-            .get(),
-        _users.where('employmentStatus', isEqualTo: 'employed').count().get(),
-        _users.where('employmentStatus', isEqualTo: 'selfEmployed').count().get(),
-        _users.where('employmentStatus', isEqualTo: 'freelance').count().get(),
-        _users.where('employmentStatus', isEqualTo: 'unemployed').count().get(),
-        _users.where('employmentStatus', isEqualTo: 'studying').count().get(),
-        _col(FirestoreCollections.surveys).count().get(),
-        _col(FirestoreCollections.surveyResponses).count().get(),
-        _col(FirestoreCollections.events).count().get(),
-        _col(FirestoreCollections.announcements).count().get(),
-      ]);
-
-      final total = results[0].count ?? 0;
-      final alumni = results[2].count ?? 0;
-      final verified = results[3].count ?? 0;
-
-      return DashboardStats(
-        totalUsers: total,
-        admins: results[1].count ?? 0,
-        alumni: alumni,
-        verifiedAlumni: verified,
-        pendingAlumni: (alumni - verified).clamp(0, alumni),
-        employed: results[4].count ?? 0,
-        selfEmployed: results[5].count ?? 0,
-        freelance: results[6].count ?? 0,
-        unemployed: results[7].count ?? 0,
-        studying: results[8].count ?? 0,
-        surveyCount: results[9].count ?? 0,
-        responseCount: results[10].count ?? 0,
-        eventCount: results[11].count ?? 0,
-        announcementCount: results[12].count ?? 0,
-      );
+      final raw = await _api.get('/api/stats/staff',
+          query: {'adminScope': adminScope ? 'true' : 'false'});
+      return DashboardStats.fromJson(Map<String, dynamic>.from(raw));
     } catch (_) {
       return DashboardStats.empty;
     }
   }
 
-  /// Live tracer-survey progress for one alumni user.
+  /// Tracer-survey progress for one alumni user.
   Stream<SurveyProgress> watchSurveyProgress(String userId) {
-    final surveys = _col(FirestoreCollections.surveys).snapshots();
-    final responses = _col(FirestoreCollections.surveyResponses)
-        .where('userId', isEqualTo: userId)
-        .snapshots();
-
-    final combiner = StreamCombiner([surveys, responses]);
-    return combiner.bind((snaps) {
-      return SurveyProgress(
-        completed: snaps[1].docs.length,
-        total: snaps[0].docs.length,
-      );
-    });
+    return _api.poll(() => fetchSurveyProgress(userId),
+        interval: pollInterval);
   }
 
-  /// Live announcements for alumni dashboards (all) or public-facing screens.
+  Future<SurveyProgress> fetchSurveyProgress(String userId) async {
+    final raw = await _api
+        .get('/api/stats/survey-progress', query: {'userId': userId});
+    return SurveyProgress.fromJson(Map<String, dynamic>.from(raw));
+  }
+
+  /// Announcements for alumni dashboards (all) or public-facing screens.
   Stream<List<Map<String, dynamic>>> watchAnnouncements({
     bool publicOnly = false,
   }) {
-    Query<Map<String, dynamic>> query =
-        _col(FirestoreCollections.announcements);
-    if (publicOnly) {
-      query = query.where('visibility', isEqualTo: 'public');
-    }
-    return query.orderBy('createdAt', descending: true).snapshots().map(
-        (snap) => snap.docs.map((d) => d.data()).toList());
+    return _api.poll(() => fetchAnnouncements(publicOnly: publicOnly),
+        interval: pollInterval);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAnnouncements({
+    bool publicOnly = false,
+  }) async {
+    final raw = await _api.get('/api/stats/announcements',
+        query: {'publicOnly': publicOnly ? 'true' : 'false'});
+    return (raw as List).cast<Map<String, dynamic>>();
   }
 }

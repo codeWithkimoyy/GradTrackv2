@@ -1,4 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+/// Parses API date values (ISO-8601 strings, epoch millis, or DateTime).
+DateTime _parseDate(dynamic val, [DateTime? fallback]) {
+  if (val is DateTime) return val;
+  if (val is String) return DateTime.tryParse(val) ?? (fallback ?? DateTime.now());
+  if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+  return fallback ?? DateTime.now();
+}
+
+String _dateOnly(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 enum WorkSetup { remote, hybrid, onSite }
 
@@ -9,10 +18,12 @@ extension WorkSetupX on WorkSetup {
         WorkSetup.onSite => 'On-site',
       };
 
-  static WorkSetup fromString(String value) => WorkSetup.values.firstWhere(
-        (w) => w.name == value,
-        orElse: () => WorkSetup.onSite,
-      );
+  static WorkSetup fromString(String value) => switch (value.toLowerCase()) {
+        'remote' => WorkSetup.remote,
+        'hybrid' => WorkSetup.hybrid,
+        'on-site' || 'onsite' || 'on site' => WorkSetup.onSite,
+        _ => WorkSetup.onSite,
+      };
 }
 
 class EmploymentRecord {
@@ -52,31 +63,51 @@ class EmploymentRecord {
     required this.createdAt,
   });
 
-  static DateTime _parseDate(dynamic val, [DateTime? fallback]) {
-    if (val is Timestamp) return val.toDate();
-    if (val is String) return DateTime.tryParse(val) ?? (fallback ?? DateTime.now());
-    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
-    return fallback ?? DateTime.now();
-  }
-
-  factory EmploymentRecord.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final map = doc.data() ?? {};
+  factory EmploymentRecord.fromJson(Map<String, dynamic> map, String id) {
     return EmploymentRecord(
-      id: doc.id,
-      userId: map['userId'] ?? '',
-      company: map['company'] ?? '',
-      position: map['position'] ?? '',
-      industry: map['industry'] ?? '',
-      employmentType: map['employmentType'] ?? '',
-      salaryRange: map['salaryRange'],
+      id: id,
+      userId: map['userId']?.toString() ?? '',
+      company: map['company']?.toString() ?? '',
+      position: map['position']?.toString() ?? '',
+      industry: map['industry']?.toString() ?? '',
+      employmentType: map['employmentType']?.toString() ?? '',
+      salaryRange: map['salaryRange']?.toString(),
       dateHired: _parseDate(map['dateHired']),
       endDate: map['endDate'] != null ? _parseDate(map['endDate']) : null,
-      country: map['country'] ?? '',
-      province: map['province'],
-      city: map['city'] ?? '',
-      workSetup: WorkSetupX.fromString(map['workSetup'] ?? 'onSite'),
-      jobDescription: map['jobDescription'],
-      isCurrent: map['isCurrent'] ?? (map['endDate'] == null),
+      country: map['country']?.toString() ?? '',
+      province: map['province']?.toString(),
+      city: map['city']?.toString() ?? '',
+      workSetup: WorkSetupX.fromString(map['workSetup']?.toString() ?? 'onSite'),
+      jobDescription: map['jobDescription']?.toString(),
+      isCurrent: map['isCurrent'] == true || map['isCurrent'] == 1,
+      createdAt: _parseDate(map['createdAt']),
+    );
+  }
+
+  /// Maps a document from the unified `jobs` collection (the shared store
+  /// where alumni record employment and staff post opportunities) onto the
+  /// same [EmploymentRecord] shape used everywhere else, so alumni history,
+  /// admin aggregates and per-user views all reflect the same data.
+  factory EmploymentRecord.fromJobJson(Map<String, dynamic> map, String id) {
+    final endDate = map['endDate'] != null ? _parseDate(map['endDate']) : null;
+    return EmploymentRecord(
+      id: id,
+      userId: map['createdBy']?.toString() ?? '',
+      company: map['company']?.toString() ?? '',
+      position: map['jobTitle']?.toString() ??
+          map['title']?.toString() ??
+          '',
+      industry: map['industry']?.toString() ?? '',
+      employmentType: map['employmentType']?.toString() ?? '',
+      salaryRange: map['salary']?.toString(),
+      dateHired: _parseDate(map['startDate']),
+      endDate: endDate,
+      country: '',
+      province: null,
+      city: map['location']?.toString() ?? '',
+      workSetup: WorkSetupX.fromString(map['workSetup']?.toString() ?? ''),
+      jobDescription: map['description']?.toString(),
+      isCurrent: map['isCurrent'] == true || map['isCurrent'] == 1,
       createdAt: _parseDate(map['createdAt']),
     );
   }
@@ -88,15 +119,15 @@ class EmploymentRecord {
         'industry': industry,
         'employmentType': employmentType,
         'salaryRange': salaryRange,
-        'dateHired': Timestamp.fromDate(dateHired),
-        'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
+        'dateHired': _dateOnly(dateHired),
+        'endDate': endDate != null ? _dateOnly(endDate!) : null,
         'country': country,
         'province': province,
         'city': city,
         'workSetup': workSetup.name,
         'jobDescription': jobDescription,
         'isCurrent': isCurrent,
-        'createdAt': Timestamp.fromDate(createdAt),
+        'createdAt': createdAt.toIso8601String(),
       };
 }
 
@@ -120,18 +151,17 @@ class CareerMilestone {
     required this.date,
   });
 
-  factory CareerMilestone.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final map = doc.data() ?? {};
+  factory CareerMilestone.fromJson(Map<String, dynamic> map, String id) {
     return CareerMilestone(
-      id: doc.id,
-      userId: map['userId'] ?? '',
+      id: id,
+      userId: map['userId']?.toString() ?? '',
       type: MilestoneType.values.firstWhere(
         (t) => t.name == map['type'],
         orElse: () => MilestoneType.firstJob,
       ),
-      title: map['title'] ?? '',
-      description: map['description'],
-      date: (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      title: map['title']?.toString() ?? '',
+      description: map['description']?.toString(),
+      date: _parseDate(map['date']),
     );
   }
 
@@ -140,6 +170,6 @@ class CareerMilestone {
         'type': type.name,
         'title': title,
         'description': description,
-        'date': Timestamp.fromDate(date),
+        'date': _dateOnly(date),
       };
 }

@@ -6,9 +6,12 @@ service cloud.firestore {
     function isNotDisabled(uid) {
       // `get(...).exists` is NOT a valid property in rules — use the
       // standalone exists() guard so a missing users doc doesn't throw.
+      // Only a literal boolean `true` marks an account as disabled; any
+      // other value ('false', 0, null, missing) stays enabled so a
+      // mis-typed legacy field never silently locks a user out.
       return !exists(/databases/$(database)/documents/users/$(uid)) ||
              !('disabled' in get(/databases/$(database)/documents/users/$(uid)).data) ||
-             !get(/databases/$(database)/documents/users/$(uid)).data.disabled;
+             get(/databases/$(database)/documents/users/$(uid)).data.disabled != true;
     }
 
     function isSignedIn() {
@@ -63,6 +66,50 @@ service cloud.firestore {
 
     function canOwnCreate() {
       return isSignedIn() && request.auth.uid == request.resource.data.userId;
+    }
+
+    function getUserAlumniId(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid)) &&
+             'alumniId' in get(/databases/$(database)/documents/users/$(uid)).data
+        ? get(/databases/$(database)/documents/users/$(uid)).data.alumniId
+        : null;
+    }
+
+    // A user is a conversation participant if their Firebase UID OR their
+    // registry Alumni ID is listed, so both UID-keyed and ID-keyed legacy
+    // conversation documents keep working.
+    function isConversationParticipant(resource) {
+      return isSignedIn() &&
+             resource.data.keys().hasAny(['participantIds']) &&
+             (request.auth.uid in resource.data.participantIds ||
+              (getUserAlumniId(request.auth.uid) != null &&
+               getUserAlumniId(request.auth.uid) in resource.data.participantIds));
+    }
+
+    // A conversation is readable when its id matches the caller's Firebase UID
+    // or registry Alumni ID, or when the conversation doc lists them as a
+    // participant. Mirrors isConversationParticipant without needing the doc
+    // to be in-context, so it can be applied to foreign docs (e.g. the
+    // conversation referenced by a message).
+    function canReadConversation(conversationId) {
+      return conversationId == 'conv_' + request.auth.uid ||
+             conversationId == 'conv_' + getUserAlumniId(request.auth.uid) ||
+             (exists(/databases/$(database)/documents/conversations/$(conversationId)) &&
+              isConversationParticipant(
+                  get(/databases/$(database)/documents/conversations/$(conversationId))));
+    }
+
+    function canReadMessage(message) {
+      return isSignedIn() && (
+        isStaff() ||
+        request.auth.uid == message.data.senderId ||
+        request.auth.uid == message.data.recipientId ||
+        getUserAlumniId(request.auth.uid) == message.data.senderId ||
+        getUserAlumniId(request.auth.uid) == message.data.recipientId ||
+        (message.data.keys().hasAny(['conversationId']) &&
+         canReadConversation(message.data.conversationId)) ||
+        isConversationParticipant(message)
+      );
     }
 
     // ---------- USERS ----------
@@ -221,23 +268,20 @@ service cloud.firestore {
 
     // ---------- MESSAGING ----------
     match /conversations/{conversationId} {
-      allow read, update, delete: if isSignedIn() && (
-        request.auth.uid in resource.data.participantIds ||
-        isStaff()
-      );
-      allow create: if isSignedIn() && (
-        request.auth.uid in request.resource.data.participantIds ||
-        isStaff()
-      );
+      allow read: if isConversationParticipant(resource) ||
+                    isStaff() ||
+                    canReadConversation(conversationId);
+      allow update, delete: if isConversationParticipant(resource) ||
+                               isStaff();
+      allow create: if isStaff() ||
+                    (isSignedIn() &&
+                     request.resource.data.keys().hasAny(['participantIds']) &&
+                     (request.auth.uid in request.resource.data.participantIds ||
+                      request.resource.data.alumniId == getUserAlumniId(request.auth.uid)));
     }
 
     match /messages/{messageId} {
-      allow read: if isSignedIn() && (
-        request.auth.uid == resource.data.senderId ||
-        request.auth.uid == resource.data.recipientId ||
-        (resource.data.keys().hasAny(['participantIds']) && request.auth.uid in resource.data.participantIds) ||
-        isStaff()
-      );
+      allow read: if canReadMessage(resource);
       allow create: if isSignedIn() && (
         request.auth.uid == request.resource.data.userId ||
         request.auth.uid == request.resource.data.senderId

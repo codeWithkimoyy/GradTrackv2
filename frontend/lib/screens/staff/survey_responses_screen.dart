@@ -1,41 +1,33 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/role_providers.dart';
+import '../../services/survey_service.dart';
 
 /// Live survey responses for a specific survey. Staff (admin)
 /// may read every response; alumni only see their own via
 /// `mySurveyResponsesProvider`.
 final surveyResponsesProvider = StreamProvider.autoDispose
-    .family<QuerySnapshot<Map<String, dynamic>>, String>((ref, surveyId) {
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.surveyResponses)
-      .where('surveyId', isEqualTo: surveyId)
-      .snapshots();
+    .family<List<Map<String, dynamic>>, String>((ref, surveyId) {
+  return ref.watch(surveyServiceProvider).watchResponses(surveyId);
 });
 
 /// Alumni user records so staff can attach names to responses. Admins read
-/// the whole users collection; non-admins are scoped to alumni records by
-/// the security rules, so the same filter is applied here.
-final staffUsersProvider = StreamProvider.autoDispose<
-    QuerySnapshot<Map<String, dynamic>>>((ref) {
+/// the whole directory; non-admins are scoped to alumni records.
+final staffUsersProvider = StreamProvider.autoDispose<List<UserModel>>((ref) {
   final role = ref.watch(currentUserRoleProvider);
-  final query =
-      FirebaseFirestore.instance.collection(FirestoreCollections.users);
-  if (role == UserRole.admin) {
-    return query.snapshots();
-  }
-  return query.where('role', isEqualTo: 'alumni').snapshots();
+  return ref.watch(userRepositoryProvider).watchUsers(
+      role: role == UserRole.admin ? null : 'alumni', limit: 500);
 });
 
 /// Staff view of the alumni answers to one survey. Shows who answered,
 /// when they submitted, and every question/answer pair for each respondent.
 class SurveyResponsesScreen extends ConsumerStatefulWidget {
-  final DocumentSnapshot<Map<String, dynamic>> survey;
+  final Map<String, dynamic> survey;
 
   const SurveyResponsesScreen({super.key, required this.survey});
 
@@ -55,7 +47,7 @@ class _SurveyResponsesScreenState
   }
 
   Map<String, String> _decodeQuestions() {
-    final data = widget.survey.data() ?? {};
+    final data = widget.survey;
     final map = <String, String>{};
     final raw = data['questions'];
     if (raw is List) {
@@ -70,8 +62,9 @@ class _SurveyResponsesScreenState
 
   @override
   Widget build(BuildContext context) {
-    final data = widget.survey.data() ?? {};
-    final responsesAsync = ref.watch(surveyResponsesProvider(widget.survey.id));
+    final data = widget.survey;
+    final surveyId = data['id']?.toString() ?? '';
+    final responsesAsync = ref.watch(surveyResponsesProvider(surveyId));
     ref.watch(staffUsersProvider);
 
     return Scaffold(
@@ -89,9 +82,8 @@ class _SurveyResponsesScreenState
             ),
           ),
         ),
-        data: (snapshot) {
-          final docs = snapshot.docs;
-          if (docs.isEmpty) {
+        data: (responses) {
+          if (responses.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -115,15 +107,14 @@ class _SurveyResponsesScreenState
             );
           }
 
-          final users = ref.watch(staffUsersProvider).valueOrNull?.docs ?? [];
+          final users = ref.watch(staffUsersProvider).valueOrNull ?? [];
           final nameOf = <String, String>{
-            for (final d in users)
-              d.id: d.data()['fullName']?.toString() ?? d.id,
+            for (final u in users) u.uid: u.fullName.isEmpty ? u.uid : u.fullName,
           };
 
-          final sorted = [...docs]..sort((a, b) {
-              final at = (a.data()['completedAt'] as Timestamp?)?.toDate();
-              final bt = (b.data()['completedAt'] as Timestamp?)?.toDate();
+          final sorted = [...responses]..sort((a, b) {
+              final at = parseApiDate(a['completedAt']);
+              final bt = parseApiDate(b['completedAt']);
               final an = at?.millisecondsSinceEpoch ?? 0;
               final bn = bt?.millisecondsSinceEpoch ?? 0;
               return bn.compareTo(an);
@@ -140,7 +131,7 @@ class _SurveyResponsesScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        data['title']?.toString() ?? widget.survey.id,
+                        data['title']?.toString() ?? surveyId,
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 17),
                       ),
@@ -168,12 +159,13 @@ class _SurveyResponsesScreenState
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              for (final doc in sorted)
+              for (final response in sorted)
                 _ResponseCard(
-                  name: nameOf[doc.data()['userId']?.toString()] ?? 'Alumni',
-                  answeredAt: (doc.data()['completedAt'] as Timestamp?)
-                      ?.toDate(),
-                  answers: doc.data()['answers'],
+                  name: response['respondentName']?.toString() ??
+                      nameOf[response['userId']?.toString()] ??
+                      'Alumni',
+                  answeredAt: parseApiDate(response['completedAt']),
+                  answers: response['answers'],
                   questionTexts: _questionTexts,
                 ),
               const SizedBox(height: AppSpacing.lg),

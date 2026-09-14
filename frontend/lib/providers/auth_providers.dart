@@ -1,103 +1,104 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../config/firebase_options.dart';
+import '../models/auth_session.dart';
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
+import '../services/api_client.dart';
 import '../services/auth_service.dart';
 
-final firebaseConfiguredProvider = Provider<bool>((_) {
-  return DefaultFirebaseOptions.isConfigured && Firebase.apps.isNotEmpty;
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+
+final authServiceProvider = Provider<AuthService>((ref) {
+  final service = AuthService(api: ref.watch(apiClientProvider));
+  ref.onDispose(() => unawaited(service.dispose()));
+  return service;
 });
 
-final authServiceProvider = Provider<AuthService>((ref) => AuthService());
-
-/// Emits the raw FirebaseAuth user (null when signed out).
-final authStateProvider = StreamProvider<User?>((ref) {
-  if (!ref.watch(firebaseConfiguredProvider)) {
-    return Stream<User?>.value(null);
-  }
+/// Emits the current session (null when signed out).
+final authStateProvider = StreamProvider<AuthSession?>((ref) {
   return ref.watch(authServiceProvider).authStateChanges;
 });
 
-/// Holds a locally-saved profile, updated by edit screens when Firestore is
-/// unavailable. The profile stream merges this into its result.
+/// Holds a locally-saved profile, updated by edit screens when the backend
+/// is unavailable. The profile stream merges this into its result.
 final localProfileProvider = StateProvider<UserModel?>((_) => null);
 
-UserModel _localProfileFromAuth(User user) => UserModel(
+UserModel _localProfileFromSession(UserModel user) => UserModel(
       uid: user.uid,
-      email: user.email ?? '',
-      fullName: user.displayName ?? '',
+      email: user.email,
+      fullName: user.fullName,
       role: UserRole.alumni,
-      photoUrl: user.photoURL,
+      photoUrl: user.photoUrl,
       emailVerified: user.emailVerified,
       approved: true,
       createdAt: DateTime.now(),
     );
 
 final userRepositoryProvider =
-    Provider<UserRepository>((ref) => UserRepository());
+    Provider<UserRepository>((ref) => UserRepository(api: ref.watch(apiClientProvider)));
 
-/// Emits the Firestore profile for the signed-in user. A local profile keeps
-/// role routing usable during temporary Firestore/network failures.
+/// Emits the profile for the signed-in user: the session profile first, then
+/// server refreshes on a short poll. A local profile keeps role routing
+/// usable during temporary backend/network failures.
 final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
-  if (!ref.watch(firebaseConfiguredProvider)) {
-    return Stream<UserModel?>.value(null);
-  }
-
   final authState = ref.watch(authStateProvider);
   ref.watch(localProfileProvider);
 
-  return authState.when(
-    data: (authUser) async* {
-      if (authUser == null) {
-        yield null;
-        return;
-      }
+  final session = authState.valueOrNull;
+  if (session == null) return Stream<UserModel?>.value(null);
 
-      final fallback = _localProfileFromAuth(authUser);
-      final localProfile = ref.read(localProfileProvider);
-      final authService = ref.read(authServiceProvider);
-      final userRepository = ref.read(userRepositoryProvider);
+  final repo = ref.watch(userRepositoryProvider);
+  return Stream<UserModel?>.multi((controller) {
+    var closed = false;
 
-      // Emit the best data we already have immediately so the UI never
-      // blocks on a slow or unreachable Firestore connection.
-      yield (localProfile != null && localProfile.uid == authUser.uid)
-          ? localProfile
-          : fallback;
-
-      // Best-effort profile bootstrap; never blocks the stream.
-      authService.ensureUserProfile(authUser.uid).then(
-            (_) {},
-            onError: (_) {},
-          );
-
+    Future<void> refresh({bool bootstrap = false}) async {
+      if (closed || controller.isClosed) return;
       try {
-        await for (final profile in userRepository.watchUser(authUser.uid)) {
-          yield profile ?? fallback;
+        final profile = await repo.fetchUser(session.uid);
+        if (closed || controller.isClosed) return;
+        if (profile != null) {
+          controller.add(profile);
+        } else if (bootstrap) {
+          // Server has no row (yet): fall back to the session profile so
+          // routing never strands a signed-in user on a blank screen.
+          final local = ref.read(localProfileProvider);
+          controller.add(
+            (local != null && local.uid == session.uid)
+                ? local
+                : _localProfileFromSession(session.user),
+          );
         }
       } catch (_) {
-        // A single failed read (network blip / transient rule sync) used to
-        // strand users on the pending-approval screen, so retry a few times
-        // against the authoritative document before falling back.
-        for (var attempt = 0; attempt < 3; attempt++) {
-          await Future<void>.delayed(const Duration(seconds: 1) * (attempt + 1));
-          try {
-            final profile = await userRepository.fetchUser(authUser.uid);
-            if (profile != null) {
-              yield profile;
-              return;
-            }
-          } catch (_) {
-            // keep retrying
-          }
+        if (bootstrap && !closed && !controller.isClosed) {
+          final local = ref.read(localProfileProvider);
+          controller.add(
+            (local != null && local.uid == session.uid)
+                ? local
+                : _localProfileFromSession(session.user),
+          );
         }
-        yield fallback;
       }
-    },
-    loading: () => Stream.value(null),
-    error: (_, __) => Stream.value(null),
-  );
+    }
+
+    // Emit the best data we already have immediately so the UI never
+    // blocks on a slow or unreachable backend connection.
+    final local = ref.read(localProfileProvider);
+    controller.add(
+      (local != null && local.uid == session.uid)
+          ? local
+          : session.user,
+    );
+    unawaited(refresh(bootstrap: true));
+    final timer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => refresh(),
+    );
+    controller.onCancel = () {
+      closed = true;
+      timer.cancel();
+    };
+  });
 });
 
 final isAuthenticatedProvider = Provider<bool>((ref) {

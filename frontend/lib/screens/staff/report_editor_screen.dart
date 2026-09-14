@@ -1,9 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../constants/app_constants.dart';
 import '../../providers/audit_log_providers.dart';
+import '../../repositories/content_repository.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
 
 const _reportTypes = [
@@ -15,8 +16,8 @@ const _reportTypes = [
 ];
 
 /// Staff editor for creating a structured report. Reports are append-only
-/// (the Firestore rules allow create/read for staff, delete for admins, and
-/// never update), so this form only supports adding a new report.
+/// (staff may create/read, admins may delete, never update), so this form
+/// only supports adding a new report.
 class ReportEditorScreen extends ConsumerStatefulWidget {
   const ReportEditorScreen({super.key});
 
@@ -55,14 +56,10 @@ class _ReportEditorScreenState extends ConsumerState<ReportEditorScreen> {
       'description': _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
     };
 
     try {
-      await FirebaseFirestore.instance
-          .collection(FirestoreCollections.reports)
-          .add(data);
+      await ref.read(contentRepositoryProvider).createItem('reports', data);
       await logAudit(
         ref,
         action: 'create',
@@ -77,7 +74,7 @@ class _ReportEditorScreenState extends ConsumerState<ReportEditorScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Save failed: $e',
+        showAppSnackBar(context, 'Save failed: ${AuthService.friendlyError(e)}',
             backgroundColor: AppColors.error);
       }
     } finally {

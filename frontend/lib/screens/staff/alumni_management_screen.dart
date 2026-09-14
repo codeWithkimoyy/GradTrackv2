@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -9,9 +8,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/user_model.dart';
 import '../../providers/audit_log_providers.dart';
 import '../../providers/auth_providers.dart';
 import '../../repositories/user_repository.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
 
 /// Admin module managing the alumni registry — the pre-approved list of
@@ -27,6 +28,34 @@ class AlumniManagementScreen extends ConsumerStatefulWidget {
 
 class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen> {
   bool _importing = false;
+  bool _showUnassigned = false;
+
+  /// Selection in batch view: start year of the academic-year pair (e.g.
+  /// 2020 for batch "2020-2021"). Null shows the full batch grid.
+  int? _selectedBatchStart;
+
+  /// Earliest batch shown in the Alumni module.
+  static const int _firstBatchYear = 2020;
+
+  /// Batch start years to render, newest first: last finished school year
+  /// down to [_firstBatchYear].
+  List<int> get _batchStartYears =>
+      [for (var year = (DateTime.now().year - 1); year >= _firstBatchYear; year--) year];
+
+  /// Derives the batch (academic-year start) an entry belongs to. Legacy
+  /// records with only a numeric graduation year are treated as graduating
+  /// in the school year that ends that year (e.g. 2021 -> batch "2020-2021").
+  int? _batchStartYearOf(AlumniRegistryEntry entry) {
+    final start = academicYearStart(entry.academicYearGraduated);
+    if (start != null) return start;
+    final gy = entry.graduationYear;
+    return gy == null ? null : gy - 1;
+  }
+
+  bool _matchesSelected(AlumniRegistryEntry entry) {
+    if (_showUnassigned) return _batchStartYearOf(entry) == null;
+    return _batchStartYearOf(entry) == _selectedBatchStart;
+  }
 
   Future<void> _addAlumni() async {
     final entry = await showDialog<AlumniRegistryEntry>(
@@ -74,16 +103,16 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv', 'xlsx'],
-      withData: true,
     );
-    if (result == null || result.files.single.bytes == null) return;
+    if (result.isEmpty) return;
+    final pickedBytes = await result.single.readAsBytes();
+    if (pickedBytes.isEmpty) return;
     if (!mounted) return;
     setState(() => _importing = true);
 
     try {
       final repo = ref.read(userRepositoryProvider);
-      final records = _parseFile(
-          result.files.single.name, result.files.single.bytes!);
+      final records = _parseFile(result.single.name, pickedBytes);
 
       var added = 0;
       var skipped = 0;
@@ -218,8 +247,8 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
   Future<void> _toggleStatus(AlumniRegistryEntry entry) async {
     final repo = ref.read(userRepositoryProvider);
     final isDisabled = entry.status == AlumniAccountStatus.disabled;
-    final accountRef = await repo.findUserByAlumniId(entry.alumniId);
-    final hasAccount = accountRef != null;
+    final accountUid = await repo.findUserByAlumniId(entry.alumniId);
+    final hasAccount = accountUid != null;
 
     final nextStatus = isDisabled
         ? (hasAccount ? AlumniAccountStatus.active : AlumniAccountStatus.pending)
@@ -227,8 +256,8 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
 
     try {
       await repo.updateRegistryStatus(entry.alumniId, nextStatus);
-      if (accountRef != null) {
-        await accountRef.update({'disabled': !isDisabled});
+      if (accountUid != null) {
+        await repo.updateUser(accountUid, {'disabled': !isDisabled});
       }
       await logAudit(
         ref,
@@ -276,11 +305,12 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
 
     setState(() => _importing = true);
     try {
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('resetAlumniPassword')
-          .call({'alumniId': entry.alumniId, 'newPassword': newPassword});
-      final data = (result.data as Map?) ?? const {};
-      final temp = data['temporaryPassword']?.toString();
+      final repo = ref.read(userRepositoryProvider);
+      final accountUid = await repo.findUserByAlumniId(entry.alumniId);
+      if (accountUid == null) {
+        throw StateError('This alumni has no account yet.');
+      }
+      await repo.adminResetPassword(accountUid, newPassword);
       await logAudit(
         ref,
         action: 'update',
@@ -292,22 +322,17 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
         targetType: 'alumni_registry',
       );
       if (!mounted) return;
-      if (temp != null && temp.isNotEmpty) {
-        showAppSnackBar(context, 'New temporary password: $temp',
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 12));
-      } else {
-        showAppSnackBar(context,
-            'Password reset for ${entry.alumniId} is complete.',
-            backgroundColor: AppColors.success);
-      }
+      showAppSnackBar(
+        context,
+        'Password for ${entry.alumniId} was updated. Share the new password with the alumni.',
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 12),
+      );
     } catch (e) {
       if (mounted) {
         showAppSnackBar(
           context,
-          'Could not reset password: $e\n\n'
-          'If the reset service is not deployed, reset it manually in '
-          'Firebase Authentication.',
+          'Could not reset password: ${AuthService.friendlyError(e)}',
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 10),
         );
@@ -348,10 +373,10 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
 
     try {
       final repo = ref.read(userRepositoryProvider);
-      final accountRef = await repo.findUserByAlumniId(entry.alumniId);
+      final accountUid = await repo.findUserByAlumniId(entry.alumniId);
       await repo.removeRegistryEntry(entry.alumniId);
-      if (accountRef != null) {
-        await accountRef.update({'disabled': true});
+      if (accountUid != null) {
+        await repo.updateUser(accountUid, {'disabled': true});
       }
       await logAudit(
         ref,
@@ -451,10 +476,14 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                     ? _buildEmptyState()
                     : LayoutBuilder(
                         builder: (context, constraints) {
-                          if (constraints.maxWidth >= 900) {
-                            return _buildTable(entries);
+                          if (_showUnassigned ||
+                              _selectedBatchStart != null) {
+                            return _buildBatchDetail(entries);
                           }
-                          return _buildCards(entries);
+                          if (constraints.maxWidth >= 900) {
+                            return _buildBatchGrid(entries);
+                          }
+                          return _buildBatchGrid(entries);
                         },
                       ),
               ),
@@ -462,6 +491,150 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
           );
         },
       ),
+    );
+  }
+
+  Widget _buildBatchGrid(List<AlumniRegistryEntry> entries) {
+    final counts = <int, int>{for (final y in _batchStartYears) y: 0};
+    var unassigned = 0;
+    for (final entry in entries) {
+      final start = _batchStartYearOf(entry);
+      if (start == null) {
+        unassigned++;
+      } else if (counts.containsKey(start)) {
+        counts[start] = counts[start]! + 1;
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+      children: [
+        Text(
+          'ALUMNI BY BATCH',
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.3,
+            color: AppColors.teal,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Registered alumni in the registry, grouped by school year',
+          style: GoogleFonts.poppins(
+            fontSize: 12.5,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _batchStartYears.length + 1,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: 108,
+          ),
+          itemBuilder: (context, index) {
+            if (index == _batchStartYears.length) {
+              return _BatchCard(
+                title: 'Not Assigned',
+                subtitle: 'Alumni without a batch',
+                count: unassigned,
+                color: AppColors.warning,
+                icon: Icons.help_outline_rounded,
+                onTap: () => setState(() {
+                  _selectedBatchStart = null;
+                  _showUnassigned = true;
+                }),
+              );
+            }
+            final startYear = _batchStartYears[index];
+            return _BatchCard(
+              title: academicYearLabel(startYear),
+              subtitle: 'S.Y. batch',
+              count: counts[startYear] ?? 0,
+              color: AppColors.bisuBlue700,
+              icon: Icons.school_outlined,
+              onTap: () => setState(() {
+                _showUnassigned = false;
+                _selectedBatchStart = startYear;
+              }),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBatchDetail(List<AlumniRegistryEntry> entries) {
+    final filtered = entries.where(_matchesSelected).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final batchTitle = _showUnassigned
+        ? 'Unassigned Alumni'
+        : 'S.Y. $_selectedBatchStart\u2013${_selectedBatchStart! + 1}';
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Back to batches',
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    onPressed: () => setState(() {
+                      _selectedBatchStart = null;
+                      _showUnassigned = false;
+                    }),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          batchTitle,
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : AppColors.primaryNavy,
+                          ),
+                        ),
+                        Text(
+                          '${filtered.length} alumni record(s)',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: filtered.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No alumni in this batch yet.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  : (constraints.maxWidth >= 900
+                      ? _buildTable(filtered)
+                      : _buildCards(filtered)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -712,7 +885,15 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
   late final TextEditingController _alumniId;
   late final TextEditingController _fullName;
   late final TextEditingController _course;
-  late final TextEditingController _gradYear;
+  String? _batch;
+
+  /// Same range as the Alumni-module batch grid.
+  static const int _firstBatchYear = 2020;
+
+  List<String> get _batchOptions => [
+        for (var year = (DateTime.now().year - 1); year >= _firstBatchYear; year--)
+          academicYearLabel(year),
+      ];
 
   @override
   void initState() {
@@ -722,8 +903,10 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
     _fullName = TextEditingController(text: existing?.fullName ?? '');
     _course = TextEditingController(
         text: existing?.course ?? AppStrings.defaultCourse);
-    _gradYear =
-        TextEditingController(text: existing?.graduationYear?.toString() ?? '');
+    _batch = existing?.academicYearGraduated ??
+        (existing?.graduationYear == null
+            ? null
+            : academicYearLabel(existing!.graduationYear! - 1));
   }
 
   @override
@@ -731,13 +914,14 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
     _alumniId.dispose();
     _fullName.dispose();
     _course.dispose();
-    _gradYear.dispose();
     super.dispose();
   }
 
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final base = widget.existing;
+    final selected = (_batch == null || _batch!.isEmpty) ? null : _batch;
+    final startYear = selected == null ? null : academicYearStart(selected);
     Navigator.pop(
       context,
       AlumniRegistryEntry(
@@ -746,7 +930,8 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
         course: _course.text.trim().isEmpty
             ? AppStrings.defaultCourse
             : _course.text.trim(),
-        graduationYear: int.tryParse(_gradYear.text.trim()),
+        academicYearGraduated: selected,
+        graduationYear: startYear == null ? null : startYear + 1,
         status: base?.status ?? AlumniAccountStatus.pending,
         activatedAt: base?.activatedAt,
       ),
@@ -804,21 +989,25 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
                     (v == null || v.isEmpty) ? 'Course is required.' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _gradYear,
-                keyboardType: TextInputType.number,
+              DropdownButtonFormField<String>(
+                initialValue: _batch,
+                isExpanded: true,
                 decoration: const InputDecoration(
-                  labelText: 'Graduation Year',
-                  helperText: 'e.g. 2025',
+                  labelText: 'Batch / School Year',
+                  helperText: 'e.g. S.Y. 2020\u20132021',
                 ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return null;
-                  final year = int.tryParse(v.trim());
-                  if (year == null || year < 1990 || year > 2100) {
-                    return 'Enter a valid graduation year (e.g. 2025).';
-                  }
-                  return null;
-                },
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: '',
+                    child: Text('Not Specified'),
+                  ),
+                  for (final option in _batchOptions)
+                    DropdownMenuItem<String>(
+                      value: option,
+                      child: Text('S.Y. $option'),
+                    ),
+                ],
+                onChanged: (value) => setState(() => _batch = value),
               ),
             ],
           ),
@@ -906,6 +1095,97 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
             onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         FilledButton(onPressed: _submit, child: const Text('Reset Password')),
       ],
+    );
+  }
+}
+
+class _BatchCard extends StatelessWidget {
+  const _BatchCard({
+    required this.title,
+    required this.subtitle,
+    required this.count,
+    required this.color,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final int count;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      onTap: onTap,
+      child: Ink(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Theme.of(context).colorScheme.surface
+              : Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.13),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$count alumni · $subtitle',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: color.withValues(alpha: 0.7)),
+          ],
+        ),
+      ),
     );
   }
 }

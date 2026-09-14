@@ -101,13 +101,15 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
         backgroundColor: isDark ? AppColors.cardDark : Colors.white,
         elevation: 1,
         titleSpacing: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: isDark ? Colors.white : AppColors.primaryNavy,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? Colors.white : AppColors.primaryNavy,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
         title: Row(
           children: [
             Container(

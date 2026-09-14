@@ -1,25 +1,24 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/user_model.dart' show parseApiDate;
 import '../../providers/audit_log_providers.dart';
 import '../../providers/role_providers.dart';
+import '../../repositories/content_repository.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
 import 'report_editor_screen.dart';
 
 /// Newest-first stream of reports for the staff Reports screen.
 final reportsProvider = StreamProvider.autoDispose<
-    QuerySnapshot<Map<String, dynamic>>>((ref) {
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.reports)
-      .orderBy('createdAt', descending: true)
-      .snapshots();
+    List<Map<String, dynamic>>>((ref) {
+  return ref.watch(contentRepositoryProvider).watchCollection('reports');
 });
 
 /// Staff Reports screen. Staff (admin) can add reports; only
-/// admins can delete them (reports are append-only per the Firestore rules).
+/// admins can delete them (reports are append-only by backend policy).
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
 
@@ -39,14 +38,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
   }
 
-  Future<void> _delete(DocumentSnapshot<Map<String, dynamic>> doc) async {
-    final data = doc.data() ?? {};
+  Future<void> _delete(Map<String, dynamic> report) async {
+    final id = report['id']?.toString() ?? '';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete report?'),
         content: Text(
-            'The report "${data['title']?.toString() ?? doc.id}" will be permanently removed.'),
+            'The report "${report['title']?.toString() ?? id}" will be permanently removed.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -61,14 +60,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
     if (!mounted || confirmed != true) return;
     try {
-      await doc.reference.delete();
+      await ref.read(contentRepositoryProvider).deleteItem('reports', id);
       await logAudit(
         ref,
         action: 'delete',
         title: 'Report deleted',
         description:
-            'Deleted report "${data['title']?.toString() ?? doc.id}".',
-        targetId: doc.id,
+            'Deleted report "${report['title']?.toString() ?? id}".',
+        targetId: id,
         targetType: 'report',
       );
       if (mounted) {
@@ -77,7 +76,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Delete failed: $e',
+        showAppSnackBar(context, 'Delete failed: ${AuthService.friendlyError(e)}',
             backgroundColor: AppColors.error);
       }
     }
@@ -105,9 +104,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             ),
           ),
         ),
-        data: (snapshot) {
-          final docs = snapshot.docs;
-          if (docs.isEmpty) {
+        data: (reports) {
+          if (reports.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -140,10 +138,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
-              Text('${docs.length} report${docs.length == 1 ? '' : 's'}',
+              Text('${reports.length} report${reports.length == 1 ? '' : 's'}',
                   style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: AppSpacing.sm),
-              for (final doc in docs) _ReportCard(doc: doc, onDelete: isAdmin ? () => _delete(doc) : null),
+              for (final report in reports)
+                _ReportCard(
+                    report: report,
+                    onDelete:
+                        isAdmin ? () => _delete(report) : null),
               const SizedBox(height: AppSpacing.lg),
             ],
           );
@@ -154,17 +156,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 }
 
 class _ReportCard extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final Map<String, dynamic> report;
   final VoidCallback? onDelete;
 
-  const _ReportCard({required this.doc, this.onDelete});
+  const _ReportCard({required this.report, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
-    final data = doc.data() ?? {};
+    final data = report;
     final type = data['type']?.toString();
     final period = data['period']?.toString();
-    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+    final createdAt = parseApiDate(data['createdAt']);
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -179,7 +181,7 @@ class _ReportCard extends StatelessWidget {
               color: AppColors.primaryBlue, size: 22),
         ),
         title: Text(
-          data['title']?.toString() ?? doc.id,
+          data['title']?.toString() ?? 'Report',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w600),

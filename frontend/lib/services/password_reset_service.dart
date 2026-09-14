@@ -1,14 +1,16 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
+import 'api_client.dart' show safeEnv;
+
 /// Sends/verifies the 6-digit password-reset code through the GradTrack
-/// backend, which emails the code and performs the Firebase password update.
+/// backend, which emails the code and performs the password update.
 class PasswordResetService {
   PasswordResetService({String? backendBaseUrl})
-      : _backendBaseUrl = backendBaseUrl ??
-            (dotenv.env['BACKEND_API_URL'] ?? 'http://localhost:3000')
-                .replaceAll(RegExp(r'/$'), '');
+      : _backendBaseUrl = (backendBaseUrl ??
+                safeEnv('BACKEND_API_URL') ??
+                'http://localhost:3000')
+            .replaceAll(RegExp(r'/$'), '');
 
   final String _backendBaseUrl;
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../constants/app_constants.dart';
@@ -41,13 +40,6 @@ class EmploymentHistoryScreen extends ConsumerWidget {
             Tab(text: 'Career Timeline'),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: Colors.white,
-        onPressed: () => context.push('/employment/add'),
-        icon: const Icon(Icons.add_rounded),
-        label: Text('Add Job Record', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
       ),
       body: TabBarView(
         children: [
@@ -106,12 +98,10 @@ class _HistoryList extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (records.isEmpty) {
-      return EmptyStateWidget(
+      return const EmptyStateWidget(
         icon: Icons.work_outline_rounded,
         title: 'No Employment Records',
-        message: 'Log your current position or past work experience to keep your alumni tracer updated.',
-        actionLabel: 'Add Job Record',
-        onAction: () => context.push('/employment/add'),
+        message: 'Log your employment in the Employment tab to appear here.',
       );
     }
 
@@ -228,7 +218,10 @@ class _HistoryList extends ConsumerWidget {
                           ? '${DateFormat.yMMM().format(r.dateHired)} – Present'
                           : '${DateFormat.yMMM().format(r.dateHired)} – ${DateFormat.yMMM().format(r.endDate!)}',
                     ),
-                    _tag(context, Icons.location_on_outlined, '${r.city}, ${r.country}'),
+                    _tag(context, Icons.location_on_outlined,
+                        [r.city, r.country]
+                            .where((s) => s.trim().isNotEmpty)
+                            .join(', ')),
                     _tag(context, Icons.laptop_mac_outlined, r.workSetup.label),
                     _tag(context, Icons.badge_outlined, r.employmentType),
                   ],

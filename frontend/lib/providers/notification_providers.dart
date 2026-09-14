@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
+import 'auth_providers.dart';
 import 'role_providers.dart';
 
-final notificationServiceProvider =
-    Provider<NotificationService>((ref) => NotificationService());
+final notificationServiceProvider = Provider<NotificationService>(
+    (ref) => NotificationService(api: ref.watch(apiClientProvider)));
 
 final notificationsProvider =
     StreamProvider.family<List<AppNotification>, String>((ref, userId) {

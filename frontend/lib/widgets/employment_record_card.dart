@@ -86,7 +86,8 @@ class EmploymentRecordCard extends StatelessWidget {
             children: [
               _tag(context, Icons.calendar_today_outlined,
                   DateFormat.yMMM().format(r.dateHired)),
-              _tag(context, Icons.location_on_outlined, '${r.city}, ${r.country}'),
+              _tag(context, Icons.location_on_outlined,
+                  [r.city, r.country].where((s) => s.trim().isNotEmpty).join(', ')),
               _tag(context, Icons.laptop_mac_outlined, r.workSetup.label),
               _tag(context, Icons.badge_outlined, r.employmentType),
               if (r.industry.isNotEmpty)

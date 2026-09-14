@@ -5,11 +5,17 @@ try {
   // mysql2 will be installed via npm install
 }
 
-const host = process.env.MYSQL_HOST || 'localhost';
-const port = Number.parseInt(process.env.MYSQL_PORT || '3306', 10);
-const user = process.env.MYSQL_USER || 'root';
-const password = process.env.MYSQL_PASSWORD || '';
-const database = process.env.MYSQL_DATABASE || 'gradtrack_db';
+const host =
+  process.env.MYSQL_HOST || process.env.SQL_HOST || 'localhost';
+const port = Number.parseInt(
+  process.env.MYSQL_PORT || process.env.SQL_PORT || '3306',
+  10,
+);
+const user = process.env.MYSQL_USER || process.env.SQL_USER || 'root';
+const password =
+  process.env.MYSQL_PASSWORD ?? process.env.SQL_PASS ?? '';
+const database =
+  process.env.MYSQL_DATABASE || process.env.SQL_DATABASE || 'gradtrack_db';
 
 let pool = null;
 let isConnected = false;
@@ -56,5 +62,11 @@ module.exports = {
     }
     const [rows] = await pool.execute(sql, params);
     return rows;
+  },
+  async close() {
+    if (pool) {
+      await pool.end();
+      pool = null;
+    }
   },
 };

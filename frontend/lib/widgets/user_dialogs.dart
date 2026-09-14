@@ -1,8 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/app_constants.dart';
 import '../models/user_model.dart';
+import '../providers/auth_providers.dart';
+import '../services/auth_service.dart';
 import '../utils/academic_year_utils.dart';
 import '../utils/app_snack_bar.dart';
 
@@ -167,21 +169,21 @@ class _AddUserDialogState extends State<AddUserDialog> {
   }
 }
 
-class EditUserDialog extends StatefulWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+class EditUserDialog extends ConsumerStatefulWidget {
+  final UserModel user;
   final bool adminRoleEditing;
 
   const EditUserDialog({
     super.key,
-    required this.doc,
+    required this.user,
     required this.adminRoleEditing,
   });
 
   @override
-  State<EditUserDialog> createState() => _EditUserDialogState();
+  ConsumerState<EditUserDialog> createState() => _EditUserDialogState();
 }
 
-class _EditUserDialogState extends State<EditUserDialog> {
+class _EditUserDialogState extends ConsumerState<EditUserDialog> {
   late final TextEditingController _name;
   late final TextEditingController _course;
   late final TextEditingController _gradYear;
@@ -208,21 +210,20 @@ class _EditUserDialogState extends State<EditUserDialog> {
   @override
   void initState() {
     super.initState();
-    final data = widget.doc.data() ?? {};
-    _name = TextEditingController(text: data['fullName']?.toString() ?? '');
+    final user = widget.user;
+    _name = TextEditingController(text: user.fullName);
     _course = TextEditingController(
-        text: data['course']?.toString().trim().isNotEmpty == true
-            ? data['course']!.toString()
+        text: user.course?.trim().isNotEmpty == true
+            ? user.course!
             : AppStrings.defaultCourse);
     _gradYear = TextEditingController(
-        text: data['graduationYear']?.toString() ?? '');
-    _alumniId = TextEditingController(
-        text: data['alumniId']?.toString() ?? '');
-    _role = data['role']?.toString() ?? 'alumni';
-    _status = data['employmentStatus']?.toString() ?? 'unemployed';
-    _verified = data['isVerified'] == true;
-    _approved = data['approved'] == true;
-    _academicYear = data['academicYearGraduated']?.toString();
+        text: user.graduationYear?.toString() ?? '');
+    _alumniId = TextEditingController(text: user.alumniId ?? '');
+    _role = user.role.name;
+    _status = user.employmentStatus.name;
+    _verified = user.isVerified;
+    _approved = user.approved;
+    _academicYear = user.academicYearGraduated;
   }
 
   @override
@@ -238,24 +239,24 @@ class _EditUserDialogState extends State<EditUserDialog> {
     final changes = <String, dynamic>{
       'fullName': _name.text.trim(),
       'course': _course.text.trim().isEmpty ? AppStrings.defaultCourse : _course.text.trim(),
-      'graduationYear':
-          int.tryParse(_gradYear.text.trim()),
+      'graduationYear': int.tryParse(_gradYear.text.trim()),
       'academicYearGraduated':
           (_academicYear == null || _academicYear!.isEmpty) ? null : _academicYear,
       'employmentStatus': _status,
       'isVerified': _verified,
-      'updatedAt': FieldValue.serverTimestamp(),
     };
     if (widget.adminRoleEditing) {
       changes['role'] = _role;
     }
     changes['approved'] = _approved;
     try {
-      await widget.doc.reference.update(changes);
+      await ref
+          .read(userRepositoryProvider)
+          .updateUser(widget.user.uid, changes);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Save failed: $e',
+        showAppSnackBar(context, 'Save failed: ${AuthService.friendlyError(e)}',
             backgroundColor: AppColors.error);
       }
     }

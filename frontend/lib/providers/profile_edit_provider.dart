@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import 'auth_providers.dart';
@@ -24,9 +23,9 @@ class ProfileEditState {
   String toString() => 'ProfileEditState($status, $message)';
 }
 
-/// Owns the edit-profile flow: photo upload, Firestore save, and the
+/// Owns the edit-profile flow: photo upload, backend save, and the
 /// saving/success/error states surfaced to the UI. Guards against multiple
-/// concurrent saves. Users only ever write their own `users/{uid}` doc.
+/// concurrent saves. Users only ever write their own profile.
 class ProfileEditController extends StateNotifier<ProfileEditState> {
   ProfileEditController(this._ref) : super(const ProfileEditState());
 
@@ -68,9 +67,9 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
       profileCompletion: UserModel.computeCompletion(updated),
     );
 
-    // Write only the fields the alumni is allowed to self-edit. Firestore
-    // rules reject any alumni update that includes 'role' or 'disabled',
-    // so a full-document merge would be denied and the edit silently lost.
+    // Write only the fields the alumni is allowed to self-edit. The
+    // backend rejects any alumni update that includes 'role' or 'disabled',
+    // so sending them would fail the edit.
     final changes = <String, dynamic>{
       'fullName': finalUser.fullName,
       'photoUrl': finalUser.photoUrl,
@@ -85,7 +84,6 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
       'academicYearGraduated': finalUser.academicYearGraduated,
       'employmentStatus': finalUser.employmentStatus.name,
       'profileCompletion': finalUser.profileCompletion,
-      'updatedAt': FieldValue.serverTimestamp(),
     };
 
     // Keep the legacy "Graduation Year" field in sync with the graduation

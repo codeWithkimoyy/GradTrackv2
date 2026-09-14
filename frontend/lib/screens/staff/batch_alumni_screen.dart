@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/audit_log_providers.dart';
+import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../widgets/user_dialogs.dart';
 
@@ -24,20 +25,17 @@ class BatchAlumniScreen extends ConsumerStatefulWidget {
 }
 
 class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
-  CollectionReference<Map<String, dynamic>> get _users =>
-      FirebaseFirestore.instance.collection(FirestoreCollections.users);
-
-  void _view(DocumentSnapshot<Map<String, dynamic>> doc) {
+  void _view(UserModel user) {
     showDialog<void>(
       context: context,
-      builder: (_) => _ViewAlumniDialog(doc: doc),
+      builder: (_) => _ViewAlumniDialog(user: user),
     );
   }
 
-  Future<void> _edit(DocumentSnapshot<Map<String, dynamic>> doc) async {
+  Future<void> _edit(UserModel user) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (_) => EditUserDialog(doc: doc, adminRoleEditing: true),
+      builder: (_) => EditUserDialog(user: user, adminRoleEditing: true),
     );
     if (result == true && mounted) {
       showAppSnackBar(context, 'User updated.',
@@ -47,21 +45,21 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
         action: 'update',
         title: 'Alumni profile edited',
         description:
-            'Edited the profile of ${doc.data()?['fullName']?.toString() ?? doc.id} '
+            'Edited the profile of ${user.fullName} '
             'in batch ${academicYearLabel(widget.batchYear)}.',
-        targetId: doc.id,
+        targetId: user.uid,
         targetType: 'user',
       );
     }
   }
 
-  Future<void> _delete(DocumentSnapshot<Map<String, dynamic>> doc) async {
+  Future<void> _delete(UserModel user) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete user?'),
         content: const Text(
-            'This removes the user record from Firebase. This cannot be undone.'),
+            'This removes the user record from the system. This cannot be undone.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -75,9 +73,8 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
       ),
     );
     if (!mounted || confirmed != true) return;
-    final data = doc.data() ?? {};
     try {
-      await _users.doc(doc.id).delete();
+      await ref.read(userRepositoryProvider).deleteUser(user.uid);
       if (mounted) {
         showAppSnackBar(context, 'User deleted.',
             backgroundColor: AppColors.success);
@@ -87,13 +84,13 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
         action: 'delete',
         title: 'User deleted',
         description:
-            'Deleted ${data['fullName']?.toString() ?? doc.id} from batch ${academicYearLabel(widget.batchYear)}.',
-        targetId: doc.id,
+            'Deleted ${user.fullName} from batch ${academicYearLabel(widget.batchYear)}.',
+        targetId: user.uid,
         targetType: 'user',
       );
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Delete failed: $e',
+        showAppSnackBar(context, 'Delete failed: ${AuthService.friendlyError(e)}',
             backgroundColor: AppColors.error);
       }
     }
@@ -103,12 +100,10 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Batch ${academicYearLabel(widget.batchYear)} Alumni')),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _users
-            .where('role', isEqualTo: 'alumni')
-            .where('graduationYear', isEqualTo: widget.batchYear)
-            .where('hasLoggedIn', isEqualTo: true)
-            .snapshots(),
+      body: StreamBuilder<List<UserModel>>(
+        stream: ref
+            .watch(userRepositoryProvider)
+            .watchUsers(role: 'alumni', limit: 500),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -124,8 +119,11 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final docs = snapshot.data!.docs;
-          final count = docs.length;
+          final users = (snapshot.data ?? const <UserModel>[])
+              .where((u) =>
+                  u.graduationYear == widget.batchYear && u.hasLoggedIn)
+              .toList();
+          final count = users.length;
           final isDark = Theme.of(context).brightness == Brightness.dark;
           final wide = MediaQuery.sizeOf(context).width >= 900;
 
@@ -160,7 +158,7 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
                       DataColumn(label: Text('Actions')),
                     ],
                     source: _BatchAlumniTableSource(
-                      docs: docs,
+                      users: users,
                       onView: _view,
                       onEdit: _edit,
                       onDelete: _delete,
@@ -168,12 +166,12 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
                   ),
                 )
               else
-                ...docs.map(
-                  (doc) => _BatchAlumniTile(
-                    doc: doc,
-                    onView: () => _view(doc),
-                    onEdit: () => _edit(doc),
-                    onDelete: () => _delete(doc),
+                ...users.map(
+                  (user) => _BatchAlumniTile(
+                    user: user,
+                    onView: () => _view(user),
+                    onEdit: () => _edit(user),
+                    onDelete: () => _delete(user),
                   ),
                 ),
             ],
@@ -299,13 +297,13 @@ Widget _verificationChip(bool verified) {
 }
 
 class _BatchAlumniTableSource extends DataTableSource {
-  final List<DocumentSnapshot<Map<String, dynamic>>> docs;
-  final void Function(DocumentSnapshot<Map<String, dynamic>>) onView;
-  final void Function(DocumentSnapshot<Map<String, dynamic>>) onEdit;
-  final void Function(DocumentSnapshot<Map<String, dynamic>>) onDelete;
+  final List<UserModel> users;
+  final void Function(UserModel) onView;
+  final void Function(UserModel) onEdit;
+  final void Function(UserModel) onDelete;
 
   _BatchAlumniTableSource({
-    required this.docs,
+    required this.users,
     required this.onView,
     required this.onEdit,
     required this.onDelete,
@@ -313,11 +311,10 @@ class _BatchAlumniTableSource extends DataTableSource {
 
   @override
   DataRow? getRow(int index) {
-    if (index >= docs.length) return null;
-    final doc = docs[index];
-    final data = doc.data() ?? {};
-    final name = data['fullName']?.toString() ?? 'Unknown';
-    final verified = data['isVerified'] == true;
+    if (index >= users.length) return null;
+    final user = users[index];
+    final name = user.fullName.isEmpty ? 'Unknown' : user.fullName;
+    final verified = user.isVerified;
 
     return DataRow.byIndex(
       index: index,
@@ -341,9 +338,9 @@ class _BatchAlumniTableSource extends DataTableSource {
             Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
           ],
         )),
-        DataCell(Text(data['alumniId']?.toString() ?? '—')),
+        DataCell(Text(user.alumniId ?? '—')),
         DataCell(Text(
-            data['course']?.toString() ?? AppStrings.defaultCourse)),
+            user.course ?? AppStrings.defaultCourse)),
         DataCell(_verificationChip(verified)),
         DataCell(Row(
           mainAxisSize: MainAxisSize.min,
@@ -351,18 +348,18 @@ class _BatchAlumniTableSource extends DataTableSource {
             IconButton(
               icon: const Icon(Icons.visibility_outlined, size: 18),
               tooltip: 'View',
-              onPressed: () => onView(doc),
+              onPressed: () => onView(user),
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, size: 18),
               tooltip: 'Edit',
-              onPressed: () => onEdit(doc),
+              onPressed: () => onEdit(user),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline,
                   size: 18, color: AppColors.error),
               tooltip: 'Delete',
-              onPressed: () => onDelete(doc),
+              onPressed: () => onDelete(user),
             ),
           ],
         )),
@@ -373,19 +370,19 @@ class _BatchAlumniTableSource extends DataTableSource {
   @override
   bool get isRowCountApproximate => false;
   @override
-  int get rowCount => docs.length;
+  int get rowCount => users.length;
   @override
   int get selectedRowCount => 0;
 }
 
 class _BatchAlumniTile extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final UserModel user;
   final VoidCallback onView;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _BatchAlumniTile({
-    required this.doc,
+    required this.user,
     required this.onView,
     required this.onEdit,
     required this.onDelete,
@@ -393,9 +390,8 @@ class _BatchAlumniTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = doc.data() ?? {};
-    final name = data['fullName']?.toString() ?? 'Unknown';
-    final verified = data['isVerified'] == true;
+    final name = user.fullName.isEmpty ? 'Unknown' : user.fullName;
+    final verified = user.isVerified;
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -419,8 +415,8 @@ class _BatchAlumniTile extends StatelessWidget {
           ],
         ),
         subtitle: Text(
-          '${data['alumniId']?.toString() ?? '—'}\n'
-          '${data['course']?.toString() ?? AppStrings.defaultCourse}',
+          '${user.alumniId ?? '—'}\n'
+          '${user.course ?? AppStrings.defaultCourse}',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         trailing: Row(
@@ -458,18 +454,16 @@ class _BatchAlumniTile extends StatelessWidget {
 }
 
 class _ViewAlumniDialog extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final UserModel user;
 
-  const _ViewAlumniDialog({required this.doc});
+  const _ViewAlumniDialog({required this.user});
 
   @override
   Widget build(BuildContext context) {
-    final data = doc.data() ?? {};
-    final name = data['fullName']?.toString() ?? 'Unknown';
-    final verified = data['isVerified'] == true;
-    final approved = data['approved'] == true;
-    final employment =
-        data['employmentStatus']?.toString() ?? 'unemployed';
+    final name = user.fullName.isEmpty ? 'Unknown' : user.fullName;
+    final verified = user.isVerified;
+    final approved = user.approved;
+    final employment = user.employmentStatus.name;
 
     return AlertDialog(
       title: Row(
@@ -502,14 +496,14 @@ class _ViewAlumniDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _InfoRow(label: 'Alumni ID', value: data['alumniId']?.toString() ?? '—'),
-            _InfoRow(label: 'Email', value: data['email']?.toString() ?? '—'),
+            _InfoRow(label: 'Alumni ID', value: user.alumniId ?? '—'),
+            _InfoRow(label: 'Email', value: user.email.isEmpty ? '—' : user.email),
             _InfoRow(label: 'Course',
-                value: data['course']?.toString() ?? AppStrings.defaultCourse),
+                value: user.course ?? AppStrings.defaultCourse),
             _InfoRow(label: 'Graduation Year',
-                value: data['graduationYear']?.toString() ?? '—'),
+                value: user.graduationYear?.toString() ?? '—'),
             _InfoRow(label: 'Academic Year Graduated',
-                value: data['academicYearGraduated']?.toString() ?? '—'),
+                value: user.academicYearGraduated ?? '—'),
             _InfoRow(
                 label: 'Employment Status',
                 value: _employmentLabel(employment)),

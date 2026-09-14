@@ -4,9 +4,11 @@ import '../repositories/document_repository.dart';
 import '../services/storage_service.dart';
 import 'auth_providers.dart';
 
-final storageServiceProvider = Provider<StorageService>((ref) => StorageService());
+final storageServiceProvider = Provider<StorageService>(
+    (ref) => StorageService(api: ref.watch(apiClientProvider)));
 
-final documentRepositoryProvider = Provider<DocumentRepository>((ref) => DocumentRepository());
+final documentRepositoryProvider = Provider<DocumentRepository>(
+    (ref) => DocumentRepository(api: ref.watch(apiClientProvider)));
 
 final myResumeProvider = StreamProvider<ResumeRecord?>((ref) {
   final user = ref.watch(currentUserProfileProvider).value;

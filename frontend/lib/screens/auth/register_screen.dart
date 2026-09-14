@@ -47,18 +47,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       setState(() => _gate = _RegisterGate.notFound);
       return;
     }
-    final entry = await repo.fetchRegistryEntry(widget.alumniId.trim());
-    if (!mounted) return;
-    setState(() {
-      _entry = entry;
-      _gate = entry == null
-          ? _RegisterGate.notFound
-          : switch (entry.status) {
-              AlumniAccountStatus.pending => _RegisterGate.pending,
-              AlumniAccountStatus.active => _RegisterGate.active,
-              AlumniAccountStatus.disabled => _RegisterGate.disabled,
-            };
-    });
+    try {
+      final entry = await repo.fetchRegistryEntry(widget.alumniId.trim());
+      if (!mounted) return;
+      setState(() {
+        _entry = entry;
+        _gate = entry == null
+            ? _RegisterGate.notFound
+            : switch (entry.status) {
+                AlumniAccountStatus.pending => _RegisterGate.pending,
+                AlumniAccountStatus.active => _RegisterGate.active,
+                AlumniAccountStatus.disabled => _RegisterGate.disabled,
+              };
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _gate = _RegisterGate.notFound);
+      showAppSnackBar(context, AuthService.friendlyError(e),
+          backgroundColor: AppColors.error);
+    }
   }
 
   Future<void> _submit() async {

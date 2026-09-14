@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../constants/app_constants.dart';
-import '../providers/messaging_providers.dart';
-import '../providers/stats_providers.dart';
-import '../repositories/stats_repository.dart';
-import '../routes/app_router.dart';
-import '../widgets/pending_approvals_queue.dart';
-import 'dashboard_components.dart';
+import '../../constants/app_constants.dart';
+import '../../providers/messaging_providers.dart';
+import '../../providers/stats_providers.dart';
+import '../../repositories/stats_repository.dart';
+import '../../routes/app_router.dart';
+import '../../widgets/pending_approvals_queue.dart';
+import 'admin_components.dart';
 
 class AdminDashboard extends ConsumerStatefulWidget {
   const AdminDashboard({super.key});
@@ -24,7 +24,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         ref.watch(staffStatsProvider).valueOrNull ?? DashboardStats.empty;
     final unreadMessages = ref.watch(unreadAdminMessagesCountProvider);
 
-    return DashboardPage(
+    return AdminDashboardPage(
       title: 'Admin Command Center',
       subtitle: 'Manage GradTrack users, content, analytics, and security.',
       icon: Icons.shield_outlined,
@@ -102,55 +102,55 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
           onViewAll: () => context.go('${AppRoutes.staffUsers}?pending=1'),
         ),
         const SizedBox(height: 14),
-        DashboardMetricGrid(
+        AdminMetricGrid(
           metrics: [
-            DashboardMetric('Total Users', '${stats.totalUsers}',
+            AdminMetric('Total Users', '${stats.totalUsers}',
                 Icons.people_outline_rounded, AppColors.bisuBlue700),
-            DashboardMetric('Total Alumni', '${stats.alumni}',
+            AdminMetric('Total Alumni', '${stats.alumni}',
                 Icons.school_outlined, AppColors.bisuBlue600),
-            DashboardMetric('Verified Alumni', '${stats.verifiedAlumni}',
+            AdminMetric('Verified Alumni', '${stats.verifiedAlumni}',
                 Icons.online_prediction_rounded, AppColors.bisuBlue500),
-            DashboardMetric('Total Surveys', '${stats.surveyCount}',
+            AdminMetric('Total Surveys', '${stats.surveyCount}',
                 Icons.fact_check_outlined, AppColors.bisuBlue800),
-            DashboardMetric('Completed Surveys', '${stats.responseCount}',
+            AdminMetric('Completed Surveys', '${stats.responseCount}',
                 Icons.task_alt_rounded, AppColors.bisuBlue400),
-            DashboardMetric('Total Events', '${stats.eventCount}',
+            AdminMetric('Total Events', '${stats.eventCount}',
                 Icons.event_outlined, AppColors.gold),
-            DashboardMetric('Announcements', '${stats.announcementCount}',
+            AdminMetric('Announcements', '${stats.announcementCount}',
                 Icons.campaign_outlined, AppColors.warning),
           ],
         ),
         const SizedBox(height: 14),
-        DashboardSectionCard(
+        AdminSectionCard(
           title: 'Administration',
           icon: Icons.settings_suggest_outlined,
-          child: DashboardActionGrid(
+          child: AdminActionGrid(
             actions: [
-              DashboardAction('Users', Icons.people_outline_rounded,
+              AdminAction('Users', Icons.people_outline_rounded,
                   () => context.go(AppRoutes.staffUsers)),
-              DashboardAction(
+              AdminAction(
                 unreadMessages > 0 ? 'Messages ($unreadMessages)' : 'Alumni Messages',
                 Icons.chat_bubble_outline_rounded,
                 () => context.push(AppRoutes.adminMessages),
               ),
-              DashboardAction('Alumni Management', Icons.badge_outlined,
+              AdminAction('Alumni Management', Icons.badge_outlined,
                   () => context.go(AppRoutes.adminAlumni)),
-              DashboardAction('Surveys', Icons.fact_check_outlined,
+              AdminAction('Surveys', Icons.fact_check_outlined,
                   () => context.go(AppRoutes.collectionData('surveys'))),
-              DashboardAction('Reports', Icons.assessment_outlined,
+              AdminAction('Reports', Icons.assessment_outlined,
                   () => context.go(AppRoutes.collectionData('reports'))),
-              DashboardAction('Employment', Icons.business_center_outlined,
+              AdminAction('Employment', Icons.business_center_outlined,
                   () => context.go(AppRoutes.collectionData('jobs'))),
-              DashboardAction('Announcements', Icons.campaign_outlined,
+              AdminAction('Announcements', Icons.campaign_outlined,
                   () => context.go(
                       AppRoutes.collectionData('announcements'))),
-              DashboardAction('Events', Icons.event_outlined,
+              AdminAction('Events', Icons.event_outlined,
                   () => context.go(AppRoutes.collectionData('events'))),
-              DashboardAction('Analytics', Icons.insights_outlined,
+              AdminAction('Analytics', Icons.insights_outlined,
                   () => context.go(AppRoutes.adminAnalytics)),
-              DashboardAction('Employment History', Icons.work_history_outlined,
+              AdminAction('Employment History', Icons.work_history_outlined,
                   () => context.go(AppRoutes.adminEmploymentHistory)),
-              DashboardAction('Audit Logs', Icons.history_rounded,
+              AdminAction('Audit Logs', Icons.history_rounded,
                   () => context.go(AppRoutes.collectionData('audit_logs'))),
             ],
           ),

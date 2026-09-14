@@ -1,12 +1,7 @@
-import 'dart:convert';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 
 import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
@@ -15,6 +10,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/role_providers.dart';
 import '../../repositories/user_repository.dart';
 import '../../routes/app_router.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../widgets/user_dialogs.dart';
 
@@ -46,9 +42,6 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   /// Earliest graduation batch year shown on the dashboard.
   static const int _firstBatchYear = 2020;
 
-  CollectionReference<Map<String, dynamic>> get _users =>
-      FirebaseFirestore.instance.collection(FirestoreCollections.users);
-
   /// Batch years to render, newest first: current year down to 2020.
   List<int> get _batchYears {
     final last = DateTime.now().year < _firstBatchYear
@@ -58,8 +51,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   }
 
   /// Only graduation years inside the dashboard range are countable.
-  int? _batchYearOf(Map<String, dynamic> data) {
-    final year = (data['graduationYear'] as num?)?.toInt();
+  int? _batchYearOf(UserModel user) {
+    final year = user.graduationYear;
     final range = _batchYears;
     if (year == null || !range.contains(year)) return null;
     return year;
@@ -99,33 +92,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         return;
       }
 
-      final apiKey = dotenv.env['FIREBASE_API_KEY'] ?? '';
-      final resp = await http.post(
-        Uri.parse(
-            'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$apiKey'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': result.email,
-          'password': result.password,
-          'returnSecureToken': false,
-        }),
-      );
-      if (resp.statusCode != 200) {
-        throw Exception(_parseApiError(resp.body));
-      }
-      final localId = (jsonDecode(resp.body) as Map)['localId'] as String;
-
-      await _users.doc(localId).set({
-        'userId': localId,
-        'email': result.email,
-        'fullName': result.fullName,
-        'role': result.role.name,
-        'course': AppStrings.defaultCourse,
-        'isVerified': false,
-        'emailVerified': false,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final created = await ref.read(userRepositoryProvider).createUser(
+            email: result.email,
+            password: result.password,
+            fullName: result.fullName,
+            role: result.role,
+          );
       if (mounted) {
         showAppSnackBar(context, 'User created successfully.',
             backgroundColor: AppColors.success);
@@ -136,54 +108,16 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         title: 'User created',
         description:
             'Created ${result.fullName} (${result.email}) as ${result.role.label}.',
-        targetId: localId,
+        targetId: created.uid,
         targetType: 'user',
       );
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Could not create user: $e',
+        showAppSnackBar(
+            context, 'Could not create user: ${AuthService.friendlyError(e)}',
             backgroundColor: AppColors.error);
       }
     }
-  }
-
-  String _parseApiError(String body) {
-    String? code;
-    String? message;
-    try {
-      final map = jsonDecode(body) as Map;
-      final raw = (map['error']?['message'] as String?) ?? '';
-      // Google returns "CODE : human readable message"; extract both parts.
-      final sep = raw.indexOf(' : ');
-      if (sep > 0) {
-        code = raw.substring(0, sep).trim();
-        message = raw.substring(sep + 3).trim();
-      } else {
-        code = raw.trim();
-      }
-    } catch (_) {
-      // Fall through to the friendly default below.
-    }
-    final friendly = switch (code ?? '') {
-      'EMAIL_EXISTS' => 'An account already exists for this email.',
-      'INVALID_EMAIL' => 'Please enter a valid email address.',
-      'WEAK_PASSWORD' => 'Password should be at least 6 characters.',
-      'EMAIL_NOT_FOUND' => 'Email address not found.',
-      'OPERATION_NOT_ALLOWED' =>
-        'Email/password sign-up is not enabled in the Firebase console.',
-      'TOO_MANY_ATTEMPTS_TRY_LATER' =>
-        'Too many attempts. Please try again later.',
-      'MISSING_API_KEY' =>
-        'Firebase API key is missing. Run flutterfire configure.',
-      'API_KEY_INVALID' => 'The Firebase API key is invalid.',
-      'API_KEY_NOT_VALID_FOR_PROJECT' =>
-        'The Firebase API key is not valid for this project.',
-      _ => '',
-    };
-    if (friendly.isNotEmpty) return friendly;
-    if (message != null && message.isNotEmpty) return message;
-    if (code != null && code.isNotEmpty) return code;
-    return 'Bad request (400). Please check the details and try again.';
   }
 
   @override
@@ -200,8 +134,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               label: const Text('Add User'),
             )
           : null,
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _users.where('role', isEqualTo: 'alumni').snapshots(),
+      body: StreamBuilder<List<UserModel>>(
+        stream: ref.watch(userRepositoryProvider).watchUsers(role: 'alumni'),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -221,10 +155,9 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           for (final year in _batchYears) {
             counts[year] = 0;
           }
-          for (final doc in snapshot.data!.docs) {
-            final data = doc.data();
-            if (data['hasLoggedIn'] != true) continue;
-            final year = _batchYearOf(data);
+          for (final user in snapshot.data ?? const <UserModel>[]) {
+            if (!user.hasLoggedIn) continue;
+            final year = _batchYearOf(user);
             if (year == null) continue;
             counts[year] = counts[year]! + 1;
           }

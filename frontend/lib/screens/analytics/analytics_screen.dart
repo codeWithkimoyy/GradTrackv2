@@ -15,7 +15,7 @@ const _monthLabels = [
 
 /// Real analytics for staff: role distribution (admin), employment-status
 /// distribution, verification rate and survey completion, all derived live
-/// from Firestore — plus 12-month signup/response trend lines and
+/// from the MySQL backend — plus 12-month signup/response trend lines and
 /// employment outcomes by graduation batch.
 class AnalyticsScreen extends ConsumerWidget {
   final bool adminMode;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gradtracker/dashboards/dashboard_components.dart';
+import 'package:gradtracker/dashboards/admin/admin_components.dart';
 import 'package:gradtracker/models/user_model.dart';
 import 'package:gradtracker/providers/auth_providers.dart';
 import 'package:gradtracker/screens/auth/login_screen.dart';
@@ -152,27 +152,27 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: DashboardMetricGrid(
+              child: AdminMetricGrid(
                 metrics: [
-                  DashboardMetric(
+                  AdminMetric(
                     'Total Alumni',
                     '156',
                     Icons.school_outlined,
                     Colors.blue,
                   ),
-                  DashboardMetric(
+                  AdminMetric(
                     'Class of 2025–2026',
                     '24',
                     Icons.calendar_month_outlined,
                     Colors.green,
                   ),
-                  DashboardMetric(
+                  AdminMetric(
                     'Total Events',
                     '12',
                     Icons.event_outlined,
                     Colors.orange,
                   ),
-                  DashboardMetric(
+                  AdminMetric(
                     'Announcements',
                     '5',
                     Icons.campaign_outlined,

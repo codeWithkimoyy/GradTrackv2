@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../constants/app_constants.dart';
+import 'api_client.dart';
 import 'cloudinary_service.dart';
 
 class FileTooLargeException implements Exception {
@@ -20,16 +19,16 @@ class UnsupportedFileTypeException implements Exception {
       'Unsupported file type. Allowed: ${allowedExtensions.join(', ')}';
 }
 
-/// Stores files via Cloudinary (free plan) with Firestore base64 fallback
-/// for profile photos.
+/// Stores files via Cloudinary (free plan) with a base64 data-URI fallback
+/// for profile photos (persisted on the MySQL user row).
 class StorageService {
-  final FirebaseFirestore _firestore;
+  final ApiClient _api;
   final CloudinaryService _cloudinary;
 
   StorageService({
-    FirebaseFirestore? firestore,
+    ApiClient? api,
     CloudinaryService? cloudinary,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+  })  : _api = api ?? ApiClient(),
         _cloudinary = cloudinary ?? CloudinaryService();
 
   static const int maxResumeBytes = 10 * 1024 * 1024;
@@ -59,8 +58,8 @@ class StorageService {
   bool get _cloudinaryConfigured =>
       _cloudinary.cloudName.isNotEmpty;
 
-  /// Uploads a profile photo via Cloudinary, falling back to base64 in
-  /// Firestore if Cloudinary is not configured.
+  /// Uploads a profile photo via Cloudinary, falling back to a base64
+  /// data-URI on the user row if Cloudinary is not configured.
   Future<({String url, String path})> uploadProfilePhoto({
     required String userId,
     required String fileName,
@@ -81,27 +80,22 @@ class StorageService {
       final result = await _cloudinary.uploadImage(
         bytes: bytes,
         fileName: fileName,
+        idToken: _api.currentToken,
         onProgress: onProgress,
       );
 
-      await _firestore.collection(FirestoreCollections.users).doc(userId).set(
-        {'photoUrl': result.url},
-        SetOptions(merge: true),
-      ).timeout(const Duration(seconds: 10));
+      await _api.patch('/api/profile', body: {'photoUrl': result.url});
 
       return (url: result.url, path: result.publicId);
     }
 
-    // Fallback: store as base64 in Firestore
+    // Fallback: store as base64 data-URI on the user row.
     onProgress?.call(0.5);
     final b64 = base64Encode(bytes);
     final dataUri =
         'data:image/${_extensionOf(fileName) == 'png' ? 'png' : 'jpeg'};base64,$b64';
 
-    await _firestore.collection(FirestoreCollections.users).doc(userId).set(
-      {'photoBase64': dataUri, 'photoUrl': dataUri},
-      SetOptions(merge: true),
-    ).timeout(const Duration(seconds: 10));
+    await _api.patch('/api/profile', body: {'photoUrl': dataUri});
 
     onProgress?.call(1.0);
     return (url: dataUri, path: 'users/$userId/photo');
@@ -133,6 +127,7 @@ class StorageService {
     final result = await _cloudinary.uploadRaw(
       bytes: bytes!,
       fileName: fileName,
+      idToken: _api.currentToken,
       onProgress: onProgress,
     );
 
@@ -169,11 +164,13 @@ class StorageService {
         ? await _cloudinary.uploadImage(
             bytes: bytes!,
             fileName: fileName,
+            idToken: _api.currentToken,
             onProgress: onProgress,
           )
         : await _cloudinary.uploadRaw(
             bytes: bytes!,
             fileName: fileName,
+            idToken: _api.currentToken,
             onProgress: onProgress,
           );
 

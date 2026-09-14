@@ -3,8 +3,8 @@ import '../models/employment_model.dart';
 import '../repositories/employment_repository.dart';
 import 'auth_providers.dart';
 
-final employmentRepositoryProvider =
-    Provider<EmploymentRepository>((ref) => EmploymentRepository());
+final employmentRepositoryProvider = Provider<EmploymentRepository>(
+    (ref) => EmploymentRepository(api: ref.watch(apiClientProvider)));
 
 /// Live employment history for the currently signed-in user.
 final myEmploymentRecordsProvider = StreamProvider<List<EmploymentRecord>>((ref) {

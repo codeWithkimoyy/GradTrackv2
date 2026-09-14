@@ -1,44 +1,78 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show debugPrint;
-import '../config/firebase_options.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../constants/app_constants.dart';
+import '../models/auth_session.dart';
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
+import 'api_client.dart';
+import 'password_reset_service.dart';
 
-/// Thin wrapper around FirebaseAuth + Firestore user-profile bootstrap.
-/// Keeping auth transport logic separate from UI/state (Riverpod) layer.
+/// Session-backed auth against the GradTrack MySQL backend. Replaces the
+/// Firebase Auth implementation: sign-in returns a bearer token that is
+/// persisted in secure storage and restored on launch.
 class AuthService {
-  FirebaseAuth? _auth;
-  final UserRepository _userRepository;
-
-  bool get _firebaseConfigured =>
-      DefaultFirebaseOptions.isConfigured && Firebase.apps.isNotEmpty;
-
-  FirebaseAuth get _requiredAuth {
-    final auth = _auth;
-    if (auth != null) return auth;
-    throw StateError(
-      'Firebase is not configured. Run flutterfire configure and populate assets/.env.',
+  AuthService({
+    ApiClient? api,
+    UserRepository? userRepository,
+    PasswordResetService? passwordResetService,
+  })  : _api = api ?? ApiClient(),
+        _userRepository =
+            userRepository ?? UserRepository(api: api ?? ApiClient()),
+        _passwordResetService = passwordResetService ??
+            PasswordResetService(
+                backendBaseUrl: (api ?? ApiClient()).baseUrl) {
+    _controller = StreamController<AuthSession?>.broadcast(
+      onListen: () {
+        if (_current != null) _controller.add(_current);
+      },
     );
   }
 
-  AuthService({
-    FirebaseAuth? auth,
-    UserRepository? userRepository,
-  }) : _userRepository = userRepository ?? UserRepository() {
-    if (_firebaseConfigured) {
-      _auth = auth ?? FirebaseAuth.instance;
+  final ApiClient _api;
+  final UserRepository _userRepository;
+  final PasswordResetService _passwordResetService;
+  late final StreamController<AuthSession?> _controller;
+  AuthSession? _current;
+
+  static bool _googleInitDone = false;
+
+  Stream<AuthSession?> get authStateChanges => _controller.stream;
+
+  AuthSession? get currentSession => _current;
+
+  UserModel? get currentUser => _current?.user;
+
+  void _emit(AuthSession? session) {
+    _current = session;
+    if (!_controller.isClosed) _controller.add(session);
+  }
+
+  Future<void> dispose() => _controller.close();
+
+  /// Restores a persisted session (if any) and validates it with the server.
+  /// Returns the live session, or null when there is none / it expired.
+  Future<AuthSession?> restoreSession() async {
+    try {
+      final saved = await _api.restoreSession();
+      if (saved == null) {
+        _emit(null);
+        return null;
+      }
+      final raw = await _api.get('/api/auth/me');
+      final user =
+          UserModel.fromJson(Map<String, dynamic>.from(raw['user']), saved.uid);
+      final session = AuthSession(token: saved.token, user: user);
+      _emit(session);
+      return session;
+    } catch (e) {
+      debugPrint('restoreSession: $e');
+      await _api.clearSession();
+      _emit(null);
+      return null;
     }
   }
-
-  Stream<User?> get authStateChanges {
-    final auth = _auth;
-    return auth?.authStateChanges() ?? Stream<User?>.value(null);
-  }
-
-  User? get currentUser => _auth?.currentUser;
 
   /// Resolves the login identifier: emails are used as-is; anything else is
   /// treated as an Alumni ID and mapped to its synthesized login address.
@@ -56,66 +90,68 @@ class AuthService {
     return local.isEmpty ? null : local;
   }
 
-  Future<UserCredential> signInWithEmail({
+  Future<AuthSession> _openSession(Map<String, dynamic> raw) async {
+    final map = Map<String, dynamic>.from(raw);
+    final userMap = Map<String, dynamic>.from(map['user']);
+    final user = UserModel.fromJson(
+        userMap, userMap['uid']?.toString() ?? '');
+    final session =
+        AuthSession(token: map['token']?.toString() ?? '', user: user);
+    await _api.setSession(session.token, session.uid);
+    _emit(session);
+    return session;
+  }
+
+  Future<AuthSession> _startSession(Map<String, dynamic> body) async {
+    final raw = await _api.post('/api/auth/login', body: body, auth: false);
+    return _openSession(Map<String, dynamic>.from(raw));
+  }
+
+  Future<AuthSession> signInWithEmail({
     required String email,
     required String password,
-  }) async {
-    final cred = await _requiredAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-
-    await _ensureProfileForUser(cred.user!);
-    return cred;
+  }) {
+    return _startSession({
+      'identifier': email.trim(),
+      'password': password,
+    });
   }
 
   /// Signs an alumni in with their Alumni ID + password.
-  Future<UserCredential> signInWithAlumniId({
+  Future<AuthSession> signInWithAlumniId({
     required String alumniId,
     required String password,
   }) {
-    return signInWithEmail(
-      email: AppStrings.alumniEmailFromId(alumniId.trim()),
-      password: password,
-    );
+    return _startSession({
+      'identifier': alumniId.trim(),
+      'password': password,
+    });
   }
 
-  Future<UserCredential> registerWithEmail({
+  Future<AuthSession> _register(Map<String, dynamic> body) async {
+    final raw = await _api.post('/api/auth/register', body: body, auth: false);
+    return _openSession(Map<String, dynamic>.from(raw));
+  }
+
+  Future<AuthSession> registerWithEmail({
     required String email,
     required String password,
     required String fullName,
     required int graduationYear,
     required String course,
-  }) async {
-    final cred = await _requiredAuth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-
-    await cred.user?.updateDisplayName(fullName);
-    await cred.user?.sendEmailVerification();
-
-    final profile = UserModel(
-      uid: cred.user!.uid,
-      email: email,
-      fullName: fullName,
-      role: UserRole.alumni,
-      graduationYear: graduationYear,
-      course: course,
-      approved: true,
-      createdAt: DateTime.now(),
-    );
-
-    await _userRepository.saveUser(profile);
-    return cred;
+  }) {
+    return _register({
+      'email': email.trim(),
+      'password': password,
+      'fullName': fullName.trim(),
+      'graduationYear': graduationYear,
+      'course': course,
+    });
   }
 
-  /// Registers an alumni using their office-issued Alumni ID. The account is
-  /// created against the ID's synthesized login address. Registration is only
-  /// accepted for IDs the administrator added to the registry (Pending status);
-  /// the account becoming Active is re-checked here so a stale verification
-  /// page can never bypass the registry.
-  Future<UserCredential> registerWithAlumniId({
+  /// Registers an alumni using their office-issued Alumni ID. The backend
+  /// enforces the registry gate (Pending only) and activates the ID.
+  Future<AuthSession> registerWithAlumniId({
     required String alumniId,
     required String password,
   }) async {
@@ -124,128 +160,96 @@ class AuthService {
       throw StateError(
           'Alumni ID may only contain letters, numbers, hyphens and underscores.');
     }
+    return _register({
+      'alumniId': cleanId,
+      'password': password,
+    });
+  }
 
-    final entry = await _userRepository.fetchRegistryEntry(cleanId);
-    if (entry == null) {
+  /// Google Sign-In backed by the MySQL database: the Google ID token is
+  /// verified server-side (`POST /api/auth/google`) and linked to a
+  /// GradTrack profile by verified email (created on first sign-in).
+  Future<AuthSession> signInWithGoogle() async {
+    final clientId = safeEnv('GOOGLE_SIGN_IN_CLIENT_ID');
+    if (clientId == null) {
       throw StateError(
-          'Alumni ID not found. Please contact the Tracer Study Administrator.');
+          'Google Sign-In is not configured. Add GOOGLE_SIGN_IN_CLIENT_ID to assets/.env.');
     }
-    if (entry.status == AlumniAccountStatus.active) {
-      throw StateError(
-          'This Alumni ID is already registered. Please sign in.');
+    try {
+      if (!_googleInitDone) {
+        await GoogleSignIn.instance.initialize(
+          clientId: clientId,
+          serverClientId: clientId,
+        );
+        _googleInitDone = true;
+      }
+      final account = await GoogleSignIn.instance.authenticate();
+      final idToken = account.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw StateError(
+            'Google sign-in did not return an ID token. Please try again.');
+      }
+      final raw = await _api.post('/api/auth/google',
+          body: {'idToken': idToken}, auth: false);
+      return _openSession(Map<String, dynamic>.from(raw));
+    } on GoogleSignInException catch (e) {
+      // Keep the Google session clean when our backend rejects the token.
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {}
+      throw StateError(_googleErrorMessage(e));
     }
-    if (entry.status == AlumniAccountStatus.disabled) {
-      throw StateError(
-          'This Alumni ID has been disabled. Please contact the Tracer Study Administrator.');
-    }
+  }
 
-    final cred = await _requiredAuth.createUserWithEmailAndPassword(
-      email: AppStrings.alumniEmailFromId(cleanId),
-      password: password,
-    );
-
-    await cred.user?.updateDisplayName(entry.fullName);
-
-    final profile = UserModel(
-      uid: cred.user!.uid,
-      email: AppStrings.alumniEmailFromId(cleanId),
-      fullName: entry.fullName,
-      role: UserRole.alumni,
-      alumniId: cleanId,
-      course: entry.course,
-      graduationYear: entry.graduationYear,
-      approved: true,
-      emailVerified: false,
-      createdAt: DateTime.now(),
-    );
-
-    await _userRepository.saveUser(profile);
-    await _userRepository.updateRegistryStatus(
-      cleanId,
-      AlumniAccountStatus.active,
-      activatedAt: DateTime.now(),
-    );
-    return cred;
+  static String _googleErrorMessage(GoogleSignInException e) {
+    final code = e.code.name;
+    if (code == 'canceled') return 'Google sign-in was cancelled.';
+    return 'Google sign-in failed ($code). Please try again.';
   }
 
   Future<UserModel?> ensureUserProfile(String uid) async {
-    final existing = await _userRepository.fetchUser(uid);
-    if (existing != null) return existing;
-    final user = _auth?.currentUser;
-    if (user == null) return null;
-    final profile = UserModel(
-      uid: uid,
-      email: user.email ?? '',
-      fullName: user.displayName ?? '',
-      role: UserRole.alumni,
-      alumniId: alumniIdFromEmail(user.email),
-      photoUrl: user.photoURL,
-      emailVerified: user.emailVerified,
-      approved: true,
-      createdAt: DateTime.now(),
-    );
-    await _userRepository.saveUser(profile);
-    return profile;
-  }
-
-  Future<void> _ensureProfileForUser(User user) async {
     try {
-      final exists = await _userRepository.userExists(user.uid);
-      if (exists) {
-        // Mark this sign-in so the admin batch dashboard can list alumni
-        // (hasLoggedIn == true) and backfill the graduation batch year from
-        // the academic year when it was never stored.
-        final existing = await _userRepository.fetchUser(user.uid);
-        final changes = <String, dynamic>{
-          'hasLoggedIn': true,
-          'lastLoginAt': FieldValue.serverTimestamp(),
-        };
-        if (existing?.graduationYear == null) {
-          final start = academicYearStart(existing?.academicYearGraduated);
-          if (start != null) changes['graduationYear'] = start;
-        }
-        await _userRepository.updateUser(user.uid, changes);
-        return;
-      }
-
-      final profile = UserModel(
-        uid: user.uid,
-        email: user.email ?? '',
-        fullName: user.displayName ?? '',
-        role: UserRole.alumni,
-        alumniId: alumniIdFromEmail(user.email),
-        photoUrl: user.photoURL,
-        emailVerified: user.emailVerified,
-        approved: true,
-        hasLoggedIn: true,
-        lastLoginAt: DateTime.now(),
-        createdAt: DateTime.now(),
-      );
-      await _userRepository.saveUser(profile);
-    } catch (e) {
-      debugPrint('Firestore unavailable during login: $e');
-      // Allow login to continue even if Firestore is blocked.
-      // The profile stream will retry when Firestore becomes available.
+      final user = await _userRepository.fetchUser(uid);
+      if (user != null) return user;
+    } catch (_) {
+      // fall through to the session profile
     }
+    return _current?.user;
   }
 
-  Future<void> sendPasswordResetEmail(String email) async {
-    await _requiredAuth.sendPasswordResetEmail(email: email);
+  /// Starts the email-code password reset flow via the backend.
+  Future<void> sendPasswordResetEmail(String email) {
+    return _passwordResetService.sendResetCode(email);
   }
 
-  Future<void> sendEmailVerification() async {
-    await _requiredAuth.currentUser?.sendEmailVerification();
-  }
+  /// Email verification is handled at registration by the backend; kept as a
+  /// no-op so existing call sites keep compiling.
+  Future<void> sendEmailVerification() async {}
 
+  /// Re-reads the profile from the server and refreshes the session.
   Future<void> reloadUser() async {
-    await _requiredAuth.currentUser?.reload();
+    final current = _current;
+    if (current == null) return;
+    final raw = await _api.get('/api/auth/me');
+    final user = UserModel.fromJson(
+        Map<String, dynamic>.from(raw['user']), current.uid);
+    _emit(current.copyWith(user: user));
   }
 
   Future<void> signOut() async {
-    await _requiredAuth.signOut();
+    try {
+      await _api.post('/api/auth/logout');
+    } catch (_) {
+      // Best-effort: always clear the local session.
+    }
+    try {
+      if (_googleInitDone) await GoogleSignIn.instance.signOut();
+    } catch (_) {}
+    await _api.clearSession();
+    _emit(null);
   }
 
-  Future<UserModel?> fetchUserProfile(String uid) async {
+  Future<UserModel?> fetchUserProfile(String uid) {
     return _userRepository.fetchUser(uid);
   }
 
@@ -256,38 +260,8 @@ class AuthService {
   /// Maps exceptions to friendly, actionable, user-facing error messages.
   static String friendlyError(Object error) {
     if (error is StateError) {
-      if (error.message.contains('Firebase is not configured')) {
-        return 'Firebase is not configured yet. Run flutterfire configure or populate assets/.env.';
-      }
       return error.message;
     }
-
-    final String errStr = error.toString();
-
-    if (errStr.contains('invalid-api-key') ||
-        errStr.contains('api-key-not-valid')) {
-      return 'Firebase API key is invalid or placeholder. Run flutterfire configure.';
-    }
-
-    if (error is FirebaseAuthException) {
-      return switch (error.code) {
-        'user-not-found' => 'No account found with this email.',
-        'wrong-password' => 'Incorrect password. Please try again.',
-        'invalid-credential' => 'Invalid email or password.',
-        'email-already-in-use' => 'An account already exists for this email.',
-        'weak-password' => 'Password should be at least 6 characters.',
-        'invalid-email' => 'Please enter a valid email address.',
-        'too-many-requests' => 'Too many attempts. Please try again later.',
-        'network-request-failed' => 'Network error. Check your connection.',
-        _ => error.message ?? 'Authentication error (${error.code}).',
-      };
-    }
-
-    if (error is Exception) {
-      final msg = error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
-      return msg.isNotEmpty ? msg : 'An error occurred during authentication.';
-    }
-
-    return error.toString();
+    return ApiException.friendlyMessage(error);
   }
 }

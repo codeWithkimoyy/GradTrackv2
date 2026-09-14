@@ -1,8 +1,35 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 const Object _unset = Object();
+
+/// Parses API date values (ISO-8601 strings, epoch millis, or DateTime).
+DateTime? parseApiDate(dynamic value) {
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+  if (value is String) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    // MySQL DATETIME comes back as "YYYY-MM-DD HH:MM:SS".
+    final normalized =
+        trimmed.contains('T') ? trimmed : trimmed.replaceFirst(' ', 'T');
+    return DateTime.tryParse(normalized);
+  }
+  return null;
+}
+
+/// Parses an API date-only value ("YYYY-MM-DD").
+DateTime? parseApiDateOnly(dynamic value) {
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  if (value is String) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    return DateTime.tryParse(trimmed.length > 10 ? trimmed : '${trimmed}T00:00:00');
+  }
+  return null;
+}
 
 enum UserRole { admin, alumni }
 
@@ -105,13 +132,13 @@ class SocialLinks {
   const SocialLinks(
       {this.github, this.linkedIn, this.portfolio, this.facebook});
 
-  factory SocialLinks.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const SocialLinks();
+  factory SocialLinks.fromMap(dynamic map) {
+    if (map is! Map) return const SocialLinks();
     return SocialLinks(
-      github: map['github'],
-      linkedIn: map['linkedIn'],
-      portfolio: map['portfolio'],
-      facebook: map['facebook'],
+      github: map['github']?.toString(),
+      linkedIn: map['linkedIn']?.toString(),
+      portfolio: map['portfolio']?.toString(),
+      facebook: map['facebook']?.toString(),
     );
   }
 
@@ -184,45 +211,43 @@ this.studentNumber,
     this.updatedAt,
   });
 
-  factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
+  factory UserModel.fromJson(Map<String, dynamic> map, String uid) {
     final role = UserRoleX.fromString(map['role'] ?? 'alumni');
     return UserModel(
       uid: uid,
-      email: map['email'] ?? '',
-      fullName: map['fullName'] ?? '',
+      email: map['email']?.toString() ?? '',
+      fullName: map['fullName']?.toString() ?? '',
       role: role,
-      photoUrl: map['photoUrl'],
-      studentNumber: map['studentNumber'],
-      alumniId: map['alumniId'],
-      gender: map['gender'],
-      birthdate: (map['birthdate'] as Timestamp?)?.toDate(),
-      phoneNumber: map['phoneNumber'],
-      currentAddress: map['currentAddress'],
-      permanentAddress: map['permanentAddress'],
-      graduationYear: map['graduationYear'],
-      course: map['course'],
-      academicYearGraduated: map['academicYearGraduated'],
-      section: map['section'],
-      biography: map['biography'],
+      photoUrl: map['photoUrl']?.toString(),
+      studentNumber: map['studentNumber']?.toString(),
+      alumniId: map['alumniId']?.toString(),
+      gender: map['gender']?.toString(),
+      birthdate: parseApiDateOnly(map['birthdate']),
+      phoneNumber: map['phoneNumber']?.toString(),
+      currentAddress: map['currentAddress']?.toString(),
+      permanentAddress: map['permanentAddress']?.toString(),
+      graduationYear: (map['graduationYear'] as num?)?.toInt(),
+      course: map['course']?.toString(),
+      academicYearGraduated: map['academicYearGraduated']?.toString(),
+      section: map['section']?.toString(),
+      biography: map['biography']?.toString(),
       socialLinks: SocialLinks.fromMap(map['socialLinks']),
       employmentStatus:
-          EmploymentStatusX.fromString(map['employmentStatus'] ?? 'unemployed'),
-      isVerified: map['isVerified'] ?? false,
-      emailVerified: map['emailVerified'] ?? false,
-      disabled: map['disabled'] ?? false,
-      approved: role == UserRole.admin ? true : (map['approved'] ?? true),
-      hasLoggedIn: map['hasLoggedIn'] ?? false,
-      lastLoginAt: (map['lastLoginAt'] as Timestamp?)?.toDate(),
-      profileCompletion: (map['profileCompletion'] ?? 0.0).toDouble(),
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
+          EmploymentStatusX.fromString(map['employmentStatus']?.toString() ?? 'unemployed'),
+      isVerified: map['isVerified'] == true,
+      emailVerified: map['emailVerified'] == true,
+      disabled: map['disabled'] == true,
+      approved: role == UserRole.admin ? true : (map['approved'] ?? true) == true,
+      hasLoggedIn: map['hasLoggedIn'] == true,
+      lastLoginAt: parseApiDate(map['lastLoginAt']),
+      profileCompletion: (map['profileCompletion'] as num?)?.toDouble() ?? 0.0,
+      createdAt: parseApiDate(map['createdAt']) ?? DateTime.now(),
+      updatedAt: parseApiDate(map['updatedAt']),
     );
   }
 
-  factory UserModel.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) =>
-      UserModel.fromMap(doc.data() ?? {}, doc.id);
-
-  Map<String, dynamic> toMap() => {
+  /// Encodes the profile for the REST API (ISO-8601 dates, no Timestamps).
+  Map<String, dynamic> toJson() => {
         'email': email,
         'fullName': fullName,
         'role': role.name,
@@ -230,7 +255,9 @@ this.studentNumber,
         'studentNumber': studentNumber,
         'alumniId': alumniId,
         'gender': gender,
-        'birthdate': birthdate != null ? Timestamp.fromDate(birthdate!) : null,
+        'birthdate': birthdate != null
+            ? '${birthdate!.year.toString().padLeft(4, '0')}-${birthdate!.month.toString().padLeft(2, '0')}-${birthdate!.day.toString().padLeft(2, '0')}'
+            : null,
         'phoneNumber': phoneNumber,
         'currentAddress': currentAddress,
         'permanentAddress': permanentAddress,
@@ -246,11 +273,15 @@ this.studentNumber,
         'disabled': disabled,
         'approved': approved,
         'hasLoggedIn': hasLoggedIn,
-        if (lastLoginAt != null) 'lastLoginAt': Timestamp.fromDate(lastLoginAt!),
+        if (lastLoginAt != null)
+          'lastLoginAt': lastLoginAt!.toIso8601String(),
         'profileCompletion': profileCompletion,
-        'createdAt': Timestamp.fromDate(createdAt),
-        'updatedAt': Timestamp.now(),
+        'createdAt': createdAt.toIso8601String(),
+        if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
       };
+
+  /// Backwards-compatible alias (the REST API uses [toJson]).
+  Map<String, dynamic> toMap() => toJson();
 
   bool get hasBase64Photo => photoUrl?.startsWith('data:') ?? false;
 

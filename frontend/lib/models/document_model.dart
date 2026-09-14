@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user_model.dart' show parseApiDate, parseApiDateOnly;
 
 enum CertificateProvider {
   tesda,
@@ -51,18 +51,17 @@ class CertificateRecord {
     required this.uploadedAt,
   });
 
-  factory CertificateRecord.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final map = doc.data() ?? {};
+  factory CertificateRecord.fromJson(Map<String, dynamic> map, String id) {
     return CertificateRecord(
-      id: doc.id,
-      userId: map['userId'] ?? '',
-      title: map['title'] ?? '',
-      provider: CertificateProviderX.fromString(map['provider'] ?? 'other'),
-      fileUrl: map['fileUrl'] ?? '',
-      storagePath: map['storagePath'] ?? '',
-      fileType: map['fileType'] ?? 'image',
-      issuedDate: (map['issuedDate'] as Timestamp?)?.toDate(),
-      uploadedAt: (map['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      id: id,
+      userId: map['userId']?.toString() ?? '',
+      title: map['title']?.toString() ?? '',
+      provider: CertificateProviderX.fromString(map['provider']?.toString() ?? 'other'),
+      fileUrl: map['fileUrl']?.toString() ?? '',
+      storagePath: map['storagePath']?.toString() ?? '',
+      fileType: map['fileType']?.toString() ?? 'image',
+      issuedDate: parseApiDateOnly(map['issuedDate']),
+      uploadedAt: parseApiDate(map['uploadedAt']) ?? DateTime.now(),
     );
   }
 
@@ -73,8 +72,10 @@ class CertificateRecord {
         'fileUrl': fileUrl,
         'storagePath': storagePath,
         'fileType': fileType,
-        'issuedDate': issuedDate != null ? Timestamp.fromDate(issuedDate!) : null,
-        'uploadedAt': Timestamp.fromDate(uploadedAt),
+        'issuedDate': issuedDate != null
+            ? '${issuedDate!.year.toString().padLeft(4, '0')}-${issuedDate!.month.toString().padLeft(2, '0')}-${issuedDate!.day.toString().padLeft(2, '0')}'
+            : null,
+        'uploadedAt': uploadedAt.toIso8601String(),
       };
 }
 
@@ -95,11 +96,11 @@ class ResumeRecord {
   });
 
   factory ResumeRecord.fromMap(Map<String, dynamic> map) => ResumeRecord(
-        fileUrl: map['fileUrl'] ?? '',
-        storagePath: map['storagePath'] ?? '',
-        fileName: map['fileName'] ?? '',
-        sizeBytes: map['sizeBytes'] ?? 0,
-        uploadedAt: (map['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        fileUrl: map['fileUrl']?.toString() ?? '',
+        storagePath: map['storagePath']?.toString() ?? '',
+        fileName: map['fileName']?.toString() ?? '',
+        sizeBytes: (map['sizeBytes'] as num?)?.toInt() ?? 0,
+        uploadedAt: parseApiDate(map['uploadedAt']) ?? DateTime.now(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -107,6 +108,6 @@ class ResumeRecord {
         'storagePath': storagePath,
         'fileName': fileName,
         'sizeBytes': sizeBytes,
-        'uploadedAt': Timestamp.fromDate(uploadedAt),
+        'uploadedAt': uploadedAt.toIso8601String(),
       };
 }

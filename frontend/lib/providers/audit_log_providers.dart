@@ -1,20 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../constants/app_constants.dart';
 import '../services/audit_log_service.dart';
 import 'auth_providers.dart';
 
 final auditLogServiceProvider =
-    Provider<AuditLogService>((ref) => AuditLogService());
+    Provider<AuditLogService>((ref) => AuditLogService(api: ref.watch(apiClientProvider)));
 
-/// Newest-first stream of audit entries for the admin Audit Logs screen.
+/// Newest-first audit entries for the admin Audit Logs screen.
 final auditLogsProvider =
-    StreamProvider.autoDispose<QuerySnapshot<Map<String, dynamic>>>((ref) {
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.auditLogs)
-      .orderBy('createdAt', descending: true)
-      .snapshots();
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  return ref.watch(auditLogServiceProvider).watchLogs();
 });
 
 /// Records a staff/security action to the append-only audit trail. Resolves

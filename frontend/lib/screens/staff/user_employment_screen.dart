@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,22 +5,20 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_constants.dart';
 import '../../models/employment_model.dart';
 import '../../models/user_model.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/employment_providers.dart';
 import '../../widgets/employment_record_card.dart';
 import '../../widgets/empty_state_widget.dart';
 
-/// Reads a single user's Firestore profile document.
-final userDocByIdProvider = FutureProvider.autoDispose
-    .family<DocumentSnapshot<Map<String, dynamic>>, String>((ref, userId) {
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.users)
-      .doc(userId)
-      .get();
+/// Reads a single user's profile from the backend.
+final userDocByIdProvider =
+    FutureProvider.autoDispose.family<UserModel?, String>((ref, userId) {
+  return ref.watch(userRepositoryProvider).fetchUser(userId);
 });
 
 /// Read-only employment history for a specific alumnus — used by admins in
-/// the user directory. Alumni add record data from their own Employment
-/// screen ([/employment/add]); this view only streams and renders it.
+/// the user directory. Alumni add record data from their Employment screen;
+/// this view only streams and renders it.
 class UserEmploymentScreen extends ConsumerWidget {
   final String userId;
   const UserEmploymentScreen({super.key, required this.userId});
@@ -72,18 +69,18 @@ class _UserHeader extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return userAsync.when(
-      data: (doc) {
-        final data = doc.data() ?? {};
-        final name = data['fullName']?.toString() ?? 'Unknown';
-        final email = data['email']?.toString() ?? '';
-        final course = data['course']?.toString() ?? AppStrings.defaultCourse;
-        final year = data['graduationYear']?.toString() ?? '';
-        final rawBatch = data['academicYearGraduated']?.toString();
+      data: (user) {
+        final name =
+            (user?.fullName.isEmpty ?? true) ? 'Unknown' : user!.fullName;
+        final email = user?.email ?? '';
+        final course = user?.course ?? AppStrings.defaultCourse;
+        final year = user?.graduationYear?.toString() ?? '';
+        final rawBatch = user?.academicYearGraduated;
         final batchText =
             (rawBatch == null || rawBatch.trim().isEmpty)
                 ? null
                 : 'S.Y. ${displayAcademicYear(rawBatch)}';
-        final status = data['employmentStatus']?.toString() ??
+        final status = user?.employmentStatus.label ??
             EmploymentStatusX.fromString('unemployed').label;
 
         return Container(

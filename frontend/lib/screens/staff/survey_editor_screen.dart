@@ -1,7 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../constants/app_constants.dart';
+import '../../services/auth_service.dart';
+import '../../services/survey_service.dart';
 import '../../utils/app_snack_bar.dart';
 
 /// A survey question currently being edited by staff.
@@ -29,16 +31,17 @@ class _QuestionDraft {
 /// Staff editor for a graduate tracer survey. Besides the metadata fields it
 /// lets the admin build the list of questions (short answer or
 /// multiple choice) that alumni answer from the "Tracer Surveys" screen.
-class SurveyEditorScreen extends StatefulWidget {
-  final DocumentSnapshot<Map<String, dynamic>>? existing;
+class SurveyEditorScreen extends ConsumerStatefulWidget {
+  final Map<String, dynamic>? existing;
 
   const SurveyEditorScreen({super.key, this.existing});
 
   @override
-  State<SurveyEditorScreen> createState() => _SurveyEditorScreenState();
+  ConsumerState<SurveyEditorScreen> createState() =>
+      _SurveyEditorScreenState();
 }
 
-class _SurveyEditorScreenState extends State<SurveyEditorScreen> {
+class _SurveyEditorScreenState extends ConsumerState<SurveyEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -52,7 +55,7 @@ class _SurveyEditorScreenState extends State<SurveyEditorScreen> {
   @override
   void initState() {
     super.initState();
-    final data = widget.existing?.data() ?? {};
+    final data = widget.existing ?? {};
     _titleController.text = data['title']?.toString() ?? '';
     _descriptionController.text = data['description']?.toString() ?? '';
     _visibility = data['visibility']?.toString() ?? 'public';
@@ -160,17 +163,15 @@ class _SurveyEditorScreenState extends State<SurveyEditorScreen> {
           : _descriptionController.text.trim(),
       'visibility': _visibility,
       'questions': questionsData,
-      'updatedAt': FieldValue.serverTimestamp(),
     };
 
     try {
+      final service = ref.read(surveyServiceProvider);
       if (_isEdit) {
-        await widget.existing!.reference.update(data);
+        await service.updateSurvey(
+            widget.existing!['id']?.toString() ?? '', data);
       } else {
-        data['createdAt'] = FieldValue.serverTimestamp();
-        await FirebaseFirestore.instance
-            .collection(FirestoreCollections.surveys)
-            .add(data);
+        await service.createSurvey(data);
       }
       if (mounted) {
         showAppSnackBar(context, 'Survey saved successfully.',
@@ -179,7 +180,8 @@ class _SurveyEditorScreenState extends State<SurveyEditorScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Save failed: $e',
+        showAppSnackBar(
+            context, 'Save failed: ${AuthService.friendlyError(e)}',
             backgroundColor: AppColors.error);
       }
     } finally {

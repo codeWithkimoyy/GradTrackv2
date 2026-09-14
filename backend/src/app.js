@@ -9,6 +9,15 @@ const profileRouter = require('./routes/profile');
 const uploadRouter = require('./routes/upload');
 const alumniRouter = require('./routes/alumni');
 const authRouter = require('./routes/auth');
+const employmentRouter = require('./routes/employment');
+const documentsRouter = require('./routes/documents');
+const surveysRouter = require('./routes/surveys');
+const notificationsRouter = require('./routes/notifications');
+const messagesRouter = require('./routes/messages');
+const contentRouter = require('./routes/content');
+const statsRouter = require('./routes/stats');
+const auditRouter = require('./routes/audit');
+const settingsRouter = require('./routes/settings');
 
 const app = express();
 
@@ -37,14 +46,15 @@ app.get('/health', (_request, response) => {
     service: 'gradtrack-backend',
     firebaseConfigured: hasFirebaseCredentials,
     mysqlConfigured: isMySQLConnected,
+    database: 'MySQL',
   });
 });
 
 app.get('/api', (_request, response) => {
   response.json({
     name: 'GradTrack API',
-    version: '1.0.0',
-    database: 'MySQL (Primary) + Firebase (Auth/Sync)',
+    version: '2.0.0',
+    database: 'MySQL',
   });
 });
 
@@ -52,6 +62,15 @@ app.use('/api/profile', profileRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/alumni', alumniRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/employment', employmentRouter);
+app.use('/api/documents', documentsRouter);
+app.use('/api/surveys', surveysRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/conversations', messagesRouter);
+app.use('/api/content', contentRouter);
+app.use('/api/stats', statsRouter);
+app.use('/api/audit-logs', auditRouter);
+app.use('/api/settings', settingsRouter);
 
 app.use((_request, response) => {
   response.status(404).json({

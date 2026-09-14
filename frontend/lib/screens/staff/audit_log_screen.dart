@@ -1,9 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/user_model.dart' show parseApiDate;
 import '../../providers/audit_log_providers.dart';
 
 /// Admin-only, read-only trail of staff/security actions, newest first.
@@ -28,9 +28,8 @@ class AuditLogScreen extends ConsumerWidget {
             ),
           ),
         ),
-        data: (snapshot) {
-          final docs = snapshot.docs;
-          if (docs.isEmpty) {
+        data: (entries) {
+          if (entries.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -60,13 +59,13 @@ class AuditLogScreen extends ConsumerWidget {
               Row(
                 children: [
                   Text(
-                    '${docs.length} entr${docs.length == 1 ? 'y' : 'ies'}',
+                    '${entries.length} entr${entries.length == 1 ? 'y' : 'ies'}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              for (final doc in docs) _AuditEntryCard(doc: doc),
+              for (final entry in entries) _AuditEntryCard(entry: entry),
               const SizedBox(height: AppSpacing.lg),
             ],
           );
@@ -77,9 +76,9 @@ class AuditLogScreen extends ConsumerWidget {
 }
 
 class _AuditEntryCard extends StatelessWidget {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final Map<String, dynamic> entry;
 
-  const _AuditEntryCard({required this.doc});
+  const _AuditEntryCard({required this.entry});
 
   (IconData, Color) _styleFor(String action) => switch (action) {
         'delete' => (Icons.delete_outline_rounded, AppColors.error),
@@ -90,12 +89,12 @@ class _AuditEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = doc.data() ?? {};
+    final data = entry;
     final (icon, color) = _styleFor(data['action']?.toString() ?? '');
     final actorName = data['actorName']?.toString();
     final actorRole = data['actorRole']?.toString();
     final target = data['targetType']?.toString();
-    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+    final createdAt = parseApiDate(data['createdAt']);
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),

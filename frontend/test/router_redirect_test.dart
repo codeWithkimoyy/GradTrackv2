@@ -244,4 +244,57 @@ void main() {
       }
     });
   });
+
+  group('resolveRedirect - disabled accounts', () {
+    test('disabled alumni is pinned to the account-disabled screen', () {
+      for (final path in [
+        AppRoutes.alumniDashboard,
+        AppRoutes.alumniSurvey,
+        AppRoutes.alumniJobs,
+        AppRoutes.alumniMessages,
+        AppRoutes.adminUsers,
+      ]) {
+        expect(
+          resolveRedirect(
+            location: path,
+            authLoading: notLoading,
+            loggedIn: loggedIn,
+            role: UserRole.alumni,
+            disabled: true,
+            approved: true,
+          ),
+          AppRoutes.accountDisabled,
+          reason: '$path must redirect to account-disabled when disabled',
+        );
+      }
+    });
+
+    test('disabled alumni stays on the account-disabled screen', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.accountDisabled,
+          authLoading: notLoading,
+          loggedIn: loggedIn,
+          role: UserRole.alumni,
+          disabled: true,
+          approved: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('disabled logged-out user is sent to login, not account-disabled', () {
+      expect(
+        resolveRedirect(
+          location: AppRoutes.alumniDashboard,
+          authLoading: notLoading,
+          loggedIn: false,
+          role: UserRole.alumni,
+          disabled: true,
+          approved: true,
+        ),
+        AppRoutes.login,
+      );
+    });
+  });
 }

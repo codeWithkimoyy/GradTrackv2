@@ -1,22 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+
+import 'api_client.dart' show safeEnv;
 
 class CloudinaryService {
   CloudinaryService() {
-    _cloudName = (dotenv.env['CLOUDINARY_CLOUD_NAME']?.isNotEmpty == true)
-        ? dotenv.env['CLOUDINARY_CLOUD_NAME']!
-        : 'cesiyg6z';
-    _apiKey = (dotenv.env['CLOUDINARY_API_KEY']?.isNotEmpty == true)
-        ? dotenv.env['CLOUDINARY_API_KEY']!
-        : '739484295666519';
-    _uploadPreset = (dotenv.env['CLOUDINARY_UPLOAD_PRESET']?.isNotEmpty == true)
-        ? dotenv.env['CLOUDINARY_UPLOAD_PRESET']!
-        : 'gradtrack_uploads';
-    _backendBaseUrl = (dotenv.env['BACKEND_API_URL']?.isNotEmpty == true)
-        ? dotenv.env['BACKEND_API_URL']!
-        : 'http://localhost:3000';
+    _cloudName = safeEnv('CLOUDINARY_CLOUD_NAME') ?? 'cesiyg6z';
+    _apiKey = safeEnv('CLOUDINARY_API_KEY') ?? '739484295666519';
+    _uploadPreset =
+        safeEnv('CLOUDINARY_UPLOAD_PRESET') ?? 'gradtrack_uploads';
+    _backendBaseUrl =
+        safeEnv('BACKEND_API_URL') ?? 'http://localhost:3000';
   }
 
   late final String _cloudName;

@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../dashboards/admin_dashboard.dart';
-import '../dashboards/alumni_dashboard.dart';
+import '../dashboards/admin/admin_dashboard.dart';
+import '../dashboards/alumni/alumni_dashboard.dart';
 import '../models/user_model.dart';
 import '../providers/auth_providers.dart';
 import '../screens/alumni/alumni_chat_screen.dart';
@@ -16,12 +17,13 @@ import '../screens/auth/onboarding_screen.dart';
 import '../screens/auth/pending_approval_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/splash_screen.dart';
+import '../screens/auth/account_disabled_screen.dart';
 import '../screens/auth/verify_alumni_id_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/documents/certificate_gallery_screen.dart';
 import '../screens/documents/resume_upload_screen.dart';
-import '../screens/employment/add_employment_screen.dart';
 import '../screens/employment/employment_history_screen.dart';
+import '../screens/landing/landing_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shared/collection_list_screen.dart';
@@ -51,6 +53,7 @@ class AppRoutes {
   static const dashboardDocuments = '/dashboard/documents';
   static const dashboardProfile = '/dashboard/profile';
   static const pendingApproval = '/pending-approval';
+  static const accountDisabled = '/account-disabled';
 
   static const alumniDashboard = '/alumni/dashboard';
   static const alumniSurvey = '/alumni/survey';
@@ -58,6 +61,7 @@ class AppRoutes {
   static const alumniNotifications = '/alumni/notifications';
   static const alumniProfile = '/alumni/profile';
   static const alumniDocuments = '/alumni/documents';
+  static const alumniMessages = '/alumni/messages';
   static const adminDashboard = '/admin/dashboard';
   static const adminUsers = '/admin/users';
   static const adminBatch = '/admin/users/batch';
@@ -80,7 +84,6 @@ class AppRoutes {
   static const profile = '/profile';
   static const editProfile = '/profile/edit';
   static const employment = '/employment';
-  static const addEmployment = '/employment/add';
   static const resume = '/documents/resume';
   static const certificates = '/documents/certificates';
 }
@@ -89,6 +92,14 @@ String dashboardForRole(UserRole role) => switch (role) {
       UserRole.alumni => AppRoutes.alumniDashboard,
       UserRole.admin => AppRoutes.adminDashboard,
     };
+
+/// Laptops/desktops browsing the web app (>= tablet width) get the landing
+/// page at the root. Phones - whether the mobile app or a web browser on a
+/// small screen - keep the existing splash + 3-screen onboarding flow.
+bool _isDesktopWeb(BuildContext context) {
+  if (!kIsWeb) return false;
+  return MediaQuery.sizeOf(context).width >= 768;
+}
 
 class _RouterListenable extends ChangeNotifier {
   _RouterListenable(Ref ref) {
@@ -116,43 +127,62 @@ final routerProvider = Provider<GoRouter>((ref) {
         authLoading: authState.isLoading,
         loggedIn: authState.value != null,
         role: profile?.role,
+        disabled: profile?.disabled ?? false,
         approved: profile?.approved ?? true,
       );
     },
     routes: [
-      GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashScreen()),
-      GoRoute(path: AppRoutes.onboarding, builder: (_, __) => const OnboardingScreen()),
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, _) => _isDesktopWeb(context)
+            ? const LandingScreen()
+            : const SplashScreen(),
+      ),
+      GoRoute(
+          path: AppRoutes.onboarding,
+          builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
-      GoRoute(path: AppRoutes.verifyAlumniId, builder: (_, __) => const VerifyAlumniIdScreen()),
+      GoRoute(
+          path: AppRoutes.verifyAlumniId,
+          builder: (_, __) => const VerifyAlumniIdScreen()),
       GoRoute(
         path: AppRoutes.registerPattern,
         builder: (context, state) => RegisterScreen(
           alumniId: state.pathParameters['alumniId'] ?? '',
         ),
       ),
-      GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(
+          path: AppRoutes.forgotPassword,
+          builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(
         path: AppRoutes.pendingApproval,
         builder: (_, __) => const PendingApprovalScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.accountDisabled,
+        builder: (_, __) => const AccountDisabledScreen(),
+      ),
       ShellRoute(
         builder: (_, __, child) => DashboardShell(child: child),
         routes: [
-          GoRoute(path: AppRoutes.staffUsers, builder: (context, state) {
-            final role = state.uri.queryParameters['role'];
-            final pendingOnly =
-                state.uri.queryParameters['pending'] == '1';
-            return UserManagementScreen(
-              roleFilter: role,
-              canVerify: role == null || role == 'alumni',
-              approvedOnly: state.uri.queryParameters['approved'] == '1',
-              initialPendingOnly: pendingOnly,
-            );
-          }),
-          GoRoute(path: AppRoutes.staffUserEmployment, builder: (context, state) {
-            final userId = state.uri.queryParameters['userId'] ?? '';
-            return UserEmploymentScreen(userId: userId);
-          }),
+          GoRoute(
+              path: AppRoutes.staffUsers,
+              builder: (context, state) {
+                final role = state.uri.queryParameters['role'];
+                final pendingOnly = state.uri.queryParameters['pending'] == '1';
+                return UserManagementScreen(
+                  roleFilter: role,
+                  canVerify: role == null || role == 'alumni',
+                  approvedOnly: state.uri.queryParameters['approved'] == '1',
+                  initialPendingOnly: pendingOnly,
+                );
+              }),
+          GoRoute(
+              path: AppRoutes.staffUserEmployment,
+              builder: (context, state) {
+                final userId = state.uri.queryParameters['userId'] ?? '';
+                return UserEmploymentScreen(userId: userId);
+              }),
           GoRoute(
             path: '${AppRoutes.staffData}/:key',
             builder: (context, state) {
@@ -170,39 +200,90 @@ final routerProvider = Provider<GoRouter>((ref) {
               return CollectionListScreen(content: content);
             },
           ),
-          GoRoute(path: AppRoutes.alumniDashboard, builder: (_, __) => const _AlumniDashboardRoute()),
-          GoRoute(path: AppRoutes.alumniSurvey, builder: (_, __) => const SurveyScreen()),
-          GoRoute(path: AppRoutes.alumniJobs, builder: (_, __) => CollectionListScreen(content: lookupCollection('jobs')!)),
-          GoRoute(path: AppRoutes.alumniNotifications, builder: (_, __) => const NotificationsScreen()),
-          GoRoute(path: AppRoutes.alumniProfile, builder: (_, __) => const ProfileScreen()),
-          GoRoute(path: AppRoutes.alumniDocuments, builder: (_, __) => const CertificateGalleryScreen()),
-          GoRoute(path: AppRoutes.adminDashboard, builder: (_, __) => const AdminDashboard()),
-          GoRoute(path: AppRoutes.adminAnalytics, builder: (_, __) => const AnalyticsScreen(adminMode: true)),
-          GoRoute(path: AppRoutes.adminEmploymentHistory, builder: (_, __) => const EmploymentHistoryAdminScreen()),
-          GoRoute(path: AppRoutes.adminUsers, builder: (_, __) => const UserManagementScreen()),
+          GoRoute(
+              path: AppRoutes.alumniDashboard,
+              builder: (_, __) => const _AlumniDashboardRoute()),
+          GoRoute(
+              path: AppRoutes.alumniSurvey,
+              builder: (_, __) => const SurveyScreen()),
+          GoRoute(
+              path: AppRoutes.alumniJobs,
+              builder: (_, __) =>
+                  CollectionListScreen(content: lookupCollection('jobs')!)),
+          GoRoute(
+              path: AppRoutes.alumniNotifications,
+              builder: (_, __) => const NotificationsScreen()),
+          GoRoute(
+              path: AppRoutes.alumniProfile,
+              builder: (_, __) => const ProfileScreen()),
+          GoRoute(
+              path: AppRoutes.alumniDocuments,
+              builder: (_, __) => const CertificateGalleryScreen()),
+          GoRoute(
+              path: AppRoutes.alumniMessages,
+              builder: (_, __) => const AlumniChatScreen()),
+          GoRoute(
+              path: AppRoutes.adminDashboard,
+              builder: (_, __) => const AdminDashboard()),
+          GoRoute(
+              path: AppRoutes.adminAnalytics,
+              builder: (_, __) => const AnalyticsScreen(adminMode: true)),
+          GoRoute(
+              path: AppRoutes.adminEmploymentHistory,
+              builder: (_, __) => const EmploymentHistoryAdminScreen()),
+          GoRoute(
+              path: AppRoutes.adminUsers,
+              builder: (_, __) => const UserManagementScreen()),
           GoRoute(
             path: AppRoutes.adminBatchPattern,
             builder: (context, state) {
-              final year = int.tryParse(
-                      state.pathParameters['year'] ?? '') ??
+              final year = int.tryParse(state.pathParameters['year'] ?? '') ??
                   DateTime.now().year;
               return BatchAlumniScreen(batchYear: year);
             },
           ),
-          GoRoute(path: AppRoutes.adminAlumni, builder: (_, __) => const AlumniManagementScreen()),
-          GoRoute(path: AppRoutes.adminAuditLogs, builder: (_, __) => const AuditLogScreen()),
-          GoRoute(path: AppRoutes.adminProfile, builder: (_, __) => const ProfileScreen()),
-          GoRoute(path: AppRoutes.adminSettings, builder: (_, __) => const AdminSettingsScreen()),
-          GoRoute(path: AppRoutes.adminMessages, builder: (_, __) => const AdminMessagesScreen()),
+          GoRoute(
+              path: AppRoutes.adminAlumni,
+              builder: (_, __) => const AlumniManagementScreen()),
+          GoRoute(
+              path: AppRoutes.adminAuditLogs,
+              builder: (_, __) => const AuditLogScreen()),
+          GoRoute(
+              path: AppRoutes.adminProfile,
+              builder: (_, __) => const ProfileScreen()),
+          GoRoute(
+              path: AppRoutes.adminSettings,
+              builder: (_, __) => const AdminSettingsScreen()),
+          GoRoute(
+              path: AppRoutes.adminMessages,
+              builder: (context, state) {
+                final params = state.uri.queryParameters;
+                return AdminMessagesScreen(
+                  initialAlumniId: params['alumniId'],
+                  initialAlumniName: params['name'],
+                  initialAlumniEmail: params['email'],
+                  initialAlumniCourse: params['course'],
+                );
+              }),
         ],
       ),
-      GoRoute(path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
-      GoRoute(path: AppRoutes.editProfile, builder: (_, __) => const EditProfileScreen()),
-      GoRoute(path: AppRoutes.employment, builder: (_, __) => const EmploymentHistoryPage()),
-      GoRoute(path: AppRoutes.addEmployment, builder: (_, __) => const AddEmploymentScreen()),
-      GoRoute(path: AppRoutes.resume, builder: (_, __) => const ResumeUploadScreen()),
-      GoRoute(path: AppRoutes.certificates, builder: (_, __) => const CertificateGalleryScreen()),
-      GoRoute(path: AppRoutes.messages, builder: (_, __) => const AlumniChatScreen()),
+      GoRoute(
+          path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
+      GoRoute(
+          path: AppRoutes.editProfile,
+          builder: (_, __) => const EditProfileScreen()),
+      GoRoute(
+          path: AppRoutes.employment,
+          builder: (_, __) => const EmploymentHistoryPage()),
+      GoRoute(
+          path: AppRoutes.resume,
+          builder: (_, __) => const ResumeUploadScreen()),
+      GoRoute(
+          path: AppRoutes.certificates,
+          builder: (_, __) => const CertificateGalleryScreen()),
+      GoRoute(
+          path: AppRoutes.messages,
+          builder: (_, __) => const AlumniChatScreen()),
     ],
   );
 });
@@ -214,6 +295,7 @@ String? resolveRedirect({
   required bool authLoading,
   required bool loggedIn,
   required UserRole? role,
+  bool disabled = false,
   required bool approved,
 }) {
   const authRoutes = {
@@ -235,7 +317,17 @@ String? resolveRedirect({
         ? null
         : AppRoutes.login;
   }
-  if (role == null) return location == AppRoutes.splash ? null : AppRoutes.splash;
+  // A disabled account has all data access revoked in the security rules, so
+  // pin the user to an explanatory screen instead of letting the rest of the
+  // routing logic scatter them into screens that just throw permission errors.
+  if (disabled) {
+    return location == AppRoutes.accountDisabled
+        ? null
+        : AppRoutes.accountDisabled;
+  }
+  if (role == null) {
+    return location == AppRoutes.splash ? null : AppRoutes.splash;
+  }
 
   // Approval is only enforced for alumni. Admins are credentialed staff
   // accounts managed by the university, so they never wait.
@@ -246,24 +338,29 @@ String? resolveRedirect({
   }
 
   final home = dashboardForRole(role);
-  if ((approved || role == UserRole.admin) && location == AppRoutes.pendingApproval) {
+  if ((approved || role == UserRole.admin) &&
+      location == AppRoutes.pendingApproval) {
     return home;
   }
+
+  // Strip any query string so role checks match the path-only route.
+  final path = location.split('?').first;
   final legacy = <String, String>{
     AppRoutes.dashboard: home,
-    AppRoutes.dashboardAlumni: role == UserRole.alumni ? AppRoutes.alumniDashboard : home,
-    AppRoutes.dashboardJobs: role == UserRole.alumni ? AppRoutes.alumniJobs : home,
-    AppRoutes.dashboardDocuments: role == UserRole.alumni ? AppRoutes.alumniDocuments : home,
-    AppRoutes.dashboardProfile: role == UserRole.alumni ? AppRoutes.alumniProfile : home,
+    AppRoutes.dashboardAlumni:
+        role == UserRole.alumni ? AppRoutes.alumniDashboard : home,
+    AppRoutes.dashboardJobs:
+        role == UserRole.alumni ? AppRoutes.alumniJobs : home,
+    AppRoutes.dashboardDocuments:
+        role == UserRole.alumni ? AppRoutes.alumniDocuments : home,
+    AppRoutes.dashboardProfile:
+        role == UserRole.alumni ? AppRoutes.alumniProfile : home,
   };
-  if (legacy.containsKey(location)) return legacy[location];
-  if (authRoutes.contains(location) || isRegisterLocation) return home;
+  if (legacy.containsKey(path)) return legacy[path];
+  if (authRoutes.contains(path) || isRegisterLocation) return home;
 
-  final collectionKey = location.startsWith(AppRoutes.staffData)
-      ? location
-          .substring(AppRoutes.staffData.length + 1)
-          .split('?')
-          .first
+  final collectionKey = path.startsWith(AppRoutes.staffData)
+      ? path.substring(AppRoutes.staffData.length + 1).split('?').first
       : null;
   final collectionExists =
       collectionKey != null && lookupCollection(collectionKey) != null;
@@ -276,14 +373,14 @@ String? resolveRedirect({
       AppRoutes.alumniNotifications,
       AppRoutes.alumniProfile,
       AppRoutes.alumniDocuments,
+      AppRoutes.alumniMessages,
       AppRoutes.profile,
       AppRoutes.editProfile,
       AppRoutes.employment,
-      AppRoutes.addEmployment,
       AppRoutes.resume,
       AppRoutes.certificates,
       AppRoutes.messages,
-      if (collectionExists) location,
+      if (collectionExists) path,
     },
     UserRole.admin: {
       AppRoutes.adminDashboard,
@@ -300,11 +397,10 @@ String? resolveRedirect({
       AppRoutes.staffUsers,
       AppRoutes.alumniNotifications,
       AppRoutes.pendingApproval,
-      if (collectionExists) location,
+      if (collectionExists) path,
     },
   }[role]!;
-  final canAccess =
-      allowed.any((path) => location == path || location.startsWith('$path/'));
+  final canAccess = allowed.any((p) => path == p || path.startsWith('$p/'));
   return canAccess ? null : home;
 }
 
