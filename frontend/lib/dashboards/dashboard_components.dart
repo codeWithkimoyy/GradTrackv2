@@ -116,12 +116,13 @@ class DashboardMetricGrid extends StatelessWidget {
 }
 
 class DashboardMetric {
-  const DashboardMetric(this.label, this.value, this.icon, this.color);
+  const DashboardMetric(this.label, this.value, this.icon, this.color, {this.onTap});
 
   final String label;
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 }
 
 class _MetricCard extends StatelessWidget {
@@ -131,7 +132,7 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final cardContent = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -152,13 +153,24 @@ class _MetricCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: metric.color.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(metric.icon, color: metric.color, size: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: metric.color.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(metric.icon, color: metric.color, size: 20),
+              ),
+              if (metric.onTap != null)
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: metric.color.withValues(alpha: 0.7),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           Column(
@@ -196,6 +208,19 @@ class _MetricCard extends StatelessWidget {
         ],
       ),
     );
+
+    if (metric.onTap != null) {
+      return Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: metric.onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: cardContent,
+        ),
+      );
+    }
+    return cardContent;
   }
 }
 

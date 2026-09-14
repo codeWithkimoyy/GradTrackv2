@@ -221,7 +221,13 @@ class _HistoryList extends ConsumerWidget {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _tag(context, Icons.calendar_today_outlined, DateFormat.yMMM().format(r.dateHired)),
+                    _tag(
+                      context,
+                      Icons.calendar_today_outlined,
+                      r.isCurrent || r.endDate == null
+                          ? '${DateFormat.yMMM().format(r.dateHired)} – Present'
+                          : '${DateFormat.yMMM().format(r.dateHired)} – ${DateFormat.yMMM().format(r.endDate!)}',
+                    ),
                     _tag(context, Icons.location_on_outlined, '${r.city}, ${r.country}'),
                     _tag(context, Icons.laptop_mac_outlined, r.workSetup.label),
                     _tag(context, Icons.badge_outlined, r.employmentType),

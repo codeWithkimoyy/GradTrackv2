@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/alumni_message.dart';
 import '../repositories/stats_repository.dart';
 import 'role_providers.dart';
 
@@ -58,10 +57,4 @@ final publicAnnouncementsProvider =
 final pendingApprovalsProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(statsRepositoryProvider).watchPendingApprovals();
-});
-
-/// Live alumni -> admin messages (admin inbox, newest first).
-final adminMessagesProvider =
-    StreamProvider.autoDispose<List<AlumniMessage>>((ref) {
-  return ref.watch(statsRepositoryProvider).watchMessages();
 });

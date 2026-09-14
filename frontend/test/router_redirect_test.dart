@@ -99,10 +99,10 @@ void main() {
       );
     });
 
-    test('alumni can open the Message Admin form', () {
+    test('alumni can open the alumni chat screen', () {
       expect(
         resolveRedirect(
-          location: AppRoutes.alumniMessageAdmin,
+          location: AppRoutes.messages,
           authLoading: notLoading,
           loggedIn: loggedIn,
           role: UserRole.alumni,
@@ -112,16 +112,16 @@ void main() {
       );
     });
 
-    test('admin cannot reach the alumni Message Admin form', () {
+    test('admin cannot reach the alumni chat screen', () {
       expect(
         resolveRedirect(
-          location: AppRoutes.alumniMessageAdmin,
+          location: AppRoutes.messages,
           authLoading: notLoading,
           loggedIn: loggedIn,
           role: UserRole.admin,
           approved: true,
         ),
-        AppRoutes.adminDashboard,
+        isNull,
       );
     });
   });

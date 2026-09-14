@@ -4,8 +4,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isNotDisabled(uid) {
-      let doc = get(/databases/$(database)/documents/users/$(uid));
-      return !doc.exists || !('disabled' in doc.data) || !doc.data.disabled;
+      // `get(...).exists` is NOT a valid property in rules — use the
+      // standalone exists() guard so a missing users doc doesn't throw.
+      return !exists(/databases/$(database)/documents/users/$(uid)) ||
+             !('disabled' in get(/databases/$(database)/documents/users/$(uid)).data) ||
+             !get(/databases/$(database)/documents/users/$(uid)).data.disabled;
     }
 
     function isSignedIn() {
@@ -13,8 +16,9 @@ service cloud.firestore {
     }
 
     function getUserRole(uid) {
-      let doc = get(/databases/$(database)/documents/users/$(uid));
-      return doc.exists ? doc.data.role : null;
+      return exists(/databases/$(database)/documents/users/$(uid))
+          ? get(/databases/$(database)/documents/users/$(uid)).data.role
+          : null;
     }
 
     function currentUserRole() {
@@ -69,6 +73,7 @@ service cloud.firestore {
                     (isSignedIn() &&
                       request.auth.uid == userId &&
                       request.resource.data.role == 'alumni' &&
+                      ('alumniId' in request.resource.data) &&
                       exists(/databases/$(database)/documents/alumni_registry/$(request.resource.data.alumniId)));
       allow update: if isAdmin() ||
                     (isSignedIn() &&
@@ -216,8 +221,14 @@ service cloud.firestore {
 
     // ---------- MESSAGING ----------
     match /conversations/{conversationId} {
-      allow read, update, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
+      allow read, update, delete: if isSignedIn() && (
+        request.auth.uid in resource.data.participantIds ||
+        isStaff()
+      );
+      allow create: if isSignedIn() && (
+        request.auth.uid in request.resource.data.participantIds ||
+        isStaff()
+      );
     }
 
     match /messages/{messageId} {

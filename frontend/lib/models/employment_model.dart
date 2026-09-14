@@ -24,6 +24,7 @@ class EmploymentRecord {
   final String employmentType; // Full-time, Part-time, Contract, etc.
   final String? salaryRange;
   final DateTime dateHired;
+  final DateTime? endDate;
   final String country;
   final String? province;
   final String city;
@@ -41,6 +42,7 @@ class EmploymentRecord {
     required this.employmentType,
     this.salaryRange,
     required this.dateHired,
+    this.endDate,
     required this.country,
     this.province,
     required this.city,
@@ -49,6 +51,13 @@ class EmploymentRecord {
     this.isCurrent = true,
     required this.createdAt,
   });
+
+  static DateTime _parseDate(dynamic val, [DateTime? fallback]) {
+    if (val is Timestamp) return val.toDate();
+    if (val is String) return DateTime.tryParse(val) ?? (fallback ?? DateTime.now());
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return fallback ?? DateTime.now();
+  }
 
   factory EmploymentRecord.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final map = doc.data() ?? {};
@@ -60,14 +69,15 @@ class EmploymentRecord {
       industry: map['industry'] ?? '',
       employmentType: map['employmentType'] ?? '',
       salaryRange: map['salaryRange'],
-      dateHired: (map['dateHired'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      dateHired: _parseDate(map['dateHired']),
+      endDate: map['endDate'] != null ? _parseDate(map['endDate']) : null,
       country: map['country'] ?? '',
       province: map['province'],
       city: map['city'] ?? '',
       workSetup: WorkSetupX.fromString(map['workSetup'] ?? 'onSite'),
       jobDescription: map['jobDescription'],
-      isCurrent: map['isCurrent'] ?? true,
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isCurrent: map['isCurrent'] ?? (map['endDate'] == null),
+      createdAt: _parseDate(map['createdAt']),
     );
   }
 
@@ -79,6 +89,7 @@ class EmploymentRecord {
         'employmentType': employmentType,
         'salaryRange': salaryRange,
         'dateHired': Timestamp.fromDate(dateHired),
+        'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
         'country': country,
         'province': province,
         'city': city,
