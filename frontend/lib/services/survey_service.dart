@@ -63,6 +63,16 @@ class SurveyService {
         body: {'surveyId': surveyId, 'answers': answers});
     return Map<String, dynamic>.from(raw);
   }
+
+  Future<Map<String, dynamic>> fetchSurveyReport(String surveyId) async {
+    final raw = await _api.get('/api/surveys/$surveyId/reports');
+    return Map<String, dynamic>.from(raw);
+  }
+
+  Future<List<int>> fetchBatches() async {
+    final raw = await _api.get('/api/alumni/batches');
+    return (raw as List).map((e) => (e as num).toInt()).toList();
+  }
 }
 
 final surveyServiceProvider = Provider<SurveyService>(
@@ -80,4 +90,17 @@ final mySurveyResponsesProvider =
   final service = ref.watch(surveyServiceProvider);
   return service._api.poll(service.fetchMyResponses,
       interval: SurveyService.pollInterval);
+});
+
+/// Aggregated report for a specific survey (admin view).
+final surveyReportProvider =
+    FutureProvider.autoDispose.family<Map<String, dynamic>, String>(
+        (ref, surveyId) {
+  return ref.watch(surveyServiceProvider).fetchSurveyReport(surveyId);
+});
+
+/// Distinct graduation years from the alumni directory (for batch picker).
+final batchesProvider =
+    FutureProvider.autoDispose<List<int>>((ref) {
+  return ref.watch(surveyServiceProvider).fetchBatches();
 });

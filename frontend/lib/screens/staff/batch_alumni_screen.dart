@@ -291,7 +291,7 @@ Widget _verificationChip(bool verified) {
         const Icon(Icons.pending_outlined, size: 16, color: AppColors.warning),
       const SizedBox(width: 4),
       Text(verified ? 'Verified' : 'Pending',
-          style: const TextStyle(fontSize: 12)),
+          style: GoogleFonts.poppins(fontSize: 12)),
     ],
   );
 }
@@ -327,7 +327,7 @@ class _BatchAlumniTableSource extends DataTableSource {
               backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
               child: Text(
                 _initials(name),
-                style: const TextStyle(
+                style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: AppColors.bisuBlue700,
@@ -335,7 +335,7 @@ class _BatchAlumniTableSource extends DataTableSource {
               ),
             ),
             const SizedBox(width: 8),
-            Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ],
         )),
         DataCell(Text(user.alumniId ?? '—')),
@@ -399,7 +399,7 @@ class _BatchAlumniTile extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
           child: Text(_initials(name),
-              style: const TextStyle(
+              style: GoogleFonts.poppins(
                   color: AppColors.bisuBlue700, fontWeight: FontWeight.bold)),
         ),
         title: Row(
@@ -408,7 +408,7 @@ class _BatchAlumniTile extends StatelessWidget {
               child: Text(name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
             ),
             const SizedBox(width: 6),
             _verificationChip(verified),
@@ -472,7 +472,7 @@ class _ViewAlumniDialog extends StatelessWidget {
             radius: 24,
             backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
             child: Text(_initials(name),
-                style: const TextStyle(
+                style: GoogleFonts.poppins(
                     color: AppColors.bisuBlue700,
                     fontWeight: FontWeight.w700,
                     fontSize: 17)),
@@ -483,7 +483,7 @@ class _ViewAlumniDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(
+                    style: GoogleFonts.poppins(
                         fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 3),
                 _verificationChip(verified),
@@ -546,14 +546,14 @@ class _InfoRow extends StatelessWidget {
           SizedBox(
             width: 150,
             child: Text(label,
-                style: const TextStyle(
+                style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary)),
           ),
           Expanded(
             child: Text(value,
-                style: const TextStyle(
+                style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary)),

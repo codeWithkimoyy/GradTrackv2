@@ -390,7 +390,7 @@ class _ChatMessageBubble extends StatelessWidget {
                   ),
                   child: Text(
                     message.senderRole.toUpperCase(),
-                    style: const TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                       color: AppColors.teal,

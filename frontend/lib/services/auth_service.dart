@@ -25,7 +25,13 @@ class AuthService {
                 backendBaseUrl: (api ?? ApiClient()).baseUrl) {
     _controller = StreamController<AuthSession?>.broadcast(
       onListen: () {
-        if (_current != null) _controller.add(_current);
+        // Always emit the current session (even when null) so auth state
+        // providers resolve out of their initial "loading" state. Without a
+        // stored session the stream would otherwise never emit and the
+        // router's redirect would keep the app trapped on the splash screen.
+        scheduleMicrotask(() {
+          if (!_controller.isClosed) _controller.add(_current);
+        });
       },
     );
   }
@@ -74,14 +80,8 @@ class AuthService {
     }
   }
 
-  /// Resolves the login identifier: emails are used as-is; anything else is
-  /// treated as an Alumni ID and mapped to its synthesized login address.
-  static String resolveIdentifier(String value) {
-    final trimmed = value.trim();
-    if (trimmed.contains('@')) return trimmed;
-    return AppStrings.alumniEmailFromId(trimmed);
-  }
-
+  /// Reverse of the synthesized Alumni ID address: extracts the Alumni ID
+  /// from `<id>@gradtrack.bisu.edu.ph`, or null when the email is unrelated.
   static String? alumniIdFromEmail(String? email) {
     if (email == null) return null;
     const suffix = AppStrings.alumniEmailSuffix;

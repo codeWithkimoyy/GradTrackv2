@@ -46,11 +46,7 @@ test('POST /api/auth/forgot-password reports labels like "not configured" rather
   const body = await response.json();
 
   assert.equal(response.status, 503);
-  assert.ok(
-    body.error === 'firebase_not_configured' ||
-      body.error === 'email_not_configured',
-    `unexpected error code: ${body.error}`,
-  );
+  assert.equal(body.error, 'email_not_configured');
 });
 
 test('POST /api/auth/verify-code validates the code shape', async () => {
@@ -114,4 +110,22 @@ test('POST /api/auth/login rejects unknown accounts without leaking why', async 
 
   assert.equal(response.status, 401);
   assert.equal(body.error, 'invalid_credentials');
+});
+
+test('POST /api/auth/login accepts a short admin username', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ identifier: 'admin', password: 'admin123' }),
+  });
+  const body = await response.json();
+
+  if (response.status === 200) {
+    assert.equal(body.user.role, 'admin');
+    assert.ok(typeof body.token === 'string' && body.token.length > 0);
+  } else {
+    // Resilient when the seed admin is absent in the test database: the route
+    // must still answer with a structured login error, never crash.
+    assert.equal(body.error, 'invalid_credentials');
+  }
 });

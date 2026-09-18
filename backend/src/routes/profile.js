@@ -9,6 +9,7 @@ const router = express.Router();
 // Fields an alumni may edit on their own profile (mirrors the legacy
 // client-side editable set; role/disabled/approved stay admin-only).
 const editableFields = new Set([
+  'email',
   'fullName',
   'photoUrl',
   'studentNumber',
@@ -26,7 +27,12 @@ const editableFields = new Set([
   'academicYearGraduated',
 ]);
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 const columnFor = {
+  email: 'email',
   fullName: 'full_name',
   photoUrl: 'photo_url',
   studentNumber: 'student_number',
@@ -97,6 +103,27 @@ router.patch('/', async (request, response, next) => {
         error: 'no_editable_fields',
         message: 'The request does not contain editable profile fields.',
       });
+    }
+
+    if (changes.email !== undefined) {
+      const email = String(changes.email).trim().toLowerCase();
+      if (!isValidEmail(email)) {
+        return response.status(400).json({
+          error: 'invalid_email',
+          message: 'A valid email address is required.',
+        });
+      }
+      const existing = await mysql.query(
+        'SELECT id FROM users WHERE email = ? AND id <> ? AND is_deleted = 0 LIMIT 1',
+        [email, request.user.uid],
+      );
+      if (existing.length > 0) {
+        return response.status(409).json({
+          error: 'email_in_use',
+          message: 'This email address is already in use by another account.',
+        });
+      }
+      changes.email = email;
     }
 
     const sets = [];

@@ -32,9 +32,8 @@ test('GET /health reports a healthy service', async () => {
   assert.equal(response.status, 200);
   assert.equal(body.status, 'ok');
   assert.equal(body.service, 'gradtrack-backend');
-  assert.equal(typeof body.firebaseConfigured, 'boolean');
-  assert.equal(body.database, 'MySQL');
   assert.equal(typeof body.mysqlConfigured, 'boolean');
+  assert.equal(body.database, 'MySQL');
 });
 
 test('unknown routes return JSON 404', async () => {

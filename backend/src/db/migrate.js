@@ -7,6 +7,10 @@ const path = require('node:path');
 const mysql = require('mysql2/promise');
 require('../config/env');
 
+const REQUIRED_SURVEY_COLUMNS = [
+  ['visible_batches_json', 'JSON NULL'],
+];
+
 const REQUIRED_USER_COLUMNS = [
   ['password_hash', 'VARCHAR(255) NULL'],
   ['alumni_id', 'VARCHAR(64) NULL'],
@@ -111,6 +115,7 @@ async function main() {
       'employment_records',
       REQUIRED_EMPLOYMENT_COLUMNS,
     );
+    await ensureColumns(conn, database, 'surveys', REQUIRED_SURVEY_COLUMNS);
     for (const table of SOFT_DELETE_TABLES) {
       // eslint-disable-next-line no-await-in-loop
       await ensureColumns(conn, database, table, [

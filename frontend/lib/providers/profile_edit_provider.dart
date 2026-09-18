@@ -71,6 +71,7 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
     // backend rejects any alumni update that includes 'role' or 'disabled',
     // so sending them would fail the edit.
     final changes = <String, dynamic>{
+      'email': finalUser.email,
       'fullName': finalUser.fullName,
       'photoUrl': finalUser.photoUrl,
       'studentNumber': finalUser.studentNumber,

@@ -190,8 +190,30 @@ router.get('/survey-progress', async (req, res, next) => {
       req.user.role === 'admin' && req.query.userId
         ? String(req.query.userId)
         : req.user.uid;
+    // Alumni are scoped by batch, so the total only counts the surveys
+    // that user is actually able to see and answer.
+    const userRows = await mysql.query(
+      'SELECT role, graduation_year FROM users WHERE id = ? LIMIT 1',
+      [userId],
+    );
+    const user = userRows[0];
+    let surveySql =
+      'SELECT COUNT(*) AS c FROM surveys WHERE is_deleted = 0';
+    const surveyParams = [];
+    if (user && user.role === 'alumni') {
+      if (user.graduation_year === null || user.graduation_year === undefined) {
+        surveySql +=
+          ' AND (visible_batches_json IS NULL OR JSON_LENGTH(visible_batches_json) = 0)';
+      } else {
+        surveySql +=
+          ' AND (visible_batches_json IS NULL' +
+          ' OR JSON_LENGTH(visible_batches_json) = 0' +
+          ' OR JSON_CONTAINS(visible_batches_json, CAST(? AS JSON)))';
+        surveyParams.push(user.graduation_year);
+      }
+    }
     const [surveys, responses] = await Promise.all([
-      count('SELECT COUNT(*) AS c FROM surveys WHERE is_deleted = 0'),
+      count(surveySql, surveyParams),
       count(
         'SELECT COUNT(*) AS c FROM survey_responses WHERE user_id = ? AND is_deleted = 0',
         [userId],

@@ -191,8 +191,10 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                           backgroundColor: AppColors.primaryBlue,
                           child: Text(
                             (_selectedAlumniName ?? 'A').substring(0, 1).toUpperCase(),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 12),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -209,7 +211,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                               ),
                               Text(
                                 _selectedAlumniCourse ?? _selectedAlumniEmail ?? '',
-                                style: const TextStyle(
+                                style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   color: Colors.grey,
                                 ),
@@ -325,7 +327,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                       conv.alumniName.isNotEmpty
                           ? conv.alumniName[0].toUpperCase()
                           : 'A',
-                      style: const TextStyle(color: Colors.white),
+                      style: GoogleFonts.poppins(color: Colors.white),
                     ),
                   ),
                   title: Text(
@@ -341,7 +343,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                     conv.lastMessage,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: conv.unreadCountForAdmin > 0
                           ? FontWeight.w600
@@ -357,7 +359,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                     children: [
                       Text(
                         DateFormat.jm().format(conv.lastMessageTime),
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
                       ),
                       if (conv.unreadCountForAdmin > 0) ...[
                         const SizedBox(height: 4),
@@ -370,7 +372,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                           ),
                           child: Text(
                             '${conv.unreadCountForAdmin}',
-                            style: const TextStyle(
+                            style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -416,9 +418,9 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Click on any conversation from the list to view and reply.',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
           ),
         ],
       ),
@@ -449,7 +451,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                 backgroundColor: AppColors.primaryBlue,
                 child: Text(
                   (_selectedAlumniName ?? 'A')[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
                 ),
               ),
               const SizedBox(width: 12),
@@ -466,7 +468,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
                     ),
                     Text(
                       '${_selectedAlumniCourse ?? 'Program not set'} · ${_selectedAlumniEmail ?? ''}',
-                      style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+                      style: GoogleFonts.poppins(fontSize: 11.5, color: Colors.grey),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

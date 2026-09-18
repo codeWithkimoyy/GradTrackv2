@@ -3,7 +3,6 @@ const express = require('express');
 const helmet = require('helmet');
 
 const env = require('./config/env');
-const { hasFirebaseCredentials } = require('./config/firebase');
 const { isConnected: isMySQLConnected } = require('./config/mysql');
 const profileRouter = require('./routes/profile');
 const uploadRouter = require('./routes/upload');
@@ -44,7 +43,6 @@ app.get('/health', (_request, response) => {
   response.json({
     status: 'ok',
     service: 'gradtrack-backend',
-    firebaseConfigured: hasFirebaseCredentials,
     mysqlConfigured: isMySQLConnected,
     database: 'MySQL',
   });

@@ -275,7 +275,7 @@ class _LandingHero extends StatelessWidget {
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/images/Splash3.jpeg',
+              'assets/images/Splash.jpg',
               fit: BoxFit.cover,
             ),
           ),

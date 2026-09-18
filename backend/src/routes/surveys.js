@@ -33,6 +33,7 @@ function toSurvey(row) {
       row.target_graduation_year === undefined
         ? null
         : Number(row.target_graduation_year),
+    visibleBatches: parseJson(row.visible_batches_json, []),
     questions: parseJson(row.questions_json, []),
     visibility: row.visibility ?? 'public',
     isActive: row.is_active === 1,
@@ -40,6 +41,14 @@ function toSurvey(row) {
     createdAt: iso(row.created_at) ?? new Date().toISOString(),
     updatedAt: iso(row.updated_at),
   };
+}
+
+function parseBatches(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => Number(v))
+    .filter((n) => Number.isFinite(n) && Number.isInteger(n))
+    .sort((a, b) => b - a);
 }
 
 function toResponse(row) {
@@ -62,6 +71,21 @@ router.get('/', async (req, res, next) => {
     if (req.query.visibility === 'public') {
       sql += ' AND visibility = ?';
       params.push('public');
+    }
+    // Alumni are scoped by batch: a survey with no batch restriction is open
+    // to everyone, otherwise only matching graduation years may answer it.
+    if (req.user.role === 'alumni') {
+      if (req.user.graduationYear) {
+        sql +=
+          ' AND (visible_batches_json IS NULL' +
+          ' OR JSON_LENGTH(visible_batches_json) = 0' +
+          ' OR JSON_CONTAINS(visible_batches_json, CAST(? AS JSON)))';
+        params.push(req.user.graduationYear);
+      } else {
+        sql +=
+          ' AND (visible_batches_json IS NULL' +
+          ' OR JSON_LENGTH(visible_batches_json) = 0)';
+      }
     }
     sql += ' ORDER BY created_at DESC';
     const rows = await mysql.query(sql, params);
@@ -89,9 +113,9 @@ router.post('/', requireAdmin, async (req, res, next) => {
         : [];
     await mysql.query(
       `INSERT INTO surveys
-         (id, title, description, target_graduation_year, questions_json,
-          visibility, is_active, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, title, description, target_graduation_year, visible_batches_json,
+          questions_json, visibility, is_active, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         String(body.title).trim(),
@@ -100,6 +124,7 @@ router.post('/', requireAdmin, async (req, res, next) => {
         body.targetGraduationYear === null
           ? null
           : Number(body.targetGraduationYear),
+        JSON.stringify(parseBatches(body.visibleBatches)),
         JSON.stringify(questions),
         body.visibility === 'private' ? 'private' : 'public',
         body.isActive === false ? 0 : 1,
@@ -150,6 +175,10 @@ router.patch('/:id', requireAdmin, async (req, res, next) => {
           ? null
           : Number(body.targetGraduationYear),
       );
+    }
+    if (Array.isArray(body.visibleBatches)) {
+      sets.push('visible_batches_json = ?');
+      params.push(JSON.stringify(parseBatches(body.visibleBatches)));
     }
     if (sets.length === 0) {
       return res.status(400).json({
@@ -224,6 +253,120 @@ router.get('/:id/responses', requireAdmin, async (req, res, next) => {
   }
 });
 
+// GET /api/surveys/:id/reports (admin) — aggregated per-question analytics
+router.get('/:id/reports', requireAdmin, async (req, res, next) => {
+  try {
+    const surveys = await mysql.query(
+      'SELECT * FROM surveys WHERE id = ? AND is_deleted = 0 LIMIT 1',
+      [req.params.id],
+    );
+    if (surveys.length === 0) {
+      return res.status(404).json({
+        error: 'not_found',
+        message: 'No survey exists with that id.',
+      });
+    }
+    const survey = surveys[0];
+    const questions = parseJson(survey.questions_json, []);
+
+    const rows = await mysql.query(
+      `SELECT r.answers_json, u.graduation_year
+       FROM survey_responses r
+       LEFT JOIN users u ON u.id = r.user_id
+       WHERE r.survey_id = ? AND r.is_deleted = 0`,
+      [req.params.id],
+    );
+
+    const totalResponses = rows.length;
+
+    const questionReports = questions.map((q) => {
+      const qId = (q.id ?? '').toString();
+      const type = q.type ?? 'text';
+      const text = q.text ?? '';
+
+      if (type === 'choice') {
+        const counts = new Map();
+        for (const row of rows) {
+          const answers = parseJson(row.answers_json, {});
+          const val =
+            typeof answers[qId] === 'string' ? answers[qId].trim() : '';
+          if (!val) continue;
+          counts.set(val, (counts.get(val) ?? 0) + 1);
+        }
+        const seen = new Set();
+        const options = [];
+        for (const opt of (Array.isArray(q.options) ? q.options : [])) {
+          const key = String(opt).trim();
+          const count = counts.get(key) ?? 0;
+          seen.add(key);
+          options.push({
+            value: key,
+            count,
+            percentage:
+              totalResponses === 0
+                ? 0
+                : Math.round((count / totalResponses) * 1000) / 10,
+          });
+        }
+        for (const [key, count] of counts.entries()) {
+          if (seen.has(key)) continue;
+          options.push({
+            value: key,
+            count,
+            percentage:
+              totalResponses === 0
+                ? 0
+                : Math.round((count / totalResponses) * 1000) / 10,
+          });
+        }
+        return { id: qId, text, type: 'choice', options };
+      }
+
+      // Text questions — collect non-empty answers.
+      const answers = [];
+      for (const row of rows) {
+        const answersMap = parseJson(row.answers_json, {});
+        const val = answersMap[qId];
+        if (typeof val === 'string' && val.trim()) answers.push(val.trim());
+      }
+      const totalAnswered = answers.length;
+      const capped = answers.length > 50 ? answers.slice(0, 50) : answers;
+      return {
+        id: qId,
+        text,
+        type: 'text',
+        responses: capped,
+        more: answers.length - capped.length,
+        totalAnswered,
+      };
+    });
+
+    // Batch breakdown — group responses by respondent graduation year.
+    const batchMap = new Map();
+    for (const row of rows) {
+      const y =
+        row.graduation_year === null || row.graduation_year === undefined
+          ? null
+          : Number(row.graduation_year);
+      batchMap.set(y, (batchMap.get(y) ?? 0) + 1);
+    }
+    const batchBreakdown = [...batchMap.entries()]
+      .map(([year, count]) => ({ year, count }))
+      .sort((a, b) => (b.year ?? -1) - (a.year ?? -1));
+
+    return res.json({
+      surveyId: survey.id,
+      title: survey.title,
+      description: survey.description ?? null,
+      totalResponses,
+      questions: questionReports,
+      batchBreakdown,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 // GET /api/surveys/responses/mine
 router.get('/responses/mine', async (req, res, next) => {
   try {
@@ -248,7 +391,7 @@ router.post('/responses', async (req, res, next) => {
       });
     }
     const surveys = await mysql.query(
-      'SELECT id FROM surveys WHERE id = ? AND is_deleted = 0 LIMIT 1',
+      'SELECT id, visible_batches_json FROM surveys WHERE id = ? AND is_deleted = 0 LIMIT 1',
       [body.surveyId],
     );
     if (surveys.length === 0) {
@@ -256,6 +399,21 @@ router.post('/responses', async (req, res, next) => {
         error: 'survey_not_found',
         message: 'No survey exists with that id.',
       });
+    }
+    if (req.user.role === 'alumni') {
+      const restricted = parseBatches(parseJson(surveys[0].visible_batches_json, []));
+      if (restricted.length > 0) {
+        const inBatch =
+          req.user.graduationYear !== null &&
+          req.user.graduationYear !== undefined &&
+          restricted.includes(Number(req.user.graduationYear));
+        if (!inBatch) {
+          return res.status(403).json({
+            error: 'batch_restricted',
+            message: 'This survey is only open to selected batches.',
+          });
+        }
+      }
     }
     const answers =
       body.answers !== undefined && body.answers !== null ? body.answers : {};

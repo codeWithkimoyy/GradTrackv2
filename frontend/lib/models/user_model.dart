@@ -289,6 +289,7 @@ this.studentNumber,
       hasBase64Photo ? base64Decode(photoUrl!.split(',').last) : null;
 
   UserModel copyWith({
+    String? email,
     String? fullName,
     String? photoUrl,
     String? studentNumber,
@@ -314,7 +315,7 @@ this.studentNumber,
   }) {
     return UserModel(
       uid: uid,
-      email: email,
+      email: email ?? this.email,
       fullName: fullName ?? this.fullName,
       role: role,
       photoUrl: photoUrl ?? this.photoUrl,

@@ -161,6 +161,7 @@ CREATE TABLE IF NOT EXISTS surveys (
   title VARCHAR(255) NOT NULL,
   description TEXT,
   target_graduation_year INT NULL,
+  visible_batches_json JSON NULL,
   questions_json JSON NOT NULL,
   visibility ENUM('public', 'private') DEFAULT 'public',
   is_active TINYINT(1) NOT NULL DEFAULT 1,

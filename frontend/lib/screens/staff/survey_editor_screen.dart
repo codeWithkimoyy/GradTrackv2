@@ -46,6 +46,7 @@ class _SurveyEditorScreenState extends ConsumerState<SurveyEditorScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _visibility = 'public';
+  final Set<int> _visibleBatches = {};
   final List<_QuestionDraft> _questions = [];
   int _idCounter = 1;
   bool _saving = false;
@@ -59,6 +60,15 @@ class _SurveyEditorScreenState extends ConsumerState<SurveyEditorScreen> {
     _titleController.text = data['title']?.toString() ?? '';
     _descriptionController.text = data['description']?.toString() ?? '';
     _visibility = data['visibility']?.toString() ?? 'public';
+    final rawBatches = data['visibleBatches'];
+    if (rawBatches is List) {
+      _visibleBatches.addAll(
+        rawBatches
+            .whereType<num>()
+            .map((e) => e.toInt())
+            .where((y) => y > 0),
+      );
+    }
 
     final raw = data['questions'];
     if (raw is List) {
@@ -162,6 +172,7 @@ class _SurveyEditorScreenState extends ConsumerState<SurveyEditorScreen> {
           ? null
           : _descriptionController.text.trim(),
       'visibility': _visibility,
+      'visibleBatches': [..._visibleBatches]..sort((a, b) => b.compareTo(a)),
       'questions': questionsData,
     };
 
@@ -187,6 +198,94 @@ class _SurveyEditorScreenState extends ConsumerState<SurveyEditorScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Widget _buildBatchPicker(bool isDark) {
+    final batchesAsync = ref.watch(batchesProvider);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.groups_outlined,
+                    size: 20, color: AppColors.primaryBlue),
+                SizedBox(width: 8),
+                Text('Visible to Batches',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _visibleBatches.isEmpty
+                  ? 'All batches can see and answer this survey.'
+                  : 'Only the selected batches can see and answer it.',
+              style: TextStyle(
+                  color: isDark ? Colors.white60 : Colors.black54,
+                  fontSize: 12.5),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            batchesAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                    child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))),
+              ),
+              error: (_, __) => Text(
+                'Batch list could not be loaded.',
+                style: TextStyle(
+                    color: isDark ? Colors.white60 : Colors.black54),
+              ),
+              data: (batches) {
+                if (batches.isEmpty) {
+                  return Text(
+                    'No alumni batches recorded yet.',
+                    style: TextStyle(
+                        color: isDark ? Colors.white60 : Colors.black54),
+                  );
+                }
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: batches.map((year) {
+                    final selected = _visibleBatches.contains(year);
+                    return FilterChip(
+                      avatar: selected
+                          ? const Icon(Icons.check, size: 16)
+                          : null,
+                      label: Text('$year'),
+                      selected: selected,
+                      onSelected: (value) => setState(() {
+                        if (value) {
+                          _visibleBatches.add(year);
+                        } else {
+                          _visibleBatches.remove(year);
+                        }
+                      }),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+            if (_visibleBatches.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              TextButton.icon(
+                onPressed: () =>
+                    setState(() => _visibleBatches.clear()),
+                icon: const Icon(Icons.clear_rounded, size: 16),
+                label: const Text('Clear selection (allow all)'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildQuestionCard(int index, _QuestionDraft q) {
@@ -328,6 +427,8 @@ class _SurveyEditorScreenState extends ConsumerState<SurveyEditorScreen> {
               ],
               onChanged: (v) => setState(() => _visibility = v ?? 'public'),
             ),
+            const SizedBox(height: AppSpacing.md),
+            _buildBatchPicker(isDark),
             const SizedBox(height: AppSpacing.lg),
             const Text('Questions',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
