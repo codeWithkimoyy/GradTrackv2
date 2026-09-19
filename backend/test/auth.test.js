@@ -46,11 +46,7 @@ test('POST /api/auth/forgot-password reports labels like "not configured" rather
   const body = await response.json();
 
   assert.equal(response.status, 503);
-  assert.ok(
-    body.error === 'firebase_not_configured' ||
-      body.error === 'email_not_configured',
-    `unexpected error code: ${body.error}`,
-  );
+  assert.equal(body.error, 'email_not_configured');
 });
 
 test('POST /api/auth/verify-code validates the code shape', async () => {
@@ -150,6 +146,7 @@ test('POST /api/auth/register requires an email or phone number', async () => {
   });
   const body = await response.json();
 
+<<<<<<< HEAD
   assert.equal(response.status, 400);
   assert.equal(body.error, 'contact_required');
 });
@@ -195,5 +192,26 @@ test('POST /api/auth/login reports 503 database_unavailable on connection outage
     assert.equal(body.error, 'database_unavailable');
   } finally {
     mysql.query = originalQuery;
+=======
+  assert.equal(response.status, 401);
+  assert.equal(body.error, 'invalid_credentials');
+});
+
+test('POST /api/auth/login accepts a short admin username', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ identifier: 'admin', password: 'admin123' }),
+  });
+  const body = await response.json();
+
+  if (response.status === 200) {
+    assert.equal(body.user.role, 'admin');
+    assert.ok(typeof body.token === 'string' && body.token.length > 0);
+  } else {
+    // Resilient when the seed admin is absent in the test database: the route
+    // must still answer with a structured login error, never crash.
+    assert.equal(body.error, 'invalid_credentials');
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
   }
 });

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 import 'config/app_theme.dart';
@@ -15,6 +16,11 @@ import 'services/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Use the Poppins font files bundled in the app (assets/fonts) instead of
+  // fetching them from the network at runtime, so every screen renders the
+  // same font even offline.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   try {
     await dotenv.load(fileName: 'assets/.env');

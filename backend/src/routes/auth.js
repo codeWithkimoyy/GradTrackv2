@@ -199,10 +199,14 @@ router.post('/register', async (request, response, next) => {
 
       const loginEmail = alumniEmailFromId(alumniId).toLowerCase();
       const existing = await mysql.query(
-        'SELECT id, is_deleted FROM users WHERE email = ? OR alumni_id = ? LIMIT 1',
+        'SELECT id, is_deleted, disabled FROM users WHERE email = ? OR alumni_id = ? LIMIT 1',
         [loginEmail, alumniId],
       );
-      if (existing.length > 0 && existing[0].is_deleted !== 1) {
+      if (
+        existing.length > 0 &&
+        existing[0].is_deleted !== 1 &&
+        existing[0].disabled !== 1
+      ) {
         return response.status(409).json({
           error: 'already_registered',
           message: 'This Alumni ID is already registered. Please sign in.',
@@ -377,12 +381,20 @@ router.post('/login', async (request, response, next) => {
         'SELECT * FROM users WHERE alumni_id = ? AND is_deleted = 0 LIMIT 1',
         [identifier],
       );
+      // Administrators sign in with a short username (e.g. "admin")
+      // matched against the local part of their email address.
+      if (rows.length === 0) {
+        rows = await mysql.query(
+          "SELECT * FROM users WHERE role = 'admin' AND is_deleted = 0 AND LOWER(email) LIKE CONCAT(LOWER(?), '@%') LIMIT 1",
+          [identifier],
+        );
+      }
     }
     const user = rows[0];
     if (!user) {
       return response.status(401).json({
         error: 'invalid_credentials',
-        message: 'Invalid email or password.',
+        message: 'Invalid credentials.',
       });
     }
     if (!(await passwords.verifyPassword(password, user.password_hash))) {

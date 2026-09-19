@@ -5,6 +5,7 @@ const authenticate = require('../middleware/authenticate');
 const { requireAdmin } = authenticate;
 const mysql = require('../config/mysql');
 const passwords = require('../config/passwords');
+const cipher = require('../config/messageCipher');
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ function toConversation(row) {
         : typeof row.participant_ids_json === 'object'
           ? row.participant_ids_json
           : JSON.parse(row.participant_ids_json),
-    lastMessage: row.last_message ?? '',
+    lastMessage: cipher.decrypt(row.last_message ?? ''),
     lastMessageTime: iso(row.last_message_time) ?? new Date().toISOString(),
     lastSenderId: row.last_sender_id ?? '',
     unreadCountForAdmin: Number(row.unread_admin ?? 0),
@@ -43,8 +44,12 @@ function toMessage(row) {
     senderId: row.sender_id ?? '',
     senderName: row.sender_name ?? 'User',
     senderRole: row.sender_role ?? 'alumni',
+<<<<<<< HEAD
     text: row.text ?? '',
     imageUrl: row.image_url ?? null,
+=======
+    text: cipher.decrypt(row.text ?? ''),
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
     timestamp: iso(row.created_at) ?? new Date().toISOString(),
     isRead: row.is_read === 1,
   };
@@ -82,13 +87,29 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// A participant may only ever touch their own thread (conv_<alumniId>).
+// Admins may access every thread.
+function canAccessConversation(user, conversationId) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const alumniId = user.alumniId;
+  return Boolean(alumniId) && conversationId === `conv_${alumniId}`;
+}
+
 // GET /api/conversations/:id
 router.get('/:id', async (req, res, next) => {
   try {
+<<<<<<< HEAD
     if (!isOwnConversation(req.user, req.params.id)) {
       return res.status(403).json({
         error: 'forbidden',
         message: 'You can only read your own conversation.',
+=======
+    if (!canAccessConversation(req.user, req.params.id)) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'You do not have access to this conversation.',
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
       });
     }
     const rows = await mysql.query(
@@ -105,10 +126,17 @@ router.get('/:id', async (req, res, next) => {
 // GET /api/conversations/:id/messages
 router.get('/:id/messages', async (req, res, next) => {
   try {
+<<<<<<< HEAD
     if (!isOwnConversation(req.user, req.params.id)) {
       return res.status(403).json({
         error: 'forbidden',
         message: 'You can only read your own conversation.',
+=======
+    if (!canAccessConversation(req.user, req.params.id)) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'You do not have access to this conversation.',
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
       });
     }
     const rows = await mysql.query(
@@ -180,6 +208,7 @@ router.post('/:id/messages', async (req, res, next) => {
       : [alumniId, 'admin'];
 
     const now = passwords.utcNowSql();
+    const encryptedText = cipher.encrypt(text);
     // Upsert the conversation header FIRST: messages carry a foreign key
     // to it, so the header must exist before the message row is written.
     await mysql.query(
@@ -207,7 +236,11 @@ router.post('/:id/messages', async (req, res, next) => {
         alumniEmail,
         alumniCourse,
         JSON.stringify(participantIds),
+<<<<<<< HEAD
         previewText,
+=======
+        encryptedText,
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
         now,
         req.user.uid,
         isAdmin ? 0 : 1,
@@ -242,8 +275,12 @@ router.post('/:id/messages', async (req, res, next) => {
         isAdmin ? alumniId : 'admin',
         req.user.uid,
         JSON.stringify(participantIds),
+<<<<<<< HEAD
         previewText,
         imageUrl || null,
+=======
+        encryptedText,
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
       ],
     );
 
@@ -258,19 +295,27 @@ router.post('/:id/messages', async (req, res, next) => {
           await mysql.query(
             `INSERT INTO notifications
                (id, user_id, recipient_role, type, title, description, priority, link)
+<<<<<<< HEAD
              VALUES (?, ?, 'alumni', 'system', 'New message from the Alumni Office', ?, 'medium', '/alumni/messages')`,
             [crypto.randomUUID(), targets[0].id, previewText],
+=======
+             VALUES (?, ?, 'alumni', 'system', 'New message from the Alumni Office', 'You have a new message. Open the Messages tab to read it.', 'medium', '/alumni/messages')`,
+            [crypto.randomUUID(), targets[0].id],
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
           );
         }
       } else {
         await mysql.query(
           `INSERT INTO notifications
              (id, user_id, recipient_role, type, title, description, priority, link)
-           VALUES (?, NULL, 'admin', 'system', ?, ?, 'medium', ?)`,
+           VALUES (?, NULL, 'admin', 'system', ?, 'You have a new message. Open the Messages tab to read it.', 'medium', ?)`,
           [
             crypto.randomUUID(),
             `New message from ${alumniName}`,
+<<<<<<< HEAD
             previewText,
+=======
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
             `/admin/messages?alumniId=${encodeURIComponent(alumniId)}&name=${encodeURIComponent(alumniName)}&email=${encodeURIComponent(alumniEmail)}&course=${encodeURIComponent(alumniCourse ?? '')}`,
           ],
         );
@@ -293,6 +338,7 @@ router.post('/:id/messages', async (req, res, next) => {
 // clear their own thread — the flag is derived from the role, never the body)
 router.patch('/:id/read', async (req, res, next) => {
   try {
+<<<<<<< HEAD
     const isAdmin = req.user.role === 'admin';
     if (!isAdmin && !isOwnConversation(req.user, req.params.id)) {
       return res.status(403).json({
@@ -300,6 +346,16 @@ router.patch('/:id/read', async (req, res, next) => {
         message: 'You can only read your own conversation.',
       });
     }
+=======
+    if (!canAccessConversation(req.user, req.params.id)) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'You do not have access to this conversation.',
+      });
+    }
+    const isAdmin =
+      req.body?.isAdmin === true || req.user.role === 'admin';
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
     await mysql.query(
       isAdmin
         ? 'UPDATE conversations SET unread_admin = 0 WHERE id = ?'

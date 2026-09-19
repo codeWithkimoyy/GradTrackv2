@@ -1,4 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'package:fl_chart/fl_chart.dart' deferred as fl_chart;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,17 +26,69 @@ class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen(
       {super.key, this.adminMode = false, this.hideAppBar = false});
 
+  /// Charts live in a deferred library so the first paint never pays for
+  /// the charting code. The gate below loads it on demand.
+  static Future<void>? _chartsFuture;
+  static Future<void> _ensureCharts() =>
+      _chartsFuture ??= fl_chart.loadLibrary();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(staffStatsProvider);
 
     return Scaffold(
+<<<<<<< HEAD
       appBar: hideAppBar
           ? null
           : AppBar(
               title:
                   Text(adminMode ? 'System Analytics' : 'Alumni Analytics')),
       body: statsAsync.when(
+=======
+      appBar: AppBar(title: Text(adminMode ? 'System Analytics' : 'Alumni Analytics')),
+      body: FutureBuilder<void>(
+        future: _ensureCharts(),
+        builder: (context, charts) {
+          if (charts.connectionState != ConnectionState.done) {
+            return ListView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: const [
+                SkeletonCard(height: 88),
+                SizedBox(height: AppSpacing.md),
+                SkeletonCard(height: 260),
+                SizedBox(height: AppSpacing.md),
+                SkeletonCard(height: 260),
+              ],
+            );
+          }
+          if (charts.hasError) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text(
+                  'Charts could not be loaded right now.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+          return _AnalyticsBody(adminMode: adminMode, statsAsync: statsAsync);
+        },
+      ),
+    );
+  }
+}
+
+class _AnalyticsBody extends StatelessWidget {
+  final bool adminMode;
+  final AsyncValue<DashboardStats> statsAsync;
+
+  const _AnalyticsBody({required this.adminMode, required this.statsAsync});
+
+  @override
+  Widget build(BuildContext context) {
+    return statsAsync.when(
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
         data: (stats) => ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
@@ -95,8 +147,7 @@ class AnalyticsScreen extends ConsumerWidget {
                 textAlign: TextAlign.center),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildRoleChart(BuildContext context, DashboardStats stats) {
@@ -108,17 +159,17 @@ class AnalyticsScreen extends ConsumerWidget {
       title: 'Users by Role',
       child: SizedBox(
         height: 210,
-        child: BarChart(
-          BarChartData(
+        child: fl_chart.BarChart(
+          fl_chart.BarChartData(
             maxY: _maxY([for (final i in items) i.$2]),
-            gridData: const FlGridData(show: false),
-            borderData: FlBorderData(show: false),
-            titlesData: FlTitlesData(
-              leftTitles: const AxisTitles(),
-              topTitles: const AxisTitles(),
-              rightTitles: const AxisTitles(),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
+            gridData: fl_chart.FlGridData(show: false),
+            borderData: fl_chart.FlBorderData(show: false),
+            titlesData: fl_chart.FlTitlesData(
+              leftTitles: fl_chart.AxisTitles(),
+              topTitles: fl_chart.AxisTitles(),
+              rightTitles: fl_chart.AxisTitles(),
+              bottomTitles: fl_chart.AxisTitles(
+                sideTitles: fl_chart.SideTitles(
                   showTitles: true,
                   getTitlesWidget: (v, m) => _bottomLabel(
                       v, m, [for (final i in items) i.$1]),
@@ -127,8 +178,8 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
             barGroups: [
               for (var i = 0; i < items.length; i++)
-                BarChartGroupData(x: i, barRods: [
-                  BarChartRodData(
+                fl_chart.BarChartGroupData(x: i, barRods: [
+                  fl_chart.BarChartRodData(
                     toY: items[i].$2,
                     color: items[i].$3,
                     width: 26,
@@ -154,17 +205,17 @@ class AnalyticsScreen extends ConsumerWidget {
       title: 'Employment Status (Alumni)',
       child: SizedBox(
         height: 210,
-        child: BarChart(
-          BarChartData(
+        child: fl_chart.BarChart(
+          fl_chart.BarChartData(
             maxY: _maxY([for (final i in items) i.$2]),
-            gridData: const FlGridData(show: false),
-            borderData: FlBorderData(show: false),
-            titlesData: FlTitlesData(
-              leftTitles: const AxisTitles(),
-              topTitles: const AxisTitles(),
-              rightTitles: const AxisTitles(),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
+            gridData: fl_chart.FlGridData(show: false),
+            borderData: fl_chart.FlBorderData(show: false),
+            titlesData: fl_chart.FlTitlesData(
+              leftTitles: fl_chart.AxisTitles(),
+              topTitles: fl_chart.AxisTitles(),
+              rightTitles: fl_chart.AxisTitles(),
+              bottomTitles: fl_chart.AxisTitles(
+                sideTitles: fl_chart.SideTitles(
                   showTitles: true,
                   getTitlesWidget: (v, m) => _bottomLabel(
                       v, m, [for (final i in items) i.$1]),
@@ -173,8 +224,8 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
             barGroups: [
               for (var i = 0; i < items.length; i++)
-                BarChartGroupData(x: i, barRods: [
-                  BarChartRodData(
+                fl_chart.BarChartGroupData(x: i, barRods: [
+                  fl_chart.BarChartRodData(
                     toY: items[i].$2,
                     color: items[i].$3,
                     width: 26,
@@ -271,7 +322,7 @@ class _TrendCard extends StatelessWidget {
     final hasData = points.any((p) => p.count > 0);
     final spots = [
       for (var i = 0; i < points.length; i++)
-        FlSpot(i.toDouble(), points[i].count.toDouble()),
+        fl_chart.FlSpot(i.toDouble(), points[i].count.toDouble()),
     ];
 
     return _ChartCard(
@@ -296,24 +347,24 @@ class _TrendCard extends StatelessWidget {
           SizedBox(
             height: 190,
             child: hasData
-                ? LineChart(
-                    LineChartData(
+                ? fl_chart.LineChart(
+                    fl_chart.LineChartData(
                       minX: 0,
                       maxX: 11,
                       minY: 0,
                       maxY: _maxY(),
                       lineBarsData: [
-                        LineChartBarData(
+                        fl_chart.LineChartBarData(
                           spots: spots,
                           isCurved: true,
                           curveSmoothness: 0.35,
                           preventCurveOverShooting: true,
                           barWidth: 3,
                           color: color,
-                          dotData: FlDotData(
+                          dotData: fl_chart.FlDotData(
                             show: true,
                             getDotPainter: (spot, percent, bar, index) =>
-                                FlDotCirclePainter(
+                                fl_chart.FlDotCirclePainter(
                               radius: spots.length <= 12 ? 3.2 : 2,
                               color: color,
                               strokeColor: Theme.of(context)
@@ -322,17 +373,17 @@ class _TrendCard extends StatelessWidget {
                               strokeWidth: 1.5,
                             ),
                           ),
-                          belowBarData: BarAreaData(
+                          belowBarData: fl_chart.BarAreaData(
                             show: true,
                             color: color.withValues(alpha: 0.12),
                           ),
                         ),
                       ],
-                      gridData: FlGridData(
+                      gridData: fl_chart.FlGridData(
                         show: true,
                         drawVerticalLine: false,
                         horizontalInterval: _gridInterval(),
-                        getDrawingHorizontalLine: (v) => FlLine(
+                        getDrawingHorizontalLine: (v) => fl_chart.FlLine(
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
@@ -340,12 +391,12 @@ class _TrendCard extends StatelessWidget {
                           strokeWidth: 1,
                         ),
                       ),
-                      borderData: FlBorderData(show: false),
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(),
-                        rightTitles: const AxisTitles(),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
+                      borderData: fl_chart.FlBorderData(show: false),
+                      titlesData: fl_chart.FlTitlesData(
+                        topTitles: fl_chart.AxisTitles(),
+                        rightTitles: fl_chart.AxisTitles(),
+                        leftTitles: fl_chart.AxisTitles(
+                          sideTitles: fl_chart.SideTitles(
                             showTitles: true,
                             reservedSize: 28,
                             interval: _gridInterval(),
@@ -355,8 +406,8 @@ class _TrendCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
+                        bottomTitles: fl_chart.AxisTitles(
+                          sideTitles: fl_chart.SideTitles(
                             showTitles: true,
                             reservedSize: 24,
                             interval: 2,
@@ -382,13 +433,13 @@ class _TrendCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      lineTouchData: LineTouchData(
-                        touchTooltipData: LineTouchTooltipData(
+                      lineTouchData: fl_chart.LineTouchData(
+                        touchTooltipData: fl_chart.LineTouchTooltipData(
                           getTooltipColor: (_) =>
                               Theme.of(context).colorScheme.surface,
                           getTooltipItems: (spots) => [
                             for (final spot in spots)
-                              LineTooltipItem(
+                              fl_chart.LineTooltipItem(
                                 '${spot.y.toInt()}',
                                 GoogleFonts.poppins(
                                   fontSize: 12,
@@ -481,18 +532,18 @@ class _EmploymentByYearChart extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           SizedBox(
             height: 230,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
+            child: fl_chart.BarChart(
+              fl_chart.BarChartData(
+                alignment: fl_chart.BarChartAlignment.spaceAround,
                 maxY: _maxY(recent),
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(),
-                  topTitles: const AxisTitles(),
-                  rightTitles: const AxisTitles(),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
+                gridData: fl_chart.FlGridData(show: false),
+                borderData: fl_chart.FlBorderData(show: false),
+                titlesData: fl_chart.FlTitlesData(
+                  leftTitles: fl_chart.AxisTitles(),
+                  topTitles: fl_chart.AxisTitles(),
+                  rightTitles: fl_chart.AxisTitles(),
+                  bottomTitles: fl_chart.AxisTitles(
+                    sideTitles: fl_chart.SideTitles(
                       showTitles: true,
                       reservedSize: 30,
                       getTitlesWidget: (v, m) {
@@ -520,17 +571,17 @@ class _EmploymentByYearChart extends StatelessWidget {
                 ),
                 barGroups: [
                   for (var i = 0; i < recent.length; i++)
-                    BarChartGroupData(
+                    fl_chart.BarChartGroupData(
                       x: i,
                       barsSpace: 3,
                       barRods: [
-                        BarChartRodData(
+                        fl_chart.BarChartRodData(
                           toY: recent[i].employedCount.toDouble(),
                           color: AppColors.success,
                           width: 14,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        BarChartRodData(
+                        fl_chart.BarChartRodData(
                           toY: recent[i].total.toDouble(),
                           color: Theme.of(context)
                               .colorScheme
@@ -542,14 +593,14 @@ class _EmploymentByYearChart extends StatelessWidget {
                       ],
                     ),
                 ],
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
+                barTouchData: fl_chart.BarTouchData(
+                  touchTooltipData: fl_chart.BarTouchTooltipData(
                     getTooltipColor: (_) =>
                         Theme.of(context).colorScheme.surface,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final e = recent[groupIndex];
                       if (rodIndex == 0) {
-                        return BarTooltipItem(
+                        return fl_chart.BarTooltipItem(
                           '${e.employedCount}/${e.total} working\n${e.rate.toStringAsFixed(0)}% employed',
                           GoogleFonts.poppins(
                             fontSize: 11,
@@ -558,7 +609,7 @@ class _EmploymentByYearChart extends StatelessWidget {
                           ),
                         );
                       }
-                      return BarTooltipItem(
+                      return fl_chart.BarTooltipItem(
                         '${e.total} graduates',
                         GoogleFonts.poppins(
                           fontSize: 11,
@@ -591,7 +642,7 @@ class _EmploymentByYearChart extends StatelessWidget {
   }
 }
 
-Widget _bottomLabel(double value, TitleMeta meta, List<String> labels) {
+  Widget _bottomLabel(double value, dynamic meta, List<String> labels) {
   final index = value.toInt();
   if (index < 0 || index >= labels.length) return const SizedBox.shrink();
   return Padding(

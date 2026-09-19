@@ -64,6 +64,21 @@ router.get('/registry/:alumniId', async (req, res, next) => {
 
 router.use(authenticate);
 
+// GET /api/alumni/batches (admin) — graduation-year buckets for survey batch targeting.
+router.get('/batches', requireAdmin, async (req, res, next) => {
+  try {
+    const rows = await mysql.query(
+      `SELECT DISTINCT graduation_year AS yr
+       FROM users
+       WHERE role = 'alumni' AND is_deleted = 0 AND graduation_year IS NOT NULL
+       ORDER BY graduation_year DESC`,
+    );
+    return res.json(rows.map((r) => Number(r.yr)));
+  } catch (err) {
+    return next(err);
+  }
+});
+
 // GET /api/alumni - List alumni with course and graduation filters
 router.get('/', async (req, res, next) => {
   try {
@@ -399,6 +414,7 @@ router.post('/registry', requireAdmin, async (req, res, next) => {
       await mysql.query(
         `UPDATE alumni_registry SET full_name = ?, course = ?,
            academic_year_graduated = ?, graduation_year = ?,
+           status = 'pending', activated_at = NULL,
            is_deleted = 0, deleted_at = NULL
          WHERE id = ?`,
         [fullName, courseValue, ayValue, gyValue, alumniId],

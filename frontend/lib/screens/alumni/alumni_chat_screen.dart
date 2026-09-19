@@ -466,7 +466,11 @@ class _ChatMessageBubble extends StatelessWidget {
                   ),
                   child: Text(
                     message.senderRole.toUpperCase(),
+<<<<<<< HEAD
                     style: TextStyle(
+=======
+                    style: GoogleFonts.poppins(
+>>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
                       fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                       color: isDark

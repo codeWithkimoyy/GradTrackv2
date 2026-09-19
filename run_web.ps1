@@ -1,6 +1,6 @@
-# GradTrack - Launch Flutter Web with Fixed Port for Google Sign-In
+# GradTrack - Launch Flutter Web (defaults to 8080; backend stays on 3000)
 param (
-    [int]$Port = 3000,
+    [int]$Port = 8080,
     [ValidateSet("chrome", "web-server", "release")]
     [string]$Mode = "chrome"
 )
@@ -11,9 +11,9 @@ $BuildWebDir = Join-Path $FrontendDir "build\web"
 
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host " Starting GradTrack Web on http://localhost:$Port (Mode: $Mode)" -ForegroundColor Green
-Write-Host " Ensure http://localhost:$Port is added to:" -ForegroundColor Yellow
+Write-Host " Backend API is on http://localhost:3000 (start it separately)." -ForegroundColor Yellow
+Write-Host " If you use Google Sign-In, add http://localhost:$Port to:" -ForegroundColor Yellow
 Write-Host " 1. Google Cloud Console -> Authorized JavaScript origins" -ForegroundColor Yellow
-Write-Host " 2. Firebase Console -> Auth -> Authorized domains (localhost)" -ForegroundColor Yellow
 Write-Host "==================================================" -ForegroundColor Cyan
 
 if ($Mode -eq "release") {

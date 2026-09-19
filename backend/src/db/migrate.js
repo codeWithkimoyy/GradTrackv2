@@ -13,6 +13,7 @@ const REQUIRED_SURVEY_COLUMNS = [
   ['closing_date', 'DATETIME NULL'],
   ['status', "ENUM('draft','published','closed') NOT NULL DEFAULT 'draft'"],
   ['allow_update', 'TINYINT(1) NOT NULL DEFAULT 0'],
+  ['visible_batches_json', 'JSON NULL'],
 ];
 
 const REQUIRED_SURVEY_RESPONSE_COLUMNS = [
