@@ -42,8 +42,8 @@ class DashboardStatCard extends StatelessWidget {
         border: Border.all(
           color: isDark
               ? color.withValues(alpha: 0.30)
-              : AppColors.borderLight,
-          width: 1,
+              : AppColors.outlineCard,
+          width: 1.5,
         ),
         boxShadow: isDark
             ? [
@@ -53,9 +53,9 @@ class DashboardStatCard extends StatelessWidget {
                   offset: const Offset(0, 6),
                 ),
               ]
-            : [
-                const BoxShadow(
-                  color: Color(0x0C0F172A),
+            : const [
+                BoxShadow(
+                  color: Color(0x0A0052CC),
                   blurRadius: 16,
                   offset: Offset(0, 4),
                 ),
@@ -68,19 +68,18 @@ class DashboardStatCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 42,
+                height: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? color.withValues(alpha: 0.16)
-                      : color.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(14),
+                  color: color.withValues(alpha: isDark ? 0.20 : 0.10),
+                  shape: BoxShape.circle,
                   border: Border.all(
-                    color: color.withValues(alpha: 0.20),
+                    color: color.withValues(alpha: 0.28),
+                    width: 1.5,
                   ),
                 ),
-                child: Icon(icon, color: color, size: 22),
+                child: Icon(icon, color: color, size: 20),
               ),
               const Spacer(),
               if (badgeLabel != null && badgeLabel!.isNotEmpty)
@@ -90,17 +89,18 @@ class DashboardStatCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: effectiveBadgeColor.withValues(alpha: isDark ? 0.18 : 0.12),
-                    borderRadius: BorderRadius.circular(999),
+                    color: effectiveBadgeColor.withValues(alpha: isDark ? 0.18 : 0.10),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: effectiveBadgeColor.withValues(alpha: 0.30),
+                      width: 1,
                     ),
                   ),
                   child: Text(
                     badgeLabel!,
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: effectiveBadgeColor,
                     ),
                   ),
@@ -166,7 +166,7 @@ class DashboardStatCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                 ),
               ),
               if (subtitle != null && subtitle!.isNotEmpty) ...[
@@ -177,7 +177,7 @@ class DashboardStatCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     fontSize: 11,
-                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                   ),
                 ),
               ],

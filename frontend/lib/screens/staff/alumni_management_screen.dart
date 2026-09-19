@@ -172,9 +172,9 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
     for (final line in lines) {
       final cells =
           line.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty).toList();
-      if (cells.length < 2) continue;
+      if (cells.isEmpty) continue;
       final alumniId = cells[0];
-      final fullName = cells[1];
+      final fullName = cells.length > 1 ? cells[1] : '';
       final course = cells.length > 2 && cells[2].isNotEmpty
           ? cells[2]
           : AppStrings.defaultCourse;
@@ -204,7 +204,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
             row[index]?.value?.toString().trim() ?? '';
         final alumniId = cell(0);
         final fullName = cell(1);
-        if (alumniId.isEmpty || fullName.isEmpty) continue;
+        if (alumniId.isEmpty) continue;
         if (!AppStrings.alumniIdPattern.hasMatch(alumniId) &&
             alumniId.toLowerCase().contains('alumni')) {
           continue;
@@ -347,16 +347,18 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Delete Alumni Record'),
+        title: Text('Delete Alumni Record',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
         content: Text(
           'Remove Alumni ID "${entry.alumniId}" for ${entry.fullName}? '
           'If this alumni has an account, their sign-in access will also be '
           'disabled.',
+          style: GoogleFonts.outfit(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: GoogleFonts.outfit()),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -364,7 +366,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text('Delete', style: GoogleFonts.outfit()),
           ),
         ],
       ),
@@ -428,7 +430,10 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
             return const Center(child: CircularProgressIndicator());
           }
 
-          final entries = snapshot.data ?? const <AlumniRegistryEntry>[];
+          // CS scope: this deployment tracks Computer Science alumni.
+          final entries = (snapshot.data ?? const <AlumniRegistryEntry>[])
+              .where((e) => AppStrings.isFocusCourse(e.course))
+              .toList();
           final pending =
               entries.where((e) => e.status == AlumniAccountStatus.pending).length;
           final active =
@@ -455,6 +460,30 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                         color: AppColors.success),
                     _StatChip(label: 'Disabled', value: disabled,
                         color: AppColors.error),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.school_rounded,
+                              size: 14, color: Colors.white),
+                          const SizedBox(width: 6),
+                          Text(
+                            AppStrings.focusCourse,
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
                       onPressed: _importing ? null : _import,
@@ -481,9 +510,9 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                             return _buildBatchDetail(entries);
                           }
                           if (constraints.maxWidth >= 900) {
-                            return _buildBatchGrid(entries);
+                            return _buildBatchGrid(context, entries);
                           }
-                          return _buildBatchGrid(entries);
+                          return _buildBatchGrid(context, entries);
                         },
                       ),
               ),
@@ -494,7 +523,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
     );
   }
 
-  Widget _buildBatchGrid(List<AlumniRegistryEntry> entries) {
+  Widget _buildBatchGrid(BuildContext context, List<AlumniRegistryEntry> entries) {
     final counts = <int, int>{for (final y in _batchStartYears) y: 0};
     var unassigned = 0;
     for (final entry in entries) {
@@ -511,17 +540,19 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
       children: [
         Text(
           'ALUMNI BY BATCH',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.outfit(
             fontSize: 10,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             letterSpacing: 1.3,
-            color: AppColors.teal,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.tealLight
+                : AppColors.tealDeep,
           ),
         ),
         const SizedBox(height: 3),
         Text(
           'Registered alumni in the registry, grouped by school year',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.outfit(
             fontSize: 12.5,
             color: AppColors.textSecondary,
           ),
@@ -600,17 +631,19 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                       children: [
                         Text(
                           batchTitle,
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.outfit(
                             fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             color: isDark ? Colors.white : AppColors.primaryNavy,
                           ),
                         ),
                         Text(
                           '${filtered.length} alumni record(s)',
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.outfit(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -622,10 +655,14 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
             const SizedBox(height: 8),
             Expanded(
               child: filtered.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'No alumni in this batch yet.',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: GoogleFonts.outfit(
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     )
                   : (constraints.maxWidth >= 900
@@ -639,24 +676,28 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hintColor =
+        isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.school_outlined,
-              size: 56, color: AppColors.primaryBlue.withValues(alpha: 0.4)),
+              size: 56,
+              color: (isDark ? AppColors.tealLight : AppColors.primaryBlue)
+                  .withValues(alpha: 0.65)),
           const SizedBox(height: 12),
           Text(
             'No alumni in the registry yet.',
-            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           Text(
             'Add alumni individually or import a CSV/Excel file. '
             'Every added ID starts as Pending.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-                fontSize: 12.5, color: AppColors.textSecondary),
+            style: GoogleFonts.outfit(fontSize: 12.5, color: hintColor),
           ),
         ],
       ),
@@ -680,22 +721,32 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
             headingRowHeight: 50,
             dataRowMinHeight: 52,
             dataRowMaxHeight: 72,
-            columns: const [
-              DataColumn(label: Text('Alumni ID')),
-              DataColumn(label: Text('Name')),
-              DataColumn(label: Text('Course')),
-              DataColumn(label: Text('Graduation Year')),
-              DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Actions')),
+            columns: [
+              for (final header in const [
+                'Alumni ID',
+                'Name',
+                'Course',
+                'Graduation Year',
+                'Status',
+                'Actions'
+              ])
+                DataColumn(
+                    label: Text(header,
+                        style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w600, fontSize: 13))),
             ],
             rows: [
               for (final entry in entries)
                 DataRow(cells: [
                   DataCell(Text(entry.alumniId,
-                      style: const TextStyle(fontWeight: FontWeight.w600))),
-                  DataCell(Text(entry.fullName)),
-                  DataCell(Text(entry.course)),
-                  DataCell(Text(entry.graduationYear?.toString() ?? '—')),
+                      style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w600))),
+                  DataCell(Text(entry.fullName,
+                      style: GoogleFonts.outfit())),
+                  DataCell(Text(entry.course,
+                      style: GoogleFonts.outfit())),
+                  DataCell(Text(entry.graduationYear?.toString() ?? '—',
+                      style: GoogleFonts.outfit())),
                   DataCell(_StatusChip(status: entry.status)),
                   DataCell(_RowActions(
                     entry: entry,
@@ -731,7 +782,8 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                     child: Text(entry.alumniId,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                        style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w600)),
                   ),
                   const SizedBox(width: 8),
                   _StatusChip(status: entry.status),
@@ -756,6 +808,17 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
   }
 }
 
+/// Text color for small text on a tinted chip background. Darkens the accent
+/// in light mode and lightens it in dark mode so 10–14px text keeps WCAG AA
+/// contrast (4.5:1) against the tint.
+Color _chipTextColor(Color color, bool isDark) {
+  final hsl = HSLColor.fromColor(color);
+  final lightness = isDark
+      ? (hsl.lightness + 0.28).clamp(0.0, 1.0)
+      : (hsl.lightness - 0.14).clamp(0.0, 1.0);
+  return hsl.withLightness(lightness).toColor();
+}
+
 class _StatChip extends StatelessWidget {
   const _StatChip({required this.label, required this.value, required this.color});
 
@@ -765,6 +828,8 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = _chipTextColor(color, isDark);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -775,11 +840,11 @@ class _StatChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('$value ',
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.w800, fontSize: 14)),
+              style: GoogleFonts.outfit(
+                  color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
           Text(label,
-              style: TextStyle(
-                  color: color.withValues(alpha: 0.85), fontSize: 12.5)),
+              style:
+                  GoogleFonts.outfit(color: textColor, fontSize: 12.5)),
         ],
       ),
     );
@@ -798,6 +863,7 @@ class _StatusChip extends StatelessWidget {
       AlumniAccountStatus.active => AppColors.success,
       AlumniAccountStatus.disabled => AppColors.error,
     };
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -806,10 +872,10 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         status.label,
-        style: TextStyle(
+        style: GoogleFonts.outfit(
           fontSize: 10.5,
-          fontWeight: FontWeight.w700,
-          color: color,
+          fontWeight: FontWeight.w600,
+          color: _chipTextColor(color, isDark),
         ),
       ),
     );
@@ -834,6 +900,12 @@ class _RowActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = entry.status == AlumniAccountStatus.disabled;
+    // Status icon colors keep 3:1 contrast against the card in both modes.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final toggleColor = isDisabled
+        ? (isDark ? AppColors.successLight : AppColors.success)
+        : (isDark ? AppColors.warningLight : AppColors.warning);
+    final deleteColor = isDark ? AppColors.errorLight : AppColors.error;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -849,7 +921,7 @@ class _RowActions extends StatelessWidget {
           icon: Icon(
             isDisabled ? Icons.lock_open_rounded : Icons.lock_outline,
             size: 18,
-            color: isDisabled ? AppColors.success : AppColors.warning,
+            color: toggleColor,
           ),
           onPressed: onToggleStatus,
         ),
@@ -862,7 +934,7 @@ class _RowActions extends StatelessWidget {
         IconButton(
           visualDensity: VisualDensity.compact,
           tooltip: 'Delete',
-          icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+          icon: Icon(Icons.delete_outline, size: 18, color: deleteColor),
           onPressed: onDelete,
         ),
       ],
@@ -895,6 +967,20 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
           academicYearLabel(year),
       ];
 
+  /// Matches a stored academic-year value to a dropdown option. Stored
+  /// values may use a hyphen ("2023-2024") while options use the display
+  /// en-dash ("2023–2024"); unknown values fall back to unselected instead
+  /// of crashing the dropdown.
+  String? _normalizeBatch(String? stored) {
+    final want = (stored ?? '').trim();
+    if (want.isEmpty) return null;
+    final normalizedWant = displayAcademicYear(want);
+    for (final option in _batchOptions) {
+      if (displayAcademicYear(option) == normalizedWant) return option;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -903,10 +989,11 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
     _fullName = TextEditingController(text: existing?.fullName ?? '');
     _course = TextEditingController(
         text: existing?.course ?? AppStrings.defaultCourse);
-    _batch = existing?.academicYearGraduated ??
+    _batch = _normalizeBatch(existing?.academicYearGraduated) ??
         (existing?.graduationYear == null
             ? null
-            : academicYearLabel(existing!.graduationYear! - 1));
+            : _normalizeBatch(
+                academicYearLabel(existing!.graduationYear! - 1)));
   }
 
   @override
@@ -921,7 +1008,10 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final base = widget.existing;
     final selected = (_batch == null || _batch!.isEmpty) ? null : _batch;
-    final startYear = selected == null ? null : academicYearStart(selected);
+    // Store the hyphen form ("2023-2024") so start-year parsing and batch
+    // grouping keep working regardless of the display en-dash.
+    final stored = selected?.replaceAll('\u2013', '-');
+    final startYear = stored == null ? null : academicYearStart(stored);
     Navigator.pop(
       context,
       AlumniRegistryEntry(
@@ -930,7 +1020,7 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
         course: _course.text.trim().isEmpty
             ? AppStrings.defaultCourse
             : _course.text.trim(),
-        academicYearGraduated: selected,
+        academicYearGraduated: stored,
         graduationYear: startYear == null ? null : startYear + 1,
         status: base?.status ?? AlumniAccountStatus.pending,
         activatedAt: base?.activatedAt,
@@ -943,7 +1033,8 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
     final isEdit = widget.isEdit;
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      title: Text(isEdit ? 'Edit Alumni' : 'Add Alumni'),
+      title: Text(isEdit ? 'Edit Alumni' : 'Add Alumni',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -977,9 +1068,11 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _fullName,
-                decoration: const InputDecoration(labelText: 'Full Name'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Full name is required.' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name (optional)',
+                  helperText:
+                      'Leave blank to register the ID only — the name appears once the alumni signs up.',
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -997,14 +1090,16 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
                   helperText: 'e.g. S.Y. 2020\u20132021',
                 ),
                 items: [
-                  const DropdownMenuItem<String>(
+                  DropdownMenuItem<String>(
                     value: '',
-                    child: Text('Not Specified'),
+                    child: Text('Not Specified',
+                        style: GoogleFonts.outfit()),
                   ),
                   for (final option in _batchOptions)
                     DropdownMenuItem<String>(
                       value: option,
-                      child: Text('S.Y. $option'),
+                      child: Text('S.Y. $option',
+                          style: GoogleFonts.outfit()),
                     ),
                 ],
                 onChanged: (value) => setState(() => _batch = value),
@@ -1014,9 +1109,13 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _submit,
-            child: Text(isEdit ? 'Save Changes' : 'Add Alumni')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: GoogleFonts.outfit())),
+        FilledButton(
+            onPressed: _submit,
+            child: Text(isEdit ? 'Save Changes' : 'Add Alumni',
+                style: GoogleFonts.outfit())),
       ],
     );
   }
@@ -1051,16 +1150,17 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      title: const Text('Reset Alumni Password'),
+      title: Text('Reset Alumni Password',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Set a new password for this alumni. Share the temporary '
               'password with them and ask them to change it after signing in.',
-              style: TextStyle(fontSize: 12.5, height: 1.4),
+              style: GoogleFonts.outfit(fontSize: 12.5, height: 1.4),
             ),
             const SizedBox(height: 14),
             TextFormField(
@@ -1092,8 +1192,11 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _submit, child: const Text('Reset Password')),
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: GoogleFonts.outfit())),
+        FilledButton(
+            onPressed: _submit,
+            child: Text('Reset Password', style: GoogleFonts.outfit())),
       ],
     );
   }
@@ -1119,6 +1222,9 @@ class _BatchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondary =
+        isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary;
+    final accent = _chipTextColor(color, isDark);
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.card),
       onTap: onTap,
@@ -1150,7 +1256,7 @@ class _BatchCard extends StatelessWidget {
                 color: color.withValues(alpha: 0.13),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 22),
+              child: Icon(icon, color: accent, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1162,10 +1268,10 @@ class _BatchCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.outfit(
                       fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w800,
+                      color: secondary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1173,16 +1279,15 @@ class _BatchCard extends StatelessWidget {
                     '$count alumni · $subtitle',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.outfit(
                       fontSize: 11.5,
-                      color: AppColors.textSecondary,
+                      color: secondary,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: color.withValues(alpha: 0.7)),
+            Icon(Icons.chevron_right_rounded, color: accent),
           ],
         ),
       ),

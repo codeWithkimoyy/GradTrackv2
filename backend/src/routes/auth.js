@@ -125,6 +125,52 @@ router.post('/register', async (request, response, next) => {
             'Alumni ID may only contain letters, numbers, hyphens and underscores.',
         });
       }
+      // Alumni supply their own identity at registration: the office
+      // pre-registers bare IDs, and the name appears once they sign up.
+      const regFullName = fullName;
+      const contactEmail =
+        typeof body.contactEmail === 'string'
+          ? body.contactEmail.trim().toLowerCase()
+          : '';
+      const phoneNumber =
+        typeof body.phoneNumber === 'string' ? body.phoneNumber.trim() : '';
+      const birthdate =
+        typeof body.birthdate === 'string' ? body.birthdate.trim() : '';
+      if (!regFullName) {
+        return response.status(400).json({
+          error: 'missing_name',
+          message: 'Your full name is required (format: Lastname, Firstname).',
+        });
+      }
+      if (!contactEmail && !phoneNumber) {
+        return response.status(400).json({
+          error: 'contact_required',
+          message: 'Provide an email address or a phone number.',
+        });
+      }
+      if (contactEmail && !isValidEmail(contactEmail)) {
+        return response.status(400).json({
+          error: 'invalid_contact_email',
+          message: 'That email address does not look valid.',
+        });
+      }
+      if (phoneNumber && !/^[+\d][\d\s\-()]{5,19}$/.test(phoneNumber)) {
+        return response.status(400).json({
+          error: 'invalid_phone',
+          message: 'That phone number does not look valid.',
+        });
+      }
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(birthdate) ||
+        Number.isNaN(Date.parse(`${birthdate}T00:00:00Z`)) ||
+        new Date(`${birthdate}T00:00:00Z`) > new Date()
+      ) {
+        return response.status(400).json({
+          error: 'invalid_birthdate',
+          message:
+            'Enter a valid date of birth (YYYY-MM-DD) that is not in the future.',
+        });
+      }
       const regs = await mysql.query(
         'SELECT * FROM alumni_registry WHERE id = ? AND is_deleted = 0 LIMIT 1',
         [alumniId],
@@ -172,6 +218,7 @@ router.post('/register', async (request, response, next) => {
           `UPDATE users SET email = ?, password_hash = ?, full_name = ?,
              role = 'alumni', alumni_id = ?, course_name = ?,
              graduation_year = ?, academic_year_graduated = ?,
+             phone_number = ?, contact_email = ?, birthdate = ?,
              is_approved = 1, email_verified = 1, disabled = 0,
              has_logged_in = 1, last_login_at = ?,
              is_deleted = 0, deleted_at = NULL
@@ -179,11 +226,14 @@ router.post('/register', async (request, response, next) => {
           [
             loginEmail,
             passwordHash,
-            entry.full_name,
+            regFullName,
             alumniId,
             entry.course || course,
             entry.graduation_year ?? (Number.isFinite(graduationYear) ? graduationYear : null),
             entry.academic_year_graduated,
+            phoneNumber || null,
+            contactEmail || null,
+            birthdate,
             passwords.utcNowSql(),
             id,
           ],
@@ -193,25 +243,31 @@ router.post('/register', async (request, response, next) => {
         await mysql.query(
           `INSERT INTO users
              (id, email, password_hash, full_name, role, alumni_id, course_name,
-              graduation_year, academic_year_graduated, is_approved, email_verified,
+              graduation_year, academic_year_graduated, phone_number,
+              contact_email, birthdate, is_approved, email_verified,
               has_logged_in, last_login_at)
-           VALUES (?, ?, ?, ?, 'alumni', ?, ?, ?, ?, 1, 1, 1, ?)`,
+           VALUES (?, ?, ?, ?, 'alumni', ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, ?)`,
           [
             id,
             loginEmail,
             passwordHash,
-            entry.full_name,
+            regFullName,
             alumniId,
             entry.course || course,
             entry.graduation_year ?? (Number.isFinite(graduationYear) ? graduationYear : null),
             entry.academic_year_graduated,
+            phoneNumber || null,
+            contactEmail || null,
+            birthdate,
             passwords.utcNowSql(),
           ],
         );
       }
+      // The registrant's name lands on the registry entry here, so the
+      // office sees who each pre-registered ID belongs to after signup.
       await mysql.query(
-        'UPDATE alumni_registry SET status = ?, activated_at = ? WHERE id = ?',
-        ['active', passwords.utcNowSql(), alumniId],
+        'UPDATE alumni_registry SET status = ?, activated_at = ?, full_name = ? WHERE id = ?',
+        ['active', passwords.utcNowSql(), regFullName, alumniId],
       );
       const user = await fetchUserById(id);
       const token = await createSession(id);

@@ -21,17 +21,18 @@ class EmploymentRecordCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+          width: 1.5,
         ),
         boxShadow: isDark
             ? []
             : const [
                 BoxShadow(
-                  color: Color(0x0C0F172A),
-                  blurRadius: 12,
-                  offset: Offset(0, 2),
+                  color: Color(0x0A0052CC),
+                  blurRadius: 16,
+                  offset: Offset(0, 4),
                 ),
               ],
       ),
@@ -75,7 +76,7 @@ class EmploymentRecordCard extends StatelessWidget {
           Text(
             r.company,
             style: GoogleFonts.poppins(
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
               fontSize: 13.5,
             ),
           ),

@@ -90,7 +90,7 @@ class _SearchOverlayState extends State<SearchOverlay>
                             hintText: 'Search alumni, surveys, records...',
                             hintStyle: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: const Color(0xFF64748B),
+                              color: const Color(0xFF94A3B8),
                             ),
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
@@ -146,13 +146,13 @@ class _SearchOverlayState extends State<SearchOverlay>
                       color: Color(0xFF94A3B8),
                     ),
                     const SizedBox(width: 10),
-                    Text(
-                      'Search portal records...',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13.5,
-                        color: const Color(0xFF64748B),
+                      Text(
+                        'Search portal records...',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13.5,
+                          color: const Color(0xFF94A3B8),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

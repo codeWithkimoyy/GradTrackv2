@@ -33,7 +33,7 @@ class EmploymentHistoryScreen extends ConsumerWidget {
           indicatorColor: AppColors.primaryBlue,
           indicatorWeight: 3,
           labelColor: isDark ? Colors.white : AppColors.primaryNavy,
-          unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+          unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
           labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
           tabs: const [
             Tab(text: 'Work History'),
@@ -129,7 +129,7 @@ class _HistoryList extends ConsumerWidget {
                 backgroundColor: isDark ? AppColors.cardDark : Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 title: Text('Delete Record', style: GoogleFonts.poppins(color: isDark ? Colors.white : AppColors.primaryNavy)),
-                content: Text('Delete "${r.position}" at ${r.company}?', style: GoogleFonts.poppins(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                content: Text('Delete "${r.position}" at ${r.company}?', style: GoogleFonts.poppins(color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary)),
                 actions: [
                   TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                   TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: AppColors.error))),
@@ -202,7 +202,7 @@ class _HistoryList extends ConsumerWidget {
                 Text(
                   r.company,
                   style: GoogleFonts.poppins(
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                     fontSize: 13.5,
                   ),
                 ),
@@ -339,7 +339,7 @@ class _CareerTimeline extends StatelessWidget {
                         DateFormat.yMMMd().format(m.date),
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -356,7 +356,7 @@ class _CareerTimeline extends StatelessWidget {
                           m.description!,
                           style: GoogleFonts.poppins(
                             fontSize: 12.5,
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                           ),
                         ),
                     ],

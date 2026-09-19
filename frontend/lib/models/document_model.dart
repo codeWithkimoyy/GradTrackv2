@@ -26,6 +26,10 @@ extension CertificateProviderX on CertificateProvider {
         (p) => p.name == value,
         orElse: () => CertificateProvider.other,
       );
+
+  /// True when the stored string was not one of the known provider names.
+  static bool isCustom(String value) =>
+      CertificateProvider.values.every((p) => p.name != value);
 }
 
 class CertificateRecord {
@@ -33,6 +37,9 @@ class CertificateRecord {
   final String userId;
   final String title;
   final CertificateProvider provider;
+  /// When `provider` is `other` and the alumnus typed a custom name (e.g.
+  /// "Coursera"), this holds that name for display. Null otherwise.
+  final String? customProvider;
   final String fileUrl;
   final String storagePath;
   final String fileType; // image or pdf
@@ -44,6 +51,7 @@ class CertificateRecord {
     required this.userId,
     required this.title,
     required this.provider,
+    this.customProvider,
     required this.fileUrl,
     required this.storagePath,
     required this.fileType,
@@ -52,11 +60,16 @@ class CertificateRecord {
   });
 
   factory CertificateRecord.fromJson(Map<String, dynamic> map, String id) {
+    final providerRaw = map['provider']?.toString() ?? 'other';
+    final provider = CertificateProviderX.fromString(providerRaw);
     return CertificateRecord(
       id: id,
       userId: map['userId']?.toString() ?? '',
       title: map['title']?.toString() ?? '',
-      provider: CertificateProviderX.fromString(map['provider']?.toString() ?? 'other'),
+      provider: provider,
+      // Preserve a custom Others name (e.g. "Coursera - UX Design") even
+      // though `provider` maps to `other` for coloring/icon purposes.
+      customProvider: CertificateProviderX.isCustom(providerRaw) ? providerRaw : null,
       fileUrl: map['fileUrl']?.toString() ?? '',
       storagePath: map['storagePath']?.toString() ?? '',
       fileType: map['fileType']?.toString() ?? 'image',
@@ -65,10 +78,19 @@ class CertificateRecord {
     );
   }
 
+  /// Human label for cards: the custom name when present, otherwise the
+  /// provider's standard label.
+  String get displayProvider =>
+      (customProvider != null && customProvider!.trim().isNotEmpty)
+          ? customProvider!.trim()
+          : provider.label;
+
   Map<String, dynamic> toMap() => {
         'userId': userId,
         'title': title,
-        'provider': provider.name,
+        'provider': (customProvider != null && customProvider!.trim().isNotEmpty)
+            ? customProvider!.trim()
+            : provider.name,
         'fileUrl': fileUrl,
         'storagePath': storagePath,
         'fileType': fileType,

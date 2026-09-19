@@ -73,14 +73,16 @@ class MessagingService {
     String? alumniCourse,
     required UserModel currentUser,
     required String text,
+    String? imageUrl,
   }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty && (imageUrl == null || imageUrl.isEmpty)) return;
 
     final conversationId = 'conv_$alumniId';
     try {
       await _api.post('/api/conversations/$conversationId/messages', body: {
         'text': trimmed,
+        if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
         'alumniId': alumniId,
         'alumniName': alumniName,
         'alumniEmail': alumniEmail,

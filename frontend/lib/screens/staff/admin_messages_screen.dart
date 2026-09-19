@@ -9,6 +9,8 @@ import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/messaging_providers.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/navigation_utils.dart';
+import '../../widgets/chat_message_image.dart';
 
 class AdminMessagesScreen extends ConsumerStatefulWidget {
   final String? initialAlumniId;
@@ -122,7 +124,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
             Icons.arrow_back_rounded,
             color: isDark ? Colors.white : AppColors.primaryNavy,
           ),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => popOrGoHome(context),
         ),
       ),
       body: conversationsAsync.when(
@@ -630,7 +632,7 @@ class _AdminChatMessageBubble extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: isDark
                       ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B),
+                      : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(width: 6),
@@ -639,8 +641,8 @@ class _AdminChatMessageBubble extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 10,
                   color: isDark
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF94A3B8),
+                      ? const Color(0xFF94A3B8)
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -650,7 +652,10 @@ class _AdminChatMessageBubble extends StatelessWidget {
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.70,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: message.hasImage && !message.hasVisibleText ? 4 : 16,
+              vertical: message.hasImage && !message.hasVisibleText ? 4 : 12,
+            ),
             decoration: BoxDecoration(
               color: bubbleBg,
               borderRadius: BorderRadius.only(
@@ -660,13 +665,24 @@ class _AdminChatMessageBubble extends StatelessWidget {
                 bottomRight: Radius.circular(isMe ? 4 : 16),
               ),
             ),
-            child: Text(
-              message.text,
-              style: GoogleFonts.poppins(
-                fontSize: 13.5,
-                color: textColor,
-                height: 1.35,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (message.hasImage)
+                  ChatMessageImage(imageUrl: message.imageUrl!),
+                if (message.hasVisibleText) ...[
+                  if (message.hasImage) const SizedBox(height: 8),
+                  Text(
+                    message.text,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.5,
+                      color: textColor,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

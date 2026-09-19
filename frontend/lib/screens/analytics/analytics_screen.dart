@@ -20,14 +20,22 @@ const _monthLabels = [
 class AnalyticsScreen extends ConsumerWidget {
   final bool adminMode;
 
-  const AnalyticsScreen({super.key, this.adminMode = false});
+  /// When true, no AppBar is built so the screen can be embedded as a tab.
+  final bool hideAppBar;
+
+  const AnalyticsScreen(
+      {super.key, this.adminMode = false, this.hideAppBar = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(staffStatsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(adminMode ? 'System Analytics' : 'Alumni Analytics')),
+      appBar: hideAppBar
+          ? null
+          : AppBar(
+              title:
+                  Text(adminMode ? 'System Analytics' : 'Alumni Analytics')),
       body: statsAsync.when(
         data: (stats) => ListView(
           padding: const EdgeInsets.all(AppSpacing.md),

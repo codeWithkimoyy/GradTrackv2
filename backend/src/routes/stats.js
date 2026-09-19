@@ -42,6 +42,7 @@ router.get('/staff', requireAdmin, async (req, res, next) => {
       createdDates,
       submittedDates,
       yearRows,
+      courseRows,
     ] = await Promise.all([
       count(`SELECT COUNT(*) AS c FROM users WHERE ${live}${userScope}`),
       count(`SELECT COUNT(*) AS c FROM users WHERE ${live} AND role = 'admin'`),
@@ -77,6 +78,11 @@ router.get('/staff', requireAdmin, async (req, res, next) => {
          FROM users WHERE ${live} AND role = 'alumni' AND graduation_year IS NOT NULL
          GROUP BY graduation_year, employment_status`,
       ),
+      mysql.query(
+        `SELECT course_name AS course, employment_status AS s, COUNT(*) AS c
+         FROM users WHERE ${live} AND role = 'alumni' AND course_name IS NOT NULL
+         GROUP BY course_name, employment_status`,
+      ),
     ]);
 
     const byYear = new Map();
@@ -89,6 +95,18 @@ router.get('/staff', requireAdmin, async (req, res, next) => {
       entry.total += Number(r.c);
       if (working) entry.employed += Number(r.c);
       byYear.set(year, entry);
+    }
+
+    const byCourse = new Map();
+    for (const r of courseRows) {
+      const course = String(r.course || '').trim();
+      if (!course) continue;
+      const entry = byCourse.get(course) ?? { employed: 0, total: 0 };
+      const working =
+        r.s === 'employed' || r.s === 'selfEmployed' || r.s === 'freelance';
+      entry.total += Number(r.c);
+      if (working) entry.employed += Number(r.c);
+      byCourse.set(course, entry);
     }
 
     res.json({
@@ -114,6 +132,14 @@ router.get('/staff', requireAdmin, async (req, res, next) => {
           year,
           employedCount: v.employed,
           total: v.total,
+        })),
+      employmentByCourse: [...byCourse.entries()]
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([course, v]) => ({
+          course,
+          employedCount: v.employed,
+          total: v.total,
+          rate: v.total > 0 ? Math.round((v.employed / v.total) * 100) : 0,
         })),
     });
   } catch (err) {

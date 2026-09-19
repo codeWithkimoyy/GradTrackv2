@@ -8,6 +8,7 @@ import '../../providers/messaging_providers.dart';
 import '../../providers/notification_providers.dart';
 import '../../providers/stats_providers.dart';
 import '../../routes/app_router.dart';
+import '../../widgets/campus_hero_banner.dart';
 import 'alumni_components.dart';
 
 class AlumniDashboard extends ConsumerWidget {
@@ -34,11 +35,31 @@ class AlumniDashboard extends ConsumerWidget {
             : '${surveyProgress.completed}/${surveyProgress.total}';
 
     return AlumniDashboardPage(
-      title: 'Welcome back, ${user.fullName}',
+      title: 'Welcome back, ${user.fullName.split(' ').first}',
       subtitle: 'Your personal graduate success dashboard.',
       icon: Icons.verified_user_outlined,
       accent: AppColors.bisuBlue700,
       children: [
+        CampusHeroBanner(
+          title: 'A graduate for a day.\nAn alumnus for life.',
+          subtitle:
+              'Keep your contact details and career milestones up to date to stay connected with Bohol Island State University and your cohort.',
+          action: ElevatedButton.icon(
+            onPressed: () => context.go(AppRoutes.alumniProfile),
+            icon: const Icon(Icons.person_outline_rounded, size: 16),
+            label: const Text('View Profile'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.primaryBlue,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
         if (unreadCount > 0) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -101,6 +122,74 @@ class AlumniDashboard extends ConsumerWidget {
                     ),
                   ),
                   child: const Text('View', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        if (unreadMessages > 0) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFF43F5E).withValues(alpha: 0.15),
+                  AppColors.primaryBlue.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFF43F5E).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF43F5E),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.chat_bubble_rounded,
+                      color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'You have $unreadMessages unread message${unreadMessages > 1 ? 's' : ''} from Admin',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      const Text(
+                        'The administrator has replied to your inquiry.',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => context.go(AppRoutes.alumniMessages),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF43F5E),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('Reply', style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
@@ -207,7 +296,7 @@ class AlumniDashboard extends ConsumerWidget {
               unreadMessages == 0 ? 'No unread' : '$unreadMessages unread',
               Icons.chat_outlined,
               AppColors.teal,
-              onTap: () => context.push(AppRoutes.messages),
+              onTap: () => context.go(AppRoutes.alumniMessages),
             ),
           ],
         ),
@@ -218,21 +307,34 @@ class AlumniDashboard extends ConsumerWidget {
           child: AlumniActionGrid(
             actions: [
               AlumniAction('My Profile', Icons.person_outline_rounded,
-                  () => context.go(AppRoutes.alumniProfile)),
+                  () => context.go(AppRoutes.alumniProfile),
+                  color: AppColors.primaryBlue),
               AlumniAction('Tracer Survey', Icons.fact_check_outlined,
-                  () => context.go(AppRoutes.alumniSurvey)),
+                  () => context.go(AppRoutes.alumniSurvey),
+                  color: const Color(0xFF10B981)),
               AlumniAction('Employment History', Icons.work_outline_rounded,
-                  () => context.push(AppRoutes.employment)),
-              AlumniAction('Message Admin', Icons.chat_outlined,
-                  () => context.push(AppRoutes.messages)),
+                  () => context.push(AppRoutes.employment),
+                  color: const Color(0xFF0D9488)),
+              AlumniAction(
+                unreadMessages > 0
+                    ? 'Messages ($unreadMessages)'
+                    : 'Message Admin',
+                Icons.chat_bubble_outline_rounded,
+                () => context.go(AppRoutes.alumniMessages),
+                color: const Color(0xFFF43F5E),
+              ),
               AlumniAction('Notifications', Icons.notifications_none_rounded,
-                  () => context.go(AppRoutes.alumniNotifications)),
-              AlumniAction('Employment', Icons.business_center_outlined,
-                  () => context.go(AppRoutes.alumniJobs)),
+                  () => context.go(AppRoutes.alumniNotifications),
+                  color: const Color(0xFF8B5CF6)),
+              AlumniAction('Jobs & Careers', Icons.business_center_outlined,
+                  () => context.go(AppRoutes.alumniJobs),
+                  color: const Color(0xFFF59E0B)),
               AlumniAction('Events', Icons.event_outlined,
-                  () => context.go(AppRoutes.collectionData('events'))),
+                  () => context.go(AppRoutes.collectionData('events')),
+                  color: const Color(0xFF06B6D4)),
               AlumniAction('Certificates', Icons.workspace_premium_outlined,
-                  () => context.go(AppRoutes.alumniDocuments)),
+                  () => context.go(AppRoutes.alumniDocuments),
+                  color: const Color(0xFFEAB308)),
             ],
           ),
         ),

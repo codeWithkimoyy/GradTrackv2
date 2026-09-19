@@ -148,14 +148,23 @@ router.get('/:collection', async (req, res, next) => {
   }
 });
 
-// POST /api/content/:collection  (admin; body.notify=true fans out a bell)
-router.post('/:collection', requireAdmin, async (req, res, next) => {
+// POST /api/content/:collection (admin; alumni may post jobs as themselves,
+// without the notification fan-out reserved for admins)
+router.post('/:collection', async (req, res, next) => {
   try {
     const def = COLLECTIONS[req.params.collection];
     if (!def) {
       return res.status(404).json({
         error: 'unknown_collection',
         message: 'Unknown content collection.',
+      });
+    }
+    const role = req.user?.role;
+    const alumniJobPost = req.params.collection === 'jobs' && role === 'alumni';
+    if (role !== 'admin' && !alumniJobPost) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'This action requires an administrator account.',
       });
     }
     const body = req.body ?? {};
@@ -179,7 +188,11 @@ router.post('/:collection', requireAdmin, async (req, res, next) => {
       params,
     );
 
-    if (body.notify === true && req.params.collection !== 'reports') {
+    if (
+      body.notify === true &&
+      req.user?.role === 'admin' &&
+      req.params.collection !== 'reports'
+    ) {
       try {
         const alumni = await mysql.query(
           "SELECT id FROM users WHERE role = 'alumni' AND is_deleted = 0 AND (disabled IS NULL OR disabled = 0)",

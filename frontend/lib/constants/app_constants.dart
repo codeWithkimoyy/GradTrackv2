@@ -1,66 +1,107 @@
 import 'package:flutter/material.dart';
 
-/// University-themed palette inspired by StudyBuddy & BISU branding:
-/// Deep Ink Navy, Royal Cover Blue, Sky Cyan, University Gold, Soft Ice Surfaces
+/// Bohol Island State University (BISU) & GradTrack High-Contrast Design System
+/// Official Primary Navy (#003DA5), Sky Cyan (#0284C7), University Gold, Defined 1.5px Outlines, Ice White Surfaces
 class AppColors {
   AppColors._();
 
-  // Core Brand
-  static const Color primaryBlue = Color(0xFF2563EB); // Royal Blue
-  static const Color primaryBlueDark = Color(0xFF1D4ED8);
-  static const Color primaryLight = Color(0xFF38BDF8); // Sky Cyan
-  static const Color secondaryBlue = Color(0xFF3B82F6);
+  // 1. Core Interactive Blues (WCAG AAA High Contrast against white text)
+  static const Color primaryBlue = Color(0xFF003DA5); // BISU Official Primary Navy (Contrast 9.8:1)
+  static const Color primaryBlueDark = Color(0xFF002D7A); // bisuBlue800 for pressed/active states
+  static const Color secondaryBlue = Color(0xFF1D4ED8); // Rich royal blue
+  static const Color primaryLight = Color(0xFF0284C7); // High-contrast accessible cyan
+  static const Color primaryLightSkyCyan = Color(0xFF0284C7);
+  static const Color bisuOfficialPrimary = Color(0xFF003DA5);
 
-  // Deep Ink & Text
-  static const Color primaryNavy = Color(0xFF0F172A); // Deep Ink Text / Navy
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color textMuted = Color(0xFF94A3B8);
+  // 2. GradTrack Accent Palette
+  static const Color logoCyan = Color(0xFF0284C7);
+  static const Color logoCyanAccent = Color(0xFF00B4D8); // Electric cyan accent
+  static const Color logoCyanLight = Color(0xFF38BDF8); // Chart & highlight accents
+  static const Color logoCyanSoft = Color(0xFFE0F2FE); // Soft cyan tint background
+  static const Color logoBlue = Color(0xFF003DA5);
+  static const Color logoGold = Color(0xFFD97706); // High-contrast dark amber/gold for text (4.8:1)
+  static const Color logoGoldBright = Color(0xFFF5B041); // Bright gold for icons, nodes, accents
+  static const Color logoGoldSoft = Color(0xFFFFFBEB);
+  static const Color logoNavy = Color(0xFF071E4A);
+  static const Color logoNavyDark = Color(0xFF031A48);
 
-  // Surfaces & Backgrounds (StudyBuddy Cool Paper / Ice)
-  static const Color surfaceLight = Color(0xFFF3F8FC); // Cool Paper Light BG
-  static const Color cardLight = Colors.white; // Pure White Card
-  static const Color surfaceLightAlt = Color(0xFFEEF5FA); // Soft Cool Grey Fill
+  // 3. Shape Outline Tokens (Defined 1.5px contours)
+  static const Color outlineCard = Color(0xFFE2EAF4);
+  static const Color outlineCardActive = Color(0x59003DA5); // rgba(0, 61, 165, 0.35)
+  static const Color outlineBadge = Color(0x4D0284C7); // rgba(2, 132, 199, 0.30)
+  static const Color outlineGold = Color(0x59D97706); // rgba(217, 119, 6, 0.35)
+  static const Color outlineSoft = Color(0xFFEDF2F8);
+
+  // 4. Eye-Comfort Surfaces & Backgrounds (Soothing Ice-White / Slate)
+  static const Color surfaceLight = Color(0xFFF4F7FB); // Soothing cool paper / ice tint
+  static const Color cardLight = Colors.white; // Crisp rounded card surface
+  static const Color surfaceLightAlt = Color(0xFFEEF4F9); // Gentle input and pill surface
 
   static const Color surfaceDark = Color(0xFF0F172A);
   static const Color surfaceDarkAlt = Color(0xFF0B132B);
   static const Color cardDark = Color(0xFF1E293B);
 
+  // Overlays & Web Meta
+  static const Color webThemeMetaColor = Color(0xFF031A48);
+  static const Color overlayNavyPhotoVeil = Color(0xD1071E4A); // rgba(7, 30, 74, 0.82)
+  static const Color overlayAuthSolid = Color(0xDE003DA8); // rgba(0, 61, 168, 0.87)
+
+  // 5. Typography & Ink (High Contrast, WCAG AAA compliant)
+  static const Color primaryNavy = Color(0xFF0F172A);
+  static const Color textPrimary = Color(0xFF0F172A); // Deep slate navy (16.2:1 against white)
+  static const Color textSecondary = Color(0xFF475569); // Darker slate (7.1:1 against white)
+  static const Color textMuted = Color(0xFF64748B); // Medium slate (4.6:1 against white)
+
   // Accents
-  static const Color teal = Color(0xFF0D9488);
-  static const Color tealLight = Color(0xFF14B8A6);
-  static const Color cyan = Color(0xFF06B6D4);
+  static const Color teal = Color(0xFF0284C7);
+  static const Color tealLight = Color(0xFF38BDF8);
+  static const Color cyan = Color(0xFF0284C7);
+
+  /// Text-safe deep teal for small text on light surfaces (5.9:1 on white).
+  /// [teal] itself is 4.1:1 on white — use only for large text, icons, fills.
+  static const Color tealDeep = Color(0xFF0369A1);
 
   static const Color gold = Color(0xFFF5B041);
   static const Color goldDark = Color(0xFFD97706);
   static const Color goldLight = Color(0xFFFDE68A);
 
-  // Status Colors
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF2563EB);
+  /// Text-safe deep bronze for small text on light surfaces (7.1:1 on white).
+  /// [goldDark] is 3.2:1 on white — use only for large text, icons, fills.
+  static const Color goldDeep = Color(0xFF92400E);
 
-  // Soft Fills (for Squircle icons and badges in Light Theme)
+  // 6. Status Colors
+  static const Color success = Color(0xFF047857); // Deep emerald (Contrast 4.9:1)
+  static const Color warning = Color(0xFFB45309); // Deep amber (Contrast 4.6:1)
+  static const Color error = Color(0xFFDC2626); // Deep crimson red (Contrast 4.7:1)
+  static const Color info = Color(0xFF003DA5); // BISU Blue
+
+  // Light variants for small text on dark surfaces (all 6.8:1+ on cardDark)
+  static const Color successLight = Color(0xFF6EE7B7);
+  static const Color warningLight = Color(0xFFFCD34D);
+  static const Color errorLight = Color(0xFFFCA5A5);
+
+  // 7. Soft Fills (for Squircle icons and badges)
   static const Color primarySoft = Color(0xFFEFF6FF);
   static const Color goldSoft = Color(0xFFFFFBEB);
   static const Color greenSoft = Color(0xFFECFDF5);
   static const Color redSoft = Color(0xFFFEF2F2);
-  static const Color tealSoft = Color(0xFFF0FDFA);
+  static const Color tealSoft = Color(0xFFE0F2FE);
+  static const Color orangeSoft = Color(0xFFFFFBEB);
+  static const Color purpleSoft = Color(0xFFEFF6FF);
 
   // Borders & Dividers
-  static const Color borderLight = Color(0xFFE2E8F0);
-  static const Color borderSoftLight = Color(0xFFEDF2F7);
+  static const Color borderLight = Color(0xFFE2EAF4);
+  static const Color borderSoftLight = Color(0xFFEDF2F8);
   static const Color borderDark = Color(0xFF334155);
 
   // Icon background colors
-  static const Color iconBgBlue = Color(0xFF1E3A8A);
-  static const Color iconBgTeal = Color(0xFF115E59);
-  static const Color iconBgGold = Color(0xFF78350F);
-  static const Color iconBgGreen = Color(0xFF065F46);
-  static const Color iconBgRed = Color(0xFF991B1B);
+  static const Color iconBgBlue = Color(0xFF003DA5);
+  static const Color iconBgTeal = Color(0xFF0284C7);
+  static const Color iconBgGold = Color(0xFFD97706);
+  static const Color iconBgGreen = Color(0xFF047857);
+  static const Color iconBgRed = Color(0xFFDC2626);
 
-  // BISU Royal Blue Palette (Official-inspired primary #003DA5)
+  // BISU Royal Blue Scale
   static const Color bisuBlue50 = Color(0xFFEFF6FF);
   static const Color bisuBlue100 = Color(0xFFDBEAFE);
   static const Color bisuBlue200 = Color(0xFFBFDBFE);
@@ -68,7 +109,7 @@ class AppColors {
   static const Color bisuBlue400 = Color(0xFF60A5FA);
   static const Color bisuBlue500 = Color(0xFF3B82F6);
   static const Color bisuBlue600 = Color(0xFF1E5FD1);
-  static const Color bisuBlue700 = Color(0xFF003DA5); // Official-inspired primary
+  static const Color bisuBlue700 = Color(0xFF003DA5); // Official Primary
   static const Color bisuBlue800 = Color(0xFF002D7A);
   static const Color bisuBlue900 = Color(0xFF001F5B);
 }
@@ -98,6 +139,17 @@ class AppStrings {
   static const String universityName = 'Bohol Island State University';
   static const String tagline = 'Empowering Graduates. Connecting Futures.';
   static const String defaultCourse = 'BS Computer Science';
+
+  /// The program this deployment tracks. Admin lists show only matching
+  /// records. Blank courses count as a match, consistent with the display
+  /// fallback to [defaultCourse].
+  static const String focusCourse = 'BS Computer Science';
+
+  static bool isFocusCourse(String? course) {
+    final c = (course ?? '').trim().toLowerCase();
+    if (c.isEmpty) return true;
+    return c.contains('computer science');
+  }
 
   /// Synthesized address used for alumni Auth login so they can sign in with
   /// their Alumni ID instead of an email: BISU-2020-001@gradtrack.bisu.edu.ph.

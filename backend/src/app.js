@@ -58,10 +58,30 @@ app.get('/api', (_request, response) => {
   });
 });
 
+// In-memory sliding-window rate limiter for sensitive authentication endpoints
+const authRateLimits = new Map();
+function authRateLimiter(maxRequests = 30, windowMs = 60 * 1000) {
+  return (req, res, next) => {
+    if (env.nodeEnv === 'test') return next();
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const timestamps = (authRateLimits.get(ip) || []).filter((t) => now - t < windowMs);
+    if (timestamps.length >= maxRequests) {
+      return res.status(429).json({
+        error: 'rate_limited',
+        message: 'Too many attempts. Please wait a minute and try again.',
+      });
+    }
+    timestamps.push(now);
+    authRateLimits.set(ip, timestamps);
+    return next();
+  };
+}
+
 app.use('/api/profile', profileRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/alumni', alumniRouter);
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authRateLimiter(30, 60 * 1000), authRouter);
 app.use('/api/employment', employmentRouter);
 app.use('/api/documents', documentsRouter);
 app.use('/api/surveys', surveysRouter);
@@ -84,6 +104,20 @@ app.use((error, _request, response, _next) => {
     return response.status(403).json({
       error: 'cors_rejected',
       message: error.message,
+    });
+  }
+
+  // Gracefully handle database connection drop or unreachable MySQL host
+  if (
+    error.code === 'ECONNREFUSED' ||
+    error.code === 'ENOTFOUND' ||
+    error.code === 'ETIMEDOUT' ||
+    error.code === 'PROTOCOL_CONNECTION_LOST' ||
+    error.message?.includes('MySQL connection pool is not initialized')
+  ) {
+    return response.status(503).json({
+      error: 'database_unavailable',
+      message: 'Database service is temporarily unavailable. Please try again shortly.',
     });
   }
 

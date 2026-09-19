@@ -102,16 +102,98 @@ test('POST /api/auth/google rejects a forged ID token', async () => {
 });
 
 test('POST /api/auth/login rejects unknown accounts without leaking why', async () => {
-  const response = await fetch(`${baseUrl}/api/auth/login`, {
+  const mysql = require('../src/config/mysql');
+  const originalQuery = mysql.query;
+  if (!mysql.isConnected) {
+    mysql.query = async () => [];
+  }
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        identifier: 'nobody-xyz-123@example.com',
+        password: 'whatever123',
+      }),
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.equal(body.error, 'invalid_credentials');
+  } finally {
+    mysql.query = originalQuery;
+  }
+});
+
+test('POST /api/auth/register requires a name for alumni IDs', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ alumniId: 'BISU-2020-001', password: 'longenough' }),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(body.error, 'missing_name');
+});
+
+test('POST /api/auth/register requires an email or phone number', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      identifier: 'nobody-xyz-123@example.com',
-      password: 'whatever123',
+      alumniId: 'BISU-2020-001',
+      password: 'longenough',
+      fullName: 'Dela Cruz, Juan',
+      birthdate: '2000-05-06',
     }),
   });
   const body = await response.json();
 
-  assert.equal(response.status, 401);
-  assert.equal(body.error, 'invalid_credentials');
+  assert.equal(response.status, 400);
+  assert.equal(body.error, 'contact_required');
+});
+
+test('POST /api/auth/register rejects a future birthdate', async () => {
+  const response = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      alumniId: 'BISU-2020-001',
+      password: 'longenough',
+      fullName: 'Dela Cruz, Juan',
+      phoneNumber: '+639171234567',
+      birthdate: '2999-01-01',
+    }),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(body.error, 'invalid_birthdate');
+});
+
+test('POST /api/auth/login reports 503 database_unavailable on connection outage', async () => {
+  const mysql = require('../src/config/mysql');
+  const originalQuery = mysql.query;
+  mysql.query = async () => {
+    const err = new Error('connect ECONNREFUSED 127.0.0.1:3306');
+    err.code = 'ECONNREFUSED';
+    throw err;
+  };
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        identifier: 'nobody-xyz-123@example.com',
+        password: 'whatever123',
+      }),
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.equal(body.error, 'database_unavailable');
+  } finally {
+    mysql.query = originalQuery;
+  }
 });

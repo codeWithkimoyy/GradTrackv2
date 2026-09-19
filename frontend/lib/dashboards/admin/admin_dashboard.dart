@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../constants/app_constants.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/messaging_providers.dart';
 import '../../providers/stats_providers.dart';
 import '../../repositories/stats_repository.dart';
 import '../../routes/app_router.dart';
+import '../../widgets/campus_hero_banner.dart';
 import '../../widgets/pending_approvals_queue.dart';
 import 'admin_components.dart';
 
@@ -23,6 +25,8 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     final stats =
         ref.watch(staffStatsProvider).valueOrNull ?? DashboardStats.empty;
     final unreadMessages = ref.watch(unreadAdminMessagesCountProvider);
+    final user = ref.watch(currentUserProfileProvider).valueOrNull;
+    final firstName = user?.fullName.split(' ').first ?? 'Admin';
 
     return AdminDashboardPage(
       title: 'Admin Command Center',
@@ -30,6 +34,26 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
       icon: Icons.shield_outlined,
       accent: AppColors.bisuBlue700,
       children: [
+        CampusHeroBanner(
+          title: 'Good morning, $firstName! 👋',
+          subtitle:
+              "Here's what's happening with your Bohol Island State University graduate community today.",
+          action: ElevatedButton.icon(
+            onPressed: () => context.push(AppRoutes.adminAlumni),
+            icon: const Icon(Icons.school_rounded, size: 16),
+            label: const Text('View Registry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.primaryBlue,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
         if (unreadMessages > 0) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -106,54 +130,17 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
           metrics: [
             AdminMetric('Total Users', '${stats.totalUsers}',
                 Icons.people_outline_rounded, AppColors.bisuBlue700),
-            AdminMetric('Total Alumni', '${stats.alumni}',
+            AdminMetric('Alumni', '${stats.alumni}',
                 Icons.school_outlined, AppColors.bisuBlue600),
-            AdminMetric('Verified Alumni', '${stats.verifiedAlumni}',
-                Icons.online_prediction_rounded, AppColors.bisuBlue500),
             AdminMetric('Total Surveys', '${stats.surveyCount}',
                 Icons.fact_check_outlined, AppColors.bisuBlue800),
-            AdminMetric('Completed Surveys', '${stats.responseCount}',
+            AdminMetric('Survey Responses', '${stats.responseCount}',
                 Icons.task_alt_rounded, AppColors.bisuBlue400),
             AdminMetric('Total Events', '${stats.eventCount}',
                 Icons.event_outlined, AppColors.gold),
             AdminMetric('Announcements', '${stats.announcementCount}',
                 Icons.campaign_outlined, AppColors.warning),
           ],
-        ),
-        const SizedBox(height: 14),
-        AdminSectionCard(
-          title: 'Administration',
-          icon: Icons.settings_suggest_outlined,
-          child: AdminActionGrid(
-            actions: [
-              AdminAction('Users', Icons.people_outline_rounded,
-                  () => context.go(AppRoutes.staffUsers)),
-              AdminAction(
-                unreadMessages > 0 ? 'Messages ($unreadMessages)' : 'Alumni Messages',
-                Icons.chat_bubble_outline_rounded,
-                () => context.push(AppRoutes.adminMessages),
-              ),
-              AdminAction('Alumni Management', Icons.badge_outlined,
-                  () => context.go(AppRoutes.adminAlumni)),
-              AdminAction('Surveys', Icons.fact_check_outlined,
-                  () => context.go(AppRoutes.collectionData('surveys'))),
-              AdminAction('Reports', Icons.assessment_outlined,
-                  () => context.go(AppRoutes.collectionData('reports'))),
-              AdminAction('Employment', Icons.business_center_outlined,
-                  () => context.go(AppRoutes.collectionData('jobs'))),
-              AdminAction('Announcements', Icons.campaign_outlined,
-                  () => context.go(
-                      AppRoutes.collectionData('announcements'))),
-              AdminAction('Events', Icons.event_outlined,
-                  () => context.go(AppRoutes.collectionData('events'))),
-              AdminAction('Analytics', Icons.insights_outlined,
-                  () => context.go(AppRoutes.adminAnalytics)),
-              AdminAction('Employment History', Icons.work_history_outlined,
-                  () => context.go(AppRoutes.adminEmploymentHistory)),
-              AdminAction('Audit Logs', Icons.history_rounded,
-                  () => context.go(AppRoutes.collectionData('audit_logs'))),
-            ],
-          ),
         ),
       ],
     );

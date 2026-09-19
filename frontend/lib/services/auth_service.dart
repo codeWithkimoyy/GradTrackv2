@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import '../constants/app_constants.dart';
 import '../models/auth_session.dart';
@@ -25,7 +25,9 @@ class AuthService {
                 backendBaseUrl: (api ?? ApiClient()).baseUrl) {
     _controller = StreamController<AuthSession?>.broadcast(
       onListen: () {
-        if (_current != null) _controller.add(_current);
+        if (_hasResolved) {
+          _controller.add(_current);
+        }
       },
     );
   }
@@ -35,8 +37,11 @@ class AuthService {
   final PasswordResetService _passwordResetService;
   late final StreamController<AuthSession?> _controller;
   AuthSession? _current;
+  bool _hasResolved = false;
 
   static bool _googleInitDone = false;
+
+  bool get hasResolved => _hasResolved;
 
   Stream<AuthSession?> get authStateChanges => _controller.stream;
 
@@ -46,7 +51,17 @@ class AuthService {
 
   void _emit(AuthSession? session) {
     _current = session;
+    _hasResolved = true;
     if (!_controller.isClosed) _controller.add(session);
+  }
+
+  /// Ensures an initial event is delivered so listeners (such as Riverpod
+  /// StreamProvider) do not hang in AsyncLoading state if restoreSession()
+  /// was skipped or delayed.
+  void ensureInitialState() {
+    if (!_hasResolved) {
+      _emit(_current);
+    }
   }
 
   Future<void> dispose() => _controller.close();
@@ -150,10 +165,16 @@ class AuthService {
   }
 
   /// Registers an alumni using their office-issued Alumni ID. The backend
-  /// enforces the registry gate (Pending only) and activates the ID.
+  /// enforces the registry gate (Pending only) and activates the ID. The
+  /// office pre-registers bare IDs; the alumnus supplies their identity
+  /// (name, contact, birthdate) here and it lands on their record.
   Future<AuthSession> registerWithAlumniId({
     required String alumniId,
     required String password,
+    required String fullName,
+    String? contactEmail,
+    String? phoneNumber,
+    String? birthdate,
   }) async {
     final cleanId = alumniId.trim();
     if (cleanId.isEmpty || !AppStrings.alumniIdPattern.hasMatch(cleanId)) {
@@ -163,6 +184,13 @@ class AuthService {
     return _register({
       'alumniId': cleanId,
       'password': password,
+      'fullName': fullName.trim(),
+      if (contactEmail != null && contactEmail.trim().isNotEmpty)
+        'contactEmail': contactEmail.trim(),
+      if (phoneNumber != null && phoneNumber.trim().isNotEmpty)
+        'phoneNumber': phoneNumber.trim(),
+      if (birthdate != null && birthdate.trim().isNotEmpty)
+        'birthdate': birthdate.trim(),
     });
   }
 
@@ -170,8 +198,10 @@ class AuthService {
   /// verified server-side (`POST /api/auth/google`) and linked to a
   /// GradTrack profile by verified email (created on first sign-in).
   Future<AuthSession> signInWithGoogle() async {
-    final clientId = safeEnv('GOOGLE_SIGN_IN_CLIENT_ID');
-    if (clientId == null) {
+    const defaultClientId =
+        '124464777845-ntu8fbijglogi6rlu4b36m31b2mat1hr.apps.googleusercontent.com';
+    final clientId = safeEnv('GOOGLE_SIGN_IN_CLIENT_ID') ?? defaultClientId;
+    if (clientId.isEmpty) {
       throw StateError(
           'Google Sign-In is not configured. Add GOOGLE_SIGN_IN_CLIENT_ID to assets/.env.');
     }
@@ -179,12 +209,51 @@ class AuthService {
       if (!_googleInitDone) {
         await GoogleSignIn.instance.initialize(
           clientId: clientId,
-          serverClientId: clientId,
+          serverClientId: kIsWeb ? null : clientId,
         );
         _googleInitDone = true;
       }
-      final account = await GoogleSignIn.instance.authenticate();
-      final idToken = account.authentication.idToken;
+
+      String? idToken;
+
+      if (kIsWeb && !GoogleSignIn.instance.supportsAuthenticate()) {
+        final completer = Completer<String?>();
+        final sub = GoogleSignIn.instance.authenticationEvents.listen(
+          (event) {
+            if (event is GoogleSignInAuthenticationEventSignIn) {
+              final token = event.user.authentication.idToken;
+              if (token != null && token.isNotEmpty && !completer.isCompleted) {
+                completer.complete(token);
+              }
+            }
+          },
+          onError: (Object err) {
+            if (!completer.isCompleted) {
+              completer.completeError(err);
+            }
+          },
+        );
+
+        try {
+          await GoogleSignIn.instance.attemptLightweightAuthentication();
+          idToken = await completer.future.timeout(
+            const Duration(seconds: 40),
+            onTimeout: () => null,
+          );
+        } finally {
+          await sub.cancel();
+        }
+
+        if (idToken == null || idToken.isEmpty) {
+          throw StateError(
+            'Google Sign-In prompt was closed. Please select your account or sign in with your email/Alumni ID.',
+          );
+        }
+      } else {
+        final account = await GoogleSignIn.instance.authenticate();
+        idToken = account.authentication.idToken;
+      }
+
       if (idToken == null || idToken.isEmpty) {
         throw StateError(
             'Google sign-in did not return an ID token. Please try again.');
@@ -198,6 +267,12 @@ class AuthService {
         await GoogleSignIn.instance.signOut();
       } catch (_) {}
       throw StateError(_googleErrorMessage(e));
+    } catch (e) {
+      if (e is StateError || e is ApiException) rethrow;
+      debugPrint('Google Sign-In error: $e');
+      throw StateError(
+        'Google Sign-In is not supported in this browser mode. Please sign in with your email/Alumni ID.',
+      );
     }
   }
 
@@ -261,6 +336,9 @@ class AuthService {
   static String friendlyError(Object error) {
     if (error is StateError) {
       return error.message;
+    }
+    if (error is AssertionError) {
+      return 'Google Sign-In configuration error on this platform. Please sign in with your email/Alumni ID.';
     }
     return ApiException.friendlyMessage(error);
   }

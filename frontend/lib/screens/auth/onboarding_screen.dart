@@ -369,7 +369,7 @@ class _GradTrackLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 126,
-      height: 54,
+      height: 48,
       child: Image.asset(
         'assets/images/logo_full.png',
         fit: BoxFit.contain,

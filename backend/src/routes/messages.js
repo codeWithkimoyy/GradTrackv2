@@ -44,12 +44,24 @@ function toMessage(row) {
     senderName: row.sender_name ?? 'User',
     senderRole: row.sender_role ?? 'alumni',
     text: row.text ?? '',
+    imageUrl: row.image_url ?? null,
     timestamp: iso(row.created_at) ?? new Date().toISOString(),
     isRead: row.is_read === 1,
   };
 }
 
 router.use(authenticate);
+
+// Canonical thread for an alumni account. Alumni may only ever touch this
+// single id, so one conversation can never leak into another account.
+function ownConversationId(user) {
+  return `conv_${user.alumniId ?? user.uid}`;
+}
+
+function isOwnConversation(user, conversationId) {
+  if (user.role === 'admin') return true;
+  return conversationId === ownConversationId(user);
+}
 
 // GET /api/conversations (admin: all; alumni: own thread or empty)
 router.get('/', async (req, res, next) => {
@@ -60,11 +72,9 @@ router.get('/', async (req, res, next) => {
       );
       return res.json(rows.map(toConversation));
     }
-    const alumniId = req.user.alumniId;
-    if (!alumniId) return res.json([]);
     const rows = await mysql.query(
       'SELECT * FROM conversations WHERE id = ? AND is_deleted = 0 LIMIT 1',
-      [`conv_${alumniId}`],
+      [ownConversationId(req.user)],
     );
     return res.json(rows.map(toConversation));
   } catch (err) {
@@ -75,6 +85,12 @@ router.get('/', async (req, res, next) => {
 // GET /api/conversations/:id
 router.get('/:id', async (req, res, next) => {
   try {
+    if (!isOwnConversation(req.user, req.params.id)) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'You can only read your own conversation.',
+      });
+    }
     const rows = await mysql.query(
       'SELECT * FROM conversations WHERE id = ? AND is_deleted = 0 LIMIT 1',
       [req.params.id],
@@ -89,6 +105,12 @@ router.get('/:id', async (req, res, next) => {
 // GET /api/conversations/:id/messages
 router.get('/:id/messages', async (req, res, next) => {
   try {
+    if (!isOwnConversation(req.user, req.params.id)) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'You can only read your own conversation.',
+      });
+    }
     const rows = await mysql.query(
       'SELECT * FROM messages WHERE conversation_id = ? AND is_deleted = 0 ORDER BY created_at ASC LIMIT 500',
       [req.params.id],
@@ -104,10 +126,18 @@ router.get('/:id/messages', async (req, res, next) => {
 router.post('/:id/messages', async (req, res, next) => {
   try {
     const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
-    if (!text) {
+    const imageUrl =
+      typeof req.body?.imageUrl === 'string' ? req.body.imageUrl.trim() : '';
+    if (!text && !imageUrl) {
       return res.status(400).json({
         error: 'empty_message',
-        message: 'Message text is required.',
+        message: 'Message text or an image is required.',
+      });
+    }
+    if (imageUrl && imageUrl.length > 60000) {
+      return res.status(400).json({
+        error: 'image_too_large',
+        message: 'The attached image reference is too large.',
       });
     }
     const isAdmin = req.user.role === 'admin';
@@ -177,7 +207,7 @@ router.post('/:id/messages', async (req, res, next) => {
         alumniEmail,
         alumniCourse,
         JSON.stringify(participantIds),
-        text,
+        previewText,
         now,
         req.user.uid,
         isAdmin ? 0 : 1,
@@ -197,11 +227,12 @@ router.post('/:id/messages', async (req, res, next) => {
     }
 
     const messageId = crypto.randomUUID();
+    const previewText = text || (imageUrl ? '📷 Photo' : '');
     await mysql.query(
       `INSERT INTO messages
          (id, conversation_id, sender_id, sender_name, sender_role,
-          recipient_id, user_id, participant_ids_json, text)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          recipient_id, user_id, participant_ids_json, text, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         messageId,
         conversationId,
@@ -211,7 +242,8 @@ router.post('/:id/messages', async (req, res, next) => {
         isAdmin ? alumniId : 'admin',
         req.user.uid,
         JSON.stringify(participantIds),
-        text,
+        previewText,
+        imageUrl || null,
       ],
     );
 
@@ -227,7 +259,7 @@ router.post('/:id/messages', async (req, res, next) => {
             `INSERT INTO notifications
                (id, user_id, recipient_role, type, title, description, priority, link)
              VALUES (?, ?, 'alumni', 'system', 'New message from the Alumni Office', ?, 'medium', '/alumni/messages')`,
-            [crypto.randomUUID(), targets[0].id, text],
+            [crypto.randomUUID(), targets[0].id, previewText],
           );
         }
       } else {
@@ -238,7 +270,7 @@ router.post('/:id/messages', async (req, res, next) => {
           [
             crypto.randomUUID(),
             `New message from ${alumniName}`,
-            text,
+            previewText,
             `/admin/messages?alumniId=${encodeURIComponent(alumniId)}&name=${encodeURIComponent(alumniName)}&email=${encodeURIComponent(alumniEmail)}&course=${encodeURIComponent(alumniCourse ?? '')}`,
           ],
         );
@@ -257,11 +289,17 @@ router.post('/:id/messages', async (req, res, next) => {
   }
 });
 
-// PATCH /api/conversations/:id/read { isAdmin }
+// PATCH /api/conversations/:id/read (admin clears either side; alumni only
+// clear their own thread — the flag is derived from the role, never the body)
 router.patch('/:id/read', async (req, res, next) => {
   try {
-    const isAdmin =
-      req.body?.isAdmin === true || req.user.role === 'admin';
+    const isAdmin = req.user.role === 'admin';
+    if (!isAdmin && !isOwnConversation(req.user, req.params.id)) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'You can only read your own conversation.',
+      });
+    }
     await mysql.query(
       isAdmin
         ? 'UPDATE conversations SET unread_admin = 0 WHERE id = ?'

@@ -9,6 +9,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/profile_edit_provider.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/avatar_utils.dart';
+import '../../utils/navigation_utils.dart';
 import '../../widgets/empty_state_widget.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -148,7 +149,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       controller.message.isEmpty ? 'Profile updated successfully.' : controller.message,
       backgroundColor: AppColors.success,
     );
-    Navigator.of(context).pop();
+    popOrGoHome(context);
   }
 
   @override
@@ -165,7 +166,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => popOrGoHome(context),
         ),
         title: Text(
           'Edit Profile',
@@ -249,7 +250,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     'Add or change your official profile photo',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                     ),
                   ),
                 ),

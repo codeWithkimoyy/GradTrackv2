@@ -183,7 +183,12 @@ final collectionContentsProvider = StreamProvider.autoDispose
 class CollectionListScreen extends ConsumerStatefulWidget {
   final ContentCollection content;
 
-  const CollectionListScreen({super.key, required this.content});
+  /// When true, no AppBar is built so the screen can be embedded as a tab.
+  /// The add FAB is still shown for staff.
+  final bool hideAppBar;
+
+  const CollectionListScreen(
+      {super.key, required this.content, this.hideAppBar = false});
 
   @override
   ConsumerState<CollectionListScreen> createState() =>
@@ -439,17 +444,19 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
         widget.content.collection == ApiCollections.jobs;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.content.title),
-        actions: [
-          if (canAddRecords && !publicOnly && widget.content.canAdd)
-            IconButton(
-              tooltip: 'Add ${widget.content.title}',
-              icon: const Icon(Icons.add_rounded),
-              onPressed: () => _openEditor(),
+      appBar: widget.hideAppBar
+          ? null
+          : AppBar(
+              title: Text(widget.content.title),
+              actions: [
+                if (canAddRecords && !publicOnly && widget.content.canAdd)
+                  IconButton(
+                    tooltip: 'Add ${widget.content.title}',
+                    icon: const Icon(Icons.add_rounded),
+                    onPressed: () => _openEditor(),
+                  ),
+              ],
             ),
-        ],
-      ),
       floatingActionButton: canAddRecords && !publicOnly
           ? FloatingActionButton.extended(
               onPressed: () => _openEditor(),

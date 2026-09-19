@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/message_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/document_providers.dart';
 import '../../providers/messaging_providers.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../widgets/chat_message_image.dart';
 
 class AlumniChatScreen extends ConsumerStatefulWidget {
   const AlumniChatScreen({super.key});
@@ -29,7 +32,7 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
       final user = ref.read(currentUserProfileProvider).valueOrNull;
       if (user != null) {
         ref.read(messagingServiceProvider).markConversationAsRead(
-              'conv_${user.uid}',
+              'conv_${user.alumniId ?? user.uid}',
               isAdmin: false,
             );
       }
@@ -62,7 +65,7 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
 
     try {
       await ref.read(messagingServiceProvider).sendMessage(
-            alumniId: user.uid,
+            alumniId: user.alumniId ?? user.uid,
             alumniName: user.fullName,
             alumniEmail: user.email,
             alumniCourse: user.course,
@@ -79,6 +82,50 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
     }
   }
 
+  Future<void> _sendImage(UserModel user) async {
+    if (_isSending) return;
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (picked == null || !mounted) return;
+
+      setState(() => _isSending = true);
+      try {
+        final bytes = await picked.readAsBytes();
+        final uploaded =
+            await ref.read(storageServiceProvider).uploadChatImage(
+                  fileName: picked.name,
+                  bytes: bytes,
+                  onProgress: (_) {},
+                );
+        await ref.read(messagingServiceProvider).sendMessage(
+              alumniId: user.alumniId ?? user.uid,
+              alumniName: user.fullName,
+              alumniEmail: user.email,
+              alumniCourse: user.course,
+              currentUser: user,
+              text: _textController.text.trim(),
+              imageUrl: uploaded.url,
+            );
+        _textController.clear();
+        Future.delayed(const Duration(milliseconds: 150), _scrollToBottom);
+      } catch (e) {
+        if (mounted) {
+          showError(context, 'Failed to send photo: $e');
+        }
+      } finally {
+        if (mounted) setState(() => _isSending = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        showError(context, 'Could not pick photo: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -92,7 +139,7 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
       );
     }
 
-    final conversationId = 'conv_${user.uid}';
+    final conversationId = 'conv_${user.alumniId ?? user.uid}';
     final messagesAsync = ref.watch(messagesStreamProvider(conversationId));
 
     return Scaffold(
@@ -179,7 +226,9 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
                     'Messages sent here are received directly by BISU GradTrack administrators.',
                     style: GoogleFonts.poppins(
                       fontSize: 11.5,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -226,7 +275,7 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               fontSize: 12.5,
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -283,6 +332,30 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
             child: SafeArea(
               child: Row(
                 children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.surfaceDark
+                          : AppColors.surfaceLightAlt,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.borderDark
+                            : AppColors.borderLight,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.image_outlined, size: 20),
+                      color: isDark ? Colors.white70 : AppColors.primaryNavy,
+                      onPressed:
+                          _isSending ? null : () => _sendImage(user),
+                      tooltip: 'Send photo',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -304,7 +377,9 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
                           hintText: 'Type your message to Admin...',
                           hintStyle: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : AppColors.textSecondary,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 18,
@@ -385,15 +460,18 @@ class _ChatMessageBubble extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: AppColors.teal.withValues(alpha: 0.15),
+                    color: (isDark ? AppColors.tealLight : AppColors.tealDeep)
+                        .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     message.senderRole.toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 9.5,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.teal,
+                      color: isDark
+                          ? AppColors.tealLight
+                          : AppColors.tealDeep,
                     ),
                   ),
                 ),
@@ -404,7 +482,9 @@ class _ChatMessageBubble extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(width: 6),
@@ -412,7 +492,9 @@ class _ChatMessageBubble extends StatelessWidget {
                 DateFormat.jm().format(message.timestamp),
                 style: GoogleFonts.poppins(
                   fontSize: 10,
-                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -422,7 +504,10 @@ class _ChatMessageBubble extends StatelessWidget {
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.76,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: message.hasImage && !message.hasVisibleText ? 4 : 16,
+              vertical: message.hasImage && !message.hasVisibleText ? 4 : 12,
+            ),
             decoration: BoxDecoration(
               color: bubbleBg,
               borderRadius: BorderRadius.only(
@@ -439,13 +524,24 @@ class _ChatMessageBubble extends StatelessWidget {
                 ),
               ],
             ),
-            child: Text(
-              message.text,
-              style: GoogleFonts.poppins(
-                fontSize: 13.5,
-                color: textColor,
-                height: 1.35,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (message.hasImage)
+                  ChatMessageImage(imageUrl: message.imageUrl!),
+                if (message.hasVisibleText) ...[
+                  if (message.hasImage) const SizedBox(height: 8),
+                  Text(
+                    message.text,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.5,
+                      color: textColor,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

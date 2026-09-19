@@ -23,16 +23,18 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/documents/certificate_gallery_screen.dart';
 import '../screens/documents/resume_upload_screen.dart';
 import '../screens/employment/employment_history_screen.dart';
-import '../screens/landing/landing_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shared/collection_list_screen.dart';
 import '../screens/staff/admin_settings_screen.dart';
+import '../screens/staff/survey_management_screen.dart';
 import '../screens/staff/admin_messages_screen.dart';
 import '../screens/staff/alumni_management_screen.dart';
+import '../screens/staff/announcements_events_screen.dart';
 import '../screens/staff/audit_log_screen.dart';
 import '../screens/staff/batch_alumni_screen.dart';
 import '../screens/staff/employment_history_screen.dart';
+import '../screens/staff/reports_analytics_screen.dart';
 import '../screens/staff/reports_screen.dart';
 import '../screens/staff/user_employment_screen.dart';
 import '../screens/staff/user_management_screen.dart';
@@ -69,6 +71,9 @@ class AppRoutes {
   static String adminBatchFor(int year) => '$adminBatch/$year';
   static const adminAlumni = '/admin/alumni';
   static const adminAnalytics = '/admin/analytics';
+  static const adminSurveys = '/admin/surveys';
+  static const adminAnnouncementsEvents = '/admin/announcements-events';
+  static const adminReportsAnalytics = '/admin/reports-analytics';
   static const adminAuditLogs = '/admin/audit-logs';
   static const adminEmploymentHistory = '/admin/employment-history';
   static const adminProfile = '/admin/profile';
@@ -93,9 +98,10 @@ String dashboardForRole(UserRole role) => switch (role) {
       UserRole.admin => AppRoutes.adminDashboard,
     };
 
-/// Laptops/desktops browsing the web app (>= tablet width) get the landing
-/// page at the root. Phones - whether the mobile app or a web browser on a
-/// small screen - keep the existing splash + 3-screen onboarding flow.
+/// Laptops/desktops browsing the web app (>= tablet width) land directly on
+/// the combined landing + login screen at the root (single viewport, no
+/// scroll). Phones - whether the mobile app or a web browser on a small
+/// screen - keep the existing splash + 3-screen onboarding flow.
 bool _isDesktopWeb(BuildContext context) {
   if (!kIsWeb) return false;
   return MediaQuery.sizeOf(context).width >= 768;
@@ -135,7 +141,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, _) => _isDesktopWeb(context)
-            ? const LandingScreen()
+            ? const LoginScreen()
             : const SplashScreen(),
       ),
       GoRoute(
@@ -249,6 +255,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: AppRoutes.adminAuditLogs,
               builder: (_, __) => const AuditLogScreen()),
           GoRoute(
+              path: AppRoutes.adminSurveys,
+              builder: (_, __) => const SurveyManagementScreen()),
+          GoRoute(
+              path: AppRoutes.adminAnnouncementsEvents,
+              builder: (_, __) => const AnnouncementsEventsScreen()),
+          GoRoute(
+              path: AppRoutes.adminReportsAnalytics,
+              builder: (_, __) => const ReportsAnalyticsScreen()),
+          GoRoute(
               path: AppRoutes.adminProfile,
               builder: (_, __) => const ProfileScreen()),
           GoRoute(
@@ -310,7 +325,13 @@ String? resolveRedirect({
   final isRegisterLocation = location.startsWith('${AppRoutes.register}/');
 
   if (authLoading) {
-    return location == AppRoutes.splash ? null : AppRoutes.splash;
+    // While checking session on cold start, keep splash/landing or allow direct
+    // navigation to explicit auth routes (login, verify-alumni-id, etc.).
+    return (location == AppRoutes.splash ||
+            authRoutes.contains(location) ||
+            isRegisterLocation)
+        ? null
+        : AppRoutes.splash;
   }
   if (!loggedIn) {
     return (authRoutes.contains(location) || isRegisterLocation)
@@ -387,6 +408,9 @@ String? resolveRedirect({
       AppRoutes.adminAnalytics,
       AppRoutes.adminUsers,
       AppRoutes.adminAlumni,
+      AppRoutes.adminSurveys,
+      AppRoutes.adminAnnouncementsEvents,
+      AppRoutes.adminReportsAnalytics,
       AppRoutes.adminAuditLogs,
       AppRoutes.adminEmploymentHistory,
       AppRoutes.adminProfile,

@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +11,7 @@ import '../../providers/document_providers.dart';
 import '../../services/storage_service.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/navigation_utils.dart';
 import '../../widgets/empty_state_widget.dart';
 
 class CertificateGalleryScreen extends ConsumerStatefulWidget {
@@ -40,51 +40,104 @@ class _CertificateGalleryScreenState
     if (user == null) return;
 
     final titleController = TextEditingController();
-    final provider = await showDialog<CertificateProvider>(
+    final otherProviderController = TextEditingController();
+    CertificateProvider? provider;
+    String? customProvider;
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => SimpleDialog(
-        backgroundColor: AppColors.cardDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Certificate Details',
-          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: TextField(
-              controller: titleController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Certificate Title',
-                hintText: 'e.g. AWS Certified Developer',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final isOther = provider == CertificateProvider.other;
+          return AlertDialog(
+            backgroundColor: AppColors.cardDark,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              'Certificate Details',
+              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Certificate Title',
+                      hintText: 'e.g. AWS Certified Developer',
+                    ),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Issuing Provider',
+                    style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: CertificateProvider.values.map((p) {
+                      final selected = provider == p;
+                      return ChoiceChip(
+                        label: Text(p.label,
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: selected ? Colors.white : AppColors.primaryBlue)),
+                        selected: selected,
+                        selectedColor: AppColors.primaryBlue,
+                        backgroundColor: Colors.white.withValues(alpha: 0.12),
+                        onSelected: (_) => setDialogState(() => provider = p),
+                      );
+                    }).toList(),
+                  ),
+                  if (isOther) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: otherProviderController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'What kind of certificate?',
+                        hintText: 'e.g. Coursera, Udemy, DICT',
+                      ),
+                      autofocus: true,
+                    ),
+                  ],
+                ],
               ),
-              autofocus: true,
             ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.only(left: 24),
-            child: Text(
-              'Issuing Provider',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
-            ),
-          ),
-          const SizedBox(height: 6),
-          ...CertificateProvider.values.map((p) => SimpleDialogOption(
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
                 onPressed: () {
                   if (titleController.text.trim().isEmpty) {
                     showAppSnackBar(ctx, 'Please enter a title');
                     return;
                   }
-                  Navigator.pop(ctx, p);
+                  if (provider == null) {
+                    showAppSnackBar(ctx, 'Select a provider');
+                    return;
+                  }
+                  if (provider == CertificateProvider.other &&
+                      otherProviderController.text.trim().isEmpty) {
+                    showAppSnackBar(ctx, 'Tell us what kind of certificate this is');
+                    return;
+                  }
+                  customProvider = provider == CertificateProvider.other
+                      ? otherProviderController.text.trim()
+                      : null;
+                  Navigator.pop(ctx);
                 },
-                child: Text(
-                  p.label,
-                  style: GoogleFonts.poppins(color: AppColors.secondaryBlue, fontSize: 13),
-                ),
-              )),
-        ],
+                child: const Text('Continue'),
+              ),
+            ],
+          );
+        },
       ),
     );
     if (provider == null || !mounted) return;
@@ -110,7 +163,8 @@ class _CertificateGalleryScreenState
               title: titleController.text.isNotEmpty
                   ? titleController.text
                   : picked.name,
-              provider: provider,
+              provider: provider!,
+              customProvider: customProvider,
               fileUrl: uploaded.url,
               storagePath: uploaded.path,
               fileType: picked.extension ?? 'image',
@@ -175,7 +229,7 @@ class _CertificateGalleryScreenState
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
-          onPressed: () => context.pop(),
+          onPressed: () => popOrGoHome(context),
         ),
         title: Text(
           'Certificates Gallery',
@@ -251,8 +305,11 @@ class _CertificateGalleryScreenState
                                   color: AppColors.gold.withValues(alpha: isDark ? 0.16 : 0.12),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.verified_rounded,
-                                    color: AppColors.goldDark, size: 22),
+                                child: Icon(Icons.verified_rounded,
+                                    color: isDark
+                                        ? AppColors.gold
+                                        : AppColors.goldDeep,
+                                    size: 22),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -271,10 +328,10 @@ class _CertificateGalleryScreenState
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${cert.provider.label} • ${DateFormat.yMMMd().format(cert.uploadedAt)}',
+                                      '${cert.displayProvider} • ${DateFormat.yMMMd().format(cert.uploadedAt)}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 11.5,
-                                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                                       ),
                                     ),
                                   ],

@@ -23,6 +23,11 @@ class SurveyService {
     return (raw as List).cast<Map<String, dynamic>>();
   }
 
+  Future<Map<String, dynamic>> fetchSurvey(String id) async {
+    final raw = await _api.get('/api/surveys/$id');
+    return Map<String, dynamic>.from(raw as Map);
+  }
+
   Future<Map<String, dynamic>> createSurvey(Map<String, dynamic> body) async {
     final raw = await _api.post('/api/surveys', body: body);
     return Map<String, dynamic>.from(raw);
@@ -34,6 +39,37 @@ class SurveyService {
 
   Future<void> deleteSurvey(String id) {
     return _api.delete('/api/surveys/$id');
+  }
+
+  Future<void> reorderQuestions(String surveyId, List<String> orderedIds) {
+    return _api.put('/api/surveys/$surveyId/questions/reorder', body: {'order': orderedIds});
+  }
+
+  Future<List<Map<String, dynamic>>> fetchResponsesFiltered(String surveyId, {String? batch, String? employment, String? q, String? dateFrom, String? dateTo, bool? archived}) async {
+    final query = <String,String>{};
+    if (batch != null) query['batch'] = batch;
+    if (employment != null) query['employment'] = employment;
+    if (q != null) query['q'] = q;
+    if (dateFrom != null) query['dateFrom'] = dateFrom;
+    if (dateTo != null) query['dateTo'] = dateTo;
+    if (archived != null) query['archived'] = archived ? '1' : '0';
+    final raw = await _api.get('/api/surveys/$surveyId/responses', query: query);
+    return (raw as List).cast<Map<String,dynamic>>();
+  }
+
+  Future<void> archiveResponse(String responseId, bool archived) {
+    return _api.patch('/api/surveys/responses/$responseId/archive', body: {'archived': archived});
+  }
+
+  Future<Map<String,dynamic>> fetchSummary(String surveyId) async {
+    final raw = await _api.get('/api/surveys/$surveyId/summary');
+    return Map<String,dynamic>.from(raw as Map);
+  }
+
+  Future<String> exportCsv(String surveyId) async {
+    final raw = await _api.get('/api/surveys/$surveyId/export', query: {'format':'csv'});
+    // raw is csv string? api returns text/csv, but ApiClient may parse as string
+    return raw.toString();
   }
 
   Stream<List<Map<String, dynamic>>> watchResponses(String surveyId) {
@@ -58,9 +94,12 @@ class SurveyService {
   }
 
   Future<Map<String, dynamic>> submitResponse(
-      String surveyId, Map<String, dynamic> answers) async {
-    final raw = await _api.post('/api/surveys/responses',
-        body: {'surveyId': surveyId, 'answers': answers});
+      String surveyId, Map<String, dynamic> answers,
+      {Map<String, dynamic>? customOthers, String? status}) async {
+    final body = <String, dynamic>{'surveyId': surveyId, 'answers': answers};
+    if (customOthers != null && customOthers.isNotEmpty) body['customOthers'] = customOthers;
+    if (status != null) body['status'] = status;
+    final raw = await _api.post('/api/surveys/responses', body: body);
     return Map<String, dynamic>.from(raw);
   }
 }

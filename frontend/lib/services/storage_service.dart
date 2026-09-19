@@ -34,10 +34,12 @@ class StorageService {
   static const int maxResumeBytes = 10 * 1024 * 1024;
   static const int maxCertificateBytes = 10 * 1024 * 1024;
   static const int maxPhotoBytes = 5 * 1024 * 1024;
+  static const int maxChatImageBytes = 5 * 1024 * 1024;
 
   static const resumeExtensions = ['pdf', 'docx'];
   static const certificateExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
   static const photoExtensions = ['jpg', 'jpeg', 'png'];
+  static const chatImageExtensions = ['jpg', 'jpeg', 'png'];
 
   String _extensionOf(String fileName) =>
       fileName.split('.').last.toLowerCase();
@@ -173,6 +175,38 @@ class StorageService {
             idToken: _api.currentToken,
             onProgress: onProgress,
           );
+
+    return (url: result.url, path: result.publicId);
+  }
+
+  /// Uploads a chat image via Cloudinary. Images are stored as hosted URLs
+  /// (persisted in MySQL `messages.image_url`) so both alumni and admin apps
+  /// can load them without an admin account.
+  Future<({String url, String path})> uploadChatImage({
+    required String fileName,
+    required Uint8List bytes,
+    void Function(double progress)? onProgress,
+  }) async {
+    _validate(
+      fileName: fileName,
+      sizeBytes: bytes.length,
+      maxBytes: maxChatImageBytes,
+      allowedExtensions: chatImageExtensions,
+    );
+
+    if (!_cloudinaryConfigured) {
+      throw UnsupportedError(
+        'Image upload is not configured. Add CLOUDINARY_CLOUD_NAME to .env',
+      );
+    }
+
+    onProgress?.call(0.1);
+    final result = await _cloudinary.uploadImage(
+      bytes: bytes,
+      fileName: fileName,
+      idToken: _api.currentToken,
+      onProgress: onProgress,
+    );
 
     return (url: result.url, path: result.publicId);
   }

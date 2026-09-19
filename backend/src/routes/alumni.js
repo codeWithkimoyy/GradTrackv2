@@ -102,6 +102,88 @@ router.get('/', async (req, res, next) => {
 });
 
 // ---------------------------------------------------------------------------
+// Admin: export alumni list to standard CSV for institutional tracer reports
+// ---------------------------------------------------------------------------
+function escapeCsv(field) {
+  if (field === null || field === undefined) return '""';
+  const str = String(field).replace(/"/g, '""');
+  return `"${str}"`;
+}
+
+router.get('/export/csv', requireAdmin, async (req, res, next) => {
+  try {
+    const { course, year, status } = req.query;
+    let sql = `
+      SELECT alumni_id, full_name, email, phone_number, course_name, section,
+             graduation_year, academic_year_graduated, employment_status,
+             is_verified, is_approved, created_at
+      FROM users
+      WHERE role = 'alumni' AND is_deleted = 0
+    `;
+    const params = [];
+    if (course) {
+      sql += ' AND course_name = ?';
+      params.push(course);
+    }
+    if (year) {
+      sql += ' AND graduation_year = ?';
+      params.push(Number(year));
+    }
+    if (status) {
+      sql += ' AND employment_status = ?';
+      params.push(status);
+    }
+    sql += ' ORDER BY graduation_year DESC, full_name ASC';
+
+    const rows = await mysql.query(sql, params);
+
+    const headers = [
+      'Alumni ID',
+      'Full Name',
+      'Email',
+      'Phone Number',
+      'Course',
+      'Section',
+      'Graduation Year',
+      'Academic Year',
+      'Employment Status',
+      'Verified',
+      'Approved',
+      'Registered Date',
+    ];
+
+    const csvLines = [headers.map(escapeCsv).join(',')];
+    for (const row of rows) {
+      csvLines.push(
+        [
+          row.alumni_id || '',
+          row.full_name || '',
+          row.email || '',
+          row.phone_number || '',
+          row.course_name || '',
+          row.section || '',
+          row.graduation_year ?? '',
+          row.academic_year_graduated || '',
+          row.employment_status || '',
+          row.is_verified ? 'Yes' : 'No',
+          row.is_approved ? 'Yes' : 'No',
+          row.created_at ? new Date(row.created_at).toISOString() : '',
+        ]
+          .map(escapeCsv)
+          .join(','),
+      );
+    }
+
+    const filename = `gradtrack_alumni_${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(csvLines.join('\r\n'));
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Admin: user management (replaces direct Firestore access from staff UI).
 // ---------------------------------------------------------------------------
 router.get('/users', requireAdmin, async (req, res, next) => {
@@ -288,12 +370,8 @@ router.post('/registry', requireAdmin, async (req, res, next) => {
         message: 'A valid Alumni ID is required.',
       });
     }
-    if (!fullName) {
-      return res.status(400).json({
-        error: 'missing_name',
-        message: 'Full name is required.',
-      });
-    }
+    // Names are optional at pre-registration: the office may register bare
+    // IDs, and the alumnus supplies their name when they sign up.
     const existing = await mysql.query(
       'SELECT id, is_deleted FROM alumni_registry WHERE id = ? LIMIT 1',
       [alumniId],

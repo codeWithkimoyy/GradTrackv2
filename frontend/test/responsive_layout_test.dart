@@ -66,7 +66,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(_hasBottomNavigation(tester), isTrue);
-    expect(find.text('NAVIGATION'), findsNothing);
+    expect(find.text('Audit Logs'), findsNothing);
   });
 
   testWidgets('alumni keeps the app-style bottom nav on a wide web viewport',
@@ -84,7 +84,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(_hasBottomNavigation(tester), isTrue);
-    expect(find.text('NAVIGATION'), findsNothing);
+    expect(find.text('Audit Logs'), findsNothing);
   });
 
   testWidgets('admin gets the web-style sidebar on a wide viewport',
@@ -102,7 +102,9 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(_hasBottomNavigation(tester), isFalse);
-    expect(find.text('NAVIGATION'), findsOneWidget);
+    expect(find.text('Audit Logs'), findsOneWidget);
+    expect(find.text('Reports & Analytics'), findsOneWidget);
+    expect(find.text('Announcements & Events'), findsOneWidget);
   });
 
   testWidgets('admin keeps the web-style shell even on a narrow viewport',

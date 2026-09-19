@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,7 @@ import '../../providers/execution_trace_provider.dart';
 import '../../providers/messaging_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/avatar_utils.dart';
+import '../../widgets/bisu_brand_logo.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/profile_menu.dart';
 
@@ -40,6 +43,8 @@ class AdminShell extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compactSidebar = constraints.maxWidth < 700;
+        final showAyBadge = constraints.maxWidth >= 1200;
+
         return Scaffold(
           backgroundColor:
               isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -55,7 +60,10 @@ class AdminShell extends ConsumerWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      _AdminTopBar(compact: compactSidebar),
+                      _AdminTopBar(
+                        compact: compactSidebar,
+                        showAyBadge: showAyBadge,
+                      ),
                       Expanded(
                         child: ColoredBox(
                           color: isDark
@@ -77,41 +85,37 @@ class AdminShell extends ConsumerWidget {
 }
 
 class _AdminShellNavItem {
-  const _AdminShellNavItem(this.icon, this.activeIcon, this.label, this.path,
-      this.color, {this.sticker = ''});
+  const _AdminShellNavItem(
+      this.icon, this.activeIcon, this.label, this.path, this.color);
 
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final String path;
   final Color color;
-
-  /// Optional emoji "sticker" shown above the selected nav item.
-  final String sticker;
 }
 
 const _adminNavItems = [
   _AdminShellNavItem(Icons.shield_outlined, Icons.shield_rounded, 'Home',
-      AppRoutes.adminDashboard, Color(0xFF2563EB),
-      sticker: '\u{1F6E1}\u{FE0F}'),
+      AppRoutes.adminDashboard, AppColors.primaryBlue),
   _AdminShellNavItem(Icons.school_outlined, Icons.school_rounded,
-      'Alumni', AppRoutes.adminAlumni, Color(0xFFD97706),
-      sticker: '\u{1F393}'),
+      'Alumni', AppRoutes.adminAlumni, Color(0xFFD97706)),
   _AdminShellNavItem(Icons.people_outline_rounded, Icons.people_rounded,
-      'Users', AppRoutes.adminUsers, Color(0xFF0D9488),
-      sticker: '\u{1F465}'),
-  _AdminShellNavItem(Icons.analytics_outlined, Icons.analytics_rounded,
-      'Analytics', AppRoutes.adminAnalytics, Color(0xFFD97706),
-      sticker: '\u{1F4CA}'),
-  _AdminShellNavItem(Icons.history_rounded, Icons.history_rounded,
-      'Audit Logs', AppRoutes.adminAuditLogs, Color(0xFFA855F7),
-      sticker: '\u{1F4DC}'),
+      'Users', AppRoutes.adminUsers, Color(0xFF0D9488)),
+  _AdminShellNavItem(Icons.fact_check_outlined, Icons.fact_check_rounded,
+      'Survey', AppRoutes.adminSurveys, Color(0xFF0369A1)),
+  _AdminShellNavItem(Icons.campaign_outlined, Icons.campaign_rounded,
+      'Announcements & Events', AppRoutes.adminAnnouncementsEvents, Color(0xFFEA580C)),
   _AdminShellNavItem(Icons.mail_outline_rounded, Icons.mail_rounded,
-      'Messages', AppRoutes.adminMessages, Color(0xFFF43F5E),
-      sticker: '\u{1F4E9}'),
+      'Messages', AppRoutes.adminMessages, Color(0xFFF43F5E)),
+  _AdminShellNavItem(Icons.work_history_outlined, Icons.work_history_rounded,
+      'Employment History', AppRoutes.adminEmploymentHistory, Color(0xFF047857)),
+  _AdminShellNavItem(Icons.history_rounded, Icons.history_rounded,
+      'Audit Logs', AppRoutes.adminAuditLogs, Color(0xFFA855F7)),
+  _AdminShellNavItem(Icons.assessment_outlined, Icons.assessment_rounded,
+      'Reports & Analytics', AppRoutes.adminReportsAnalytics, Color(0xFF4F46E5)),
   _AdminShellNavItem(Icons.settings_outlined, Icons.settings_rounded,
-      'Settings', AppRoutes.adminSettings, Color(0xFF06B6D4),
-      sticker: '\u{2699}\u{FE0F}'),
+      'Settings', AppRoutes.adminSettings, Color(0xFF06B6D4)),
 ];
 
 int _selectedIndex(String location, List<_AdminShellNavItem> items) {
@@ -144,15 +148,15 @@ class _AdminSidebar extends ConsumerWidget {
         color: isDark ? AppColors.surfaceDarkAlt : Colors.white,
         border: Border(
           right: BorderSide(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-            width: 1,
+            color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+            width: 1.5,
           ),
         ),
         boxShadow: isDark
             ? []
             : const [
                 BoxShadow(
-                  color: Color(0x080F172A),
+                  color: Color(0x060052CC),
                   blurRadius: 20,
                   offset: Offset(4, 0),
                 ),
@@ -164,90 +168,13 @@ class _AdminSidebar extends ConsumerWidget {
           // Logo & Branding Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Row(
-              mainAxisAlignment:
-                  isCompact ? MainAxisAlignment.center : MainAxisAlignment.start,
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDark : AppColors.surfaceLightAlt,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
-                  child: Image.asset(
-                    'assets/images/logo_full.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                if (!isCompact) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Grad',
-                                style: GoogleFonts.poppins(
-                                  color: isDark ? Colors.white : AppColors.primaryNavy,
-                                ),
-                              ),
-                              const TextSpan(
-                                text: 'Track',
-                                style: TextStyle(color: AppColors.goldDark),
-                              ),
-                            ],
-                          ),
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            height: 1.1,
-                          ),
-                        ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'BISU ALUMNI PORTAL',
-                        style: GoogleFonts.poppins(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.teal,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
+            child: isCompact
+                ? const Center(
+                    child: BisuBrandLogo(compact: true, size: 34),
+                  )
+                : const BisuBrandLogo(compact: false, size: 36),
           ),
-          ),
-          if (!isCompact) ...[
-            const SizedBox(height: 28),
-
-            // Menu Section Label
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text(
-                'NAVIGATION',
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                  letterSpacing: 1.4,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ] else
-            const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
           // Navigation List
           Expanded(
@@ -273,83 +200,86 @@ class _AdminSidebar extends ConsumerWidget {
             ),
           ),
 
-          // Integrated Secure Portal Footer Card
+          // Integrated Stronger Connections Promo Card
           if (!isCompact)
             Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.cardDark : AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.bisuBlue900 : AppColors.primaryBlue,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.20),
+                  width: 1.5,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x38003DA5),
+                    blurRadius: 20,
+                    offset: Offset(0, 6),
+                  ),
+                ],
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.20),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.verified_user_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Stronger Connections,\nStronger Community.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Together, we grow with BISU alumni worldwide.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10.5,
+                      color: const Color(0xFFDBEAFE),
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  InkWell(
+                    onTap: () => context.push(AppRoutes.adminAnalytics),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 7),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.gold.withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
-                        Icons.verified_user_rounded,
-                        color: AppColors.goldDark,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
                       child: Text(
-                        'BISU Alumni Network',
+                        'Explore Portal',
                         style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : AppColors.primaryNavy,
+                          color: AppColors.primaryBlue,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Official & Encrypted Portal for BISU Graduates.',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    height: 1.3,
                   ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'System Online',
-                      style: GoogleFonts.poppins(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.success,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -387,23 +317,35 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     Color backgroundColor;
+    Color textColor;
+    Color iconColor;
+    BorderSide borderSide;
+
     if (widget.selected) {
-      backgroundColor = widget.activeColor;
+      backgroundColor = isDark
+          ? AppColors.bisuBlue800.withValues(alpha: 0.35)
+          : AppColors.primarySoft;
+      borderSide = BorderSide(
+        color: isDark
+            ? AppColors.primaryLightSkyCyan.withValues(alpha: 0.45)
+            : AppColors.outlineCardActive,
+        width: 1.5,
+      );
+      textColor = isDark ? Colors.white : AppColors.primaryBlue;
+      iconColor = isDark ? const Color(0xFF60A5FA) : AppColors.primaryBlue;
     } else {
-      backgroundColor = _isHovered ? AppColors.cardDark : Colors.transparent;
+      backgroundColor = _isHovered
+          ? (isDark ? AppColors.cardDark : AppColors.surfaceLightAlt)
+          : Colors.transparent;
+      borderSide = BorderSide(
+        color: _isHovered
+            ? (isDark ? AppColors.borderDark : AppColors.outlineCard)
+            : Colors.transparent,
+        width: 1.5,
+      );
+      textColor = isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary;
+      iconColor = isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary;
     }
-
-    final textColor = widget.selected
-        ? Colors.white
-        : (_isHovered
-            ? (isDark ? Colors.white : AppColors.primaryNavy)
-            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)));
-
-    final iconColor = widget.selected
-        ? Colors.white
-        : (_isHovered
-            ? widget.activeColor
-            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)));
 
     final hasBadge = widget.badgeCount != null && widget.badgeCount! > 0;
 
@@ -416,26 +358,11 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           padding: EdgeInsets.symmetric(
-              horizontal: widget.isCompact ? 10 : 14, vertical: 12),
+              horizontal: widget.isCompact ? 10 : 14, vertical: 11),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: widget.selected
-                  ? widget.activeColor
-                  : (_isHovered
-                      ? (isDark ? AppColors.borderDark : AppColors.borderLight)
-                      : Colors.transparent),
-            ),
-            boxShadow: widget.selected
-                ? [
-                    BoxShadow(
-                      color: widget.activeColor.withValues(alpha: 0.30),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.fromBorderSide(borderSide),
           ),
           child: widget.isCompact
               ? Tooltip(
@@ -529,9 +456,10 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 }
 
 class _AdminTopBar extends ConsumerWidget {
-  const _AdminTopBar({this.compact = false});
+  const _AdminTopBar({this.compact = false, this.showAyBadge = false});
 
   final bool compact;
+  final bool showAyBadge;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -547,8 +475,8 @@ class _AdminTopBar extends ConsumerWidget {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-            width: 1,
+            color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+            width: 1.5,
           ),
         ),
       ),
@@ -556,50 +484,89 @@ class _AdminTopBar extends ConsumerWidget {
         children: [
           // Breadcrumb / Context Title
           if (!compact)
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Graduate Tracking System',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : AppColors.primaryNavy,
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Graduate Tracking System',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : AppColors.bisuOfficialPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 1),
-                Row(
-                  children: [
-                    Text(
-                      'Bohol Island State University',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: AppColors.teal.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Bilar Campus',
-                        style: GoogleFonts.poppins(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.teal,
+                  const SizedBox(height: 1),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Bohol Island State University',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySoft,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: AppColors.outlineBadge,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            'Bilar Campus',
+                            style: GoogleFonts.poppins(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryBlue,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            )
+          else
+            const Spacer(),
+
+          // AY Badge
+          if (!compact && showAyBadge) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardDark : AppColors.surfaceLightAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+                  width: 1,
                 ),
-              ],
+              ),
+              child: Text(
+                'AY 2026–2027 · Bohol Island State University',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                ),
+              ),
             ),
-          const Spacer(),
+            const SizedBox(width: 12),
+          ],
 
           // Messages / Chat Button
           if (user != null) ...[
@@ -613,7 +580,7 @@ class _AdminTopBar extends ConsumerWidget {
               userId: user.uid,
               isAdmin: user.role == UserRole.admin,
             ),
-          if (!compact) const SizedBox(width: 14),
+          if (!compact) const SizedBox(width: 12),
 
           // User Avatar & Profile Dropdown
           if (user != null)
@@ -624,20 +591,12 @@ class _AdminTopBar extends ConsumerWidget {
                   padding:
                       EdgeInsets.symmetric(horizontal: compact ? 4 : 10, vertical: compact ? 4 : 6),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDark : Colors.white,
+                    color: isDark ? AppColors.cardDark : AppColors.surfaceLightAlt,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+                      width: 1.5,
                     ),
-                    boxShadow: isDark
-                        ? []
-                        : [
-                            const BoxShadow(
-                              color: Color(0x0A0F172A),
-                              blurRadius: 10,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
                   ),
                   child: Row(
                     children: [
@@ -677,7 +636,9 @@ class _AdminTopBar extends ConsumerWidget {
                               user.role.label,
                               style: GoogleFonts.poppins(
                                 fontSize: 10,
-                                color: AppColors.teal,
+                                color: isDark
+                                    ? AppColors.tealLight
+                                    : AppColors.tealDeep,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -686,7 +647,7 @@ class _AdminTopBar extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                           size: 18,
                         ),
                       ],
@@ -751,6 +712,178 @@ class _AdminChatButton extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+// ignore: unused_element, kept for future mobile admin nav
+class _AdminBottomNavigation extends ConsumerWidget {
+  const _AdminBottomNavigation({
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final List<_AdminShellNavItem> items;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inactiveColor =
+        isDark ? Colors.white.withValues(alpha: .68) : const Color(0xFF667085);
+    final unreadMessages = ref.watch(unreadAdminMessagesCountProvider);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: .40)
+                : const Color(0xFF0B1F3A).withValues(alpha: .12),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 72,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF131720).withValues(alpha: .96)
+                  : Colors.white.withValues(alpha: .96),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: .08)
+                    : AppColors.outlineCard,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: List.generate(items.length, (index) {
+                final item = items[index];
+                final selected = selectedIndex == index;
+                final activeColor = item.color;
+
+                return Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: selected,
+                    label: item.label,
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      child: InkWell(
+                        onTap: () => onSelected(index),
+                        borderRadius: BorderRadius.circular(18),
+                        splashColor: activeColor.withValues(alpha: .14),
+                        highlightColor: activeColor.withValues(alpha: .06),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Stack(
+                                clipBehavior: Clip.none,
+                                alignment: Alignment.center,
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    curve: Curves.easeOutCubic,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: selected ? 10 : 3,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: selected
+                                          ? activeColor.withValues(
+                                              alpha: isDark ? .22 : .12,
+                                            )
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Icon(
+                                      selected ? item.activeIcon : item.icon,
+                                      size: 20,
+                                      color: selected
+                                          ? activeColor
+                                          : inactiveColor,
+                                    ),
+                                  ),
+                                  if (item.path == AppRoutes.adminMessages && unreadMessages > 0)
+                                    Positioned(
+                                      right: selected ? 2 : -4,
+                                      top: -2,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.error,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: isDark
+                                                ? const Color(0xFF131720)
+                                                : Colors.white,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        constraints: const BoxConstraints(
+                                            minWidth: 16, minHeight: 16),
+                                        child: Text(
+                                          unreadMessages > 99
+                                              ? '99+'
+                                              : '$unreadMessages',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  item.label,
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    color: selected
+                                        ? (isDark ? Colors.white : activeColor)
+                                        : inactiveColor,
+                                    fontSize: 9,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -157,6 +157,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           }
           for (final user in snapshot.data ?? const <UserModel>[]) {
             if (!user.hasLoggedIn) continue;
+            if (!AppStrings.isFocusCourse(user.course)) continue;
             final year = _batchYearOf(user);
             if (year == null) continue;
             counts[year] = counts[year]! + 1;
@@ -200,7 +201,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.3,
-                  color: AppColors.teal,
+                  color: isDark ? AppColors.tealLight : AppColors.tealDeep,
                 ),
               ),
               const SizedBox(height: 3),
@@ -215,14 +216,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               ),
               const SizedBox(height: 3),
               Text(
-                'Select a batch year to view alumni who have signed in '
-                'to the portal.',
+                'Select a batch year to view ${AppStrings.focusCourse} alumni '
+                'who have signed in to the portal.',
                 style: GoogleFonts.poppins(
                   fontSize: 12.5,
                   height: 1.4,
                   color: isDark
                       ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B),
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -361,7 +362,7 @@ class _BatchYearCard extends StatelessWidget {
                           height: 1.2,
                           color: isDark
                               ? const Color(0xFF94A3B8)
-                              : const Color(0xFF64748B),
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),

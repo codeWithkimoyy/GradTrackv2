@@ -153,6 +153,7 @@ class SocialLinks {
 class UserModel {
   final String uid;
   final String email;
+  final String? contactEmail;
   final String fullName;
   final UserRole role;
   final String? photoUrl;
@@ -183,6 +184,7 @@ class UserModel {
   const UserModel({
     required this.uid,
     required this.email,
+    this.contactEmail,
     required this.fullName,
     required this.role,
     this.photoUrl,
@@ -216,6 +218,7 @@ this.studentNumber,
     return UserModel(
       uid: uid,
       email: map['email']?.toString() ?? '',
+      contactEmail: map['contactEmail']?.toString(),
       fullName: map['fullName']?.toString() ?? '',
       role: role,
       photoUrl: map['photoUrl']?.toString(),
@@ -249,6 +252,7 @@ this.studentNumber,
   /// Encodes the profile for the REST API (ISO-8601 dates, no Timestamps).
   Map<String, dynamic> toJson() => {
         'email': email,
+        'contactEmail': contactEmail,
         'fullName': fullName,
         'role': role.name,
         'photoUrl': photoUrl,
@@ -289,6 +293,7 @@ this.studentNumber,
       hasBase64Photo ? base64Decode(photoUrl!.split(',').last) : null;
 
   UserModel copyWith({
+    String? contactEmail,
     String? fullName,
     String? photoUrl,
     String? studentNumber,
@@ -315,6 +320,7 @@ this.studentNumber,
     return UserModel(
       uid: uid,
       email: email,
+      contactEmail: contactEmail ?? this.contactEmail,
       fullName: fullName ?? this.fullName,
       role: role,
       photoUrl: photoUrl ?? this.photoUrl,

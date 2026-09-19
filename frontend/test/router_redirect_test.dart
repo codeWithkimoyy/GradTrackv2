@@ -297,4 +297,22 @@ void main() {
       );
     });
   });
+
+  group('resolveRedirect - auth navigation on cold start', () {
+    test('user can open login and verify-alumni-id even while authLoading is true', () {
+      for (final path in [AppRoutes.login, AppRoutes.verifyAlumniId, AppRoutes.splash]) {
+        expect(
+          resolveRedirect(
+            location: path,
+            authLoading: true,
+            loggedIn: false,
+            role: null,
+            approved: true,
+          ),
+          isNull,
+          reason: '$path must not be bounced back to splash during cold start',
+        );
+      }
+    });
+  });
 }

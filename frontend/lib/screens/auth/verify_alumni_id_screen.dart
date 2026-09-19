@@ -109,7 +109,7 @@ class _VerifyAlumniIdScreenState extends ConsumerState<VerifyAlumniIdScreen> {
               title == 'Alumni ID Not Found'
                   ? Icons.person_search_outlined
                   : Icons.error_outline,
-              color: AppColors.gold,
+              color: AppColors.goldDeep,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -165,13 +165,13 @@ class _VerifyAlumniIdScreenState extends ConsumerState<VerifyAlumniIdScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF38BDF8)],
+                  colors: [AppColors.primaryBlue, AppColors.logoCyanLight],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                    color: AppColors.primaryBlue.withValues(alpha: 0.35),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),
@@ -186,7 +186,7 @@ class _VerifyAlumniIdScreenState extends ConsumerState<VerifyAlumniIdScreen> {
               autocorrect: false,
               autofocus: true,
               style: GoogleFonts.poppins(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,

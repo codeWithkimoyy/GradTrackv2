@@ -77,22 +77,18 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
   void _openModal() {
     final bellContext = context;
     _isOpen = true;
-    showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => _NotificationModal(
-        userId: widget.userId,
-        typeFilter: _typeFilter,
-        readFilter: _readFilter,
-        searchQuery: _searchController.text,
-        onTypeFilterChanged: (t) => setState(() => _typeFilter = t),
-        onReadFilterChanged: (r) => setState(() => _readFilter = r),
-        searchController: _searchController,
-        onOpenLink: (link) {
-          if (link != null && link.isNotEmpty) bellContext.go(link);
-        },
+    Navigator.of(context)
+        .push(
+      MaterialPageRoute<void>(
+        builder: (_) => _AdminNotificationsFullScreen(
+          userId: widget.userId,
+          onOpenLink: (link) {
+            if (link != null && link.isNotEmpty) bellContext.go(link);
+          },
+        ),
       ),
-    ).whenComplete(() => _isOpen = false);
+    )
+        .whenComplete(() => _isOpen = false);
   }
 
   void _closePanel() {
@@ -217,6 +213,58 @@ class _NotificationPanel extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AdminNotificationsFullScreen extends ConsumerStatefulWidget {
+  final String userId;
+  final ValueChanged<String?> onOpenLink;
+
+  const _AdminNotificationsFullScreen({
+    required this.userId,
+    required this.onOpenLink,
+  });
+
+  @override
+  ConsumerState<_AdminNotificationsFullScreen> createState() =>
+      _AdminNotificationsFullScreenState();
+}
+
+class _AdminNotificationsFullScreenState
+    extends ConsumerState<_AdminNotificationsFullScreen> {
+  NotificationType? _typeFilter;
+  String _readFilter = 'all';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Notifications',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        centerTitle: false,
+      ),
+      body: _NotificationPanelBody(
+        userId: widget.userId,
+        typeFilter: _typeFilter,
+        readFilter: _readFilter,
+        searchQuery: _searchController.text,
+        onTypeFilterChanged: (t) => setState(() => _typeFilter = t),
+        onReadFilterChanged: (r) => setState(() => _readFilter = r),
+        searchController: _searchController,
+        onClose: () => Navigator.of(context).pop(),
+        onTapNotification: (link) {
+          Navigator.of(context).pop();
+          widget.onOpenLink(link);
+        },
       ),
     );
   }

@@ -123,16 +123,16 @@ class PendingApprovalScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.cardDark : Colors.white,
-                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    width: 1,
+                    color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+                    width: 1.5,
                   ),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.04),
+                      color: Color(0x0A0052CC),
                       blurRadius: 16,
-                      offset: const Offset(0, 4),
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),

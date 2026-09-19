@@ -7,6 +7,7 @@ class ChatMessage {
   final String senderName;
   final String senderRole;
   final String text;
+  final String? imageUrl;
   final DateTime timestamp;
   final bool isRead;
 
@@ -17,6 +18,7 @@ class ChatMessage {
     required this.senderName,
     required this.senderRole,
     required this.text,
+    this.imageUrl,
     required this.timestamp,
     this.isRead = false,
   });
@@ -33,6 +35,7 @@ class ChatMessage {
       senderName: data['senderName']?.toString() ?? 'User',
       senderRole: data['senderRole']?.toString() ?? 'alumni',
       text: data['text']?.toString() ?? '',
+      imageUrl: data['imageUrl']?.toString(),
       timestamp: _parseDate(data['timestamp']),
       isRead: data['isRead'] == true,
     );
@@ -44,9 +47,13 @@ class ChatMessage {
         'senderName': senderName,
         'senderRole': senderRole,
         'text': text,
+        'imageUrl': imageUrl,
         'timestamp': timestamp.toIso8601String(),
         'isRead': isRead,
       };
+
+  bool get hasImage => imageUrl != null && imageUrl!.isNotEmpty;
+  bool get hasVisibleText => text.isNotEmpty && text != '📷 Photo';
 }
 
 class ChatConversation {

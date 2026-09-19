@@ -8,7 +8,6 @@ import '../../providers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../utils/avatar_utils.dart';
 import '../../widgets/empty_state_widget.dart';
-import '../../widgets/execution_trace_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -42,7 +41,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          const ExecutionTraceButton(),
           const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppColors.primaryBlue),
@@ -60,24 +58,25 @@ class ProfileScreen extends ConsumerWidget {
             );
           }
           return ListView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               Container(
                 clipBehavior: Clip.antiAlias,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.cardDark : Colors.white,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+                    width: 1.5,
                   ),
                   boxShadow: isDark
                       ? []
                       : const [
                           BoxShadow(
-                            color: Color(0x0C0F172A),
-                            blurRadius: 18,
-                            offset: Offset(0, 6),
+                            color: Color(0x0A0052CC),
+                            blurRadius: 16,
+                            offset: Offset(0, 4),
                           ),
                         ],
                 ),
@@ -105,6 +104,9 @@ class ProfileScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         Text(
                           user.fullName,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -116,7 +118,9 @@ class ProfileScreen extends ConsumerWidget {
                           user.role.label,
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: AppColors.teal,
+                            color: isDark
+                                ? AppColors.tealLight
+                                : AppColors.tealDeep,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -134,13 +138,18 @@ class ProfileScreen extends ConsumerWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.verified_rounded,
-                                  color: AppColors.goldDark, size: 16),
+                              Icon(Icons.verified_rounded,
+                                  color: isDark
+                                      ? AppColors.gold
+                                      : AppColors.goldDeep,
+                                  size: 16),
                               const SizedBox(width: 6),
                               Text(
                                 'Verified BISU Graduate',
                                 style: GoogleFonts.poppins(
-                                  color: AppColors.goldDark,
+                                  color: isDark
+                                      ? AppColors.gold
+                                      : AppColors.goldDeep,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -247,13 +256,14 @@ class _InfoTile extends StatelessWidget {
         color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+          width: 1.5,
         ),
         boxShadow: isDark
             ? []
             : const [
                 BoxShadow(
-                  color: Color(0x0A0F172A),
+                  color: Color(0x080052CC),
                   blurRadius: 12,
                   offset: Offset(0, 2),
                 ),
@@ -279,13 +289,16 @@ class _InfoTile extends StatelessWidget {
                 Text(
                   label,
                   style: GoogleFonts.poppins(
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                     fontSize: 11.5,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

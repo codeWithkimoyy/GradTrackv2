@@ -35,11 +35,11 @@ class RolePlaceholderScreen extends StatelessWidget {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB).withValues(alpha: .13),
+                      color: AppColors.primaryBlue.withValues(alpha: .13),
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: const Icon(Icons.construction_outlined,
-                        color: Color(0xFF2563EB), size: 28),
+                        color: AppColors.primaryBlue, size: 28),
                   ),
                   const SizedBox(width: 14),
                   Expanded(

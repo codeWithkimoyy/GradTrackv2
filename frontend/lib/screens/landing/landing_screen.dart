@@ -5,13 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../routes/app_router.dart';
+import '../../widgets/bisu_brand_logo.dart';
 
 const kLandingNavy = Color(0xFF031A48);
-const kLandingOverlay = Color(0xC7051329);
-const kLandingGold = Color(0xFFFFC21A);
-const kLandingBlue = Color(0xFF2563EB);
-const kLandingBlueDark = Color(0xFF1D4ED8);
-const kLandingSky = Color(0xFFCEE7FF);
+const kLandingOverlay = Color(0xD1071E4A);
+const kLandingGold = Color(0xFFF5B041);
+const kLandingBlue = Color(0xFF003DA5);
+const kLandingBlueDark = Color(0xFF002D7A);
+const kLandingSky = Color(0xFFE0F2FE);
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -179,34 +180,7 @@ class _LandingLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          height: 34,
-          child: Image.asset(
-            'assets/images/logo_full.png',
-            fit: BoxFit.contain,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text.rich(
-          const TextSpan(
-            children: [
-              TextSpan(text: 'Grad'),
-              TextSpan(
-                text: 'Track',
-                style: TextStyle(color: kLandingGold),
-              ),
-            ],
-          ),
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
+    return const BisuBrandLogo(inverted: true, size: 36);
   }
 }
 
@@ -275,8 +249,12 @@ class _LandingHero extends StatelessWidget {
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/images/Splash3.jpeg',
+              'assets/images/landing.jpg',
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Image.asset(
+                'assets/images/Splash3.jpeg',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           const Positioned.fill(

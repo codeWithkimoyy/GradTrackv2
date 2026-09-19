@@ -127,7 +127,7 @@ class _UserHeader extends ConsumerWidget {
                       email,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +11,7 @@ import '../../providers/document_providers.dart';
 import '../../services/storage_service.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/navigation_utils.dart';
 import '../../widgets/empty_state_widget.dart';
 
 class ResumeUploadScreen extends ConsumerStatefulWidget {
@@ -101,7 +101,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : AppColors.primaryNavy),
-          onPressed: () => context.pop(),
+          onPressed: () => popOrGoHome(context),
         ),
         title: Text(
           'Resume & CV',
@@ -139,7 +139,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
                       Text(
                         'Uploading… ${(_progress * 100).round()}%',
                         style: GoogleFonts.poppins(
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -164,7 +164,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
                   child: Text(
                     'Supported formats: PDF or DOCX (Max size: 10 MB).',
                     style: GoogleFonts.poppins(
-                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                       fontSize: 11.5,
                     ),
                   ),
@@ -244,7 +244,7 @@ class _ResumeCard extends StatelessWidget {
                   '$sizeMb MB • Uploaded ${DateFormat.yMMMd().format(resume.uploadedAt)}',
                   style: GoogleFonts.poppins(
                     fontSize: 11.5,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                   ),
                 ),
               ],

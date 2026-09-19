@@ -7,7 +7,26 @@ const path = require('node:path');
 const mysql = require('mysql2/promise');
 require('../config/env');
 
+const REQUIRED_SURVEY_COLUMNS = [
+  ['target_batch_year', 'INT NULL'],
+  ['opening_date', 'DATETIME NULL'],
+  ['closing_date', 'DATETIME NULL'],
+  ['status', "ENUM('draft','published','closed') NOT NULL DEFAULT 'draft'"],
+  ['allow_update', 'TINYINT(1) NOT NULL DEFAULT 0'],
+];
+
+const REQUIRED_SURVEY_RESPONSE_COLUMNS = [
+  ['updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'],
+  ['is_archived', 'TINYINT(1) NOT NULL DEFAULT 0'],
+  ['status', "ENUM('draft','submitted') NOT NULL DEFAULT 'submitted'"],
+];
+
+const REQUIRED_MESSAGE_COLUMNS = [
+  ['image_url', 'TEXT NULL'],
+];
+
 const REQUIRED_USER_COLUMNS = [
+  ['contact_email', 'VARCHAR(255) NULL'],
   ['password_hash', 'VARCHAR(255) NULL'],
   ['alumni_id', 'VARCHAR(64) NULL'],
   ['email_verified', 'TINYINT(1) NOT NULL DEFAULT 0'],
@@ -104,6 +123,9 @@ async function main() {
       }
     }
 
+    await ensureColumns(conn, database, 'surveys', REQUIRED_SURVEY_COLUMNS);
+    await ensureColumns(conn, database, 'survey_responses', REQUIRED_SURVEY_RESPONSE_COLUMNS);
+    await ensureColumns(conn, database, 'messages', REQUIRED_MESSAGE_COLUMNS);
     await ensureColumns(conn, database, 'users', REQUIRED_USER_COLUMNS);
     await ensureColumns(
       conn,
@@ -111,7 +133,7 @@ async function main() {
       'employment_records',
       REQUIRED_EMPLOYMENT_COLUMNS,
     );
-    for (const table of SOFT_DELETE_TABLES) {
+    for (const table of [...SOFT_DELETE_TABLES, 'survey_questions', 'survey_question_options', 'survey_answers']) {
       // eslint-disable-next-line no-await-in-loop
       await ensureColumns(conn, database, table, [
         ['is_deleted', 'TINYINT(1) NOT NULL DEFAULT 0'],

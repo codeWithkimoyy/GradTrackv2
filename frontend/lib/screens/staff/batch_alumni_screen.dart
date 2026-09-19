@@ -121,7 +121,9 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
 
           final users = (snapshot.data ?? const <UserModel>[])
               .where((u) =>
-                  u.graduationYear == widget.batchYear && u.hasLoggedIn)
+                  u.graduationYear == widget.batchYear &&
+                  u.hasLoggedIn &&
+                  AppStrings.isFocusCourse(u.course))
               .toList();
           final count = users.length;
           final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -214,7 +216,9 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
                 children: [
                   Icon(Icons.person_outline_rounded,
                       size: 15,
-                      color: isDark ? const Color(0xFF94A3B8) : AppColors.teal),
+                      color: isDark
+                          ? AppColors.tealLight
+                          : AppColors.tealDeep),
                   const SizedBox(width: 5),
                   Text(
                     '$count registered alumni who have signed in',
@@ -266,7 +270,7 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
             style: GoogleFonts.poppins(
               fontSize: 12.5,
               color:
-                  isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
             ),
           ),
         ],

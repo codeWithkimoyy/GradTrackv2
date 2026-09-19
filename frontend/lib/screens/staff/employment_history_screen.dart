@@ -8,6 +8,7 @@ import '../../models/employment_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/employment_providers.dart';
+import '../../widgets/batch_filter_widgets.dart';
 import '../../widgets/employment_record_card.dart';
 import '../../widgets/empty_state_widget.dart';
 
@@ -21,37 +22,84 @@ final allEmploymentRecordsProvider = StreamProvider<
       .watchAllRecords();
 });
 
-/// Brief user profiles (id -> profile) used to label records with alumnus names.
+/// Brief user profiles (id -> profile) used to label records with alumnus
+/// names. Scoped to the focus program (Computer Science); records whose
+/// owner is unknown are kept since their program cannot be determined.
 final usersBriefProvider =
     StreamProvider<Map<String, UserModel>>((ref) {
   return ref.watch(userRepositoryProvider).watchUsers(limit: 500).map(
-      (users) => {for (final u in users) u.uid: u});
+      (users) => {
+            for (final u in users)
+              if (AppStrings.isFocusCourse(u.course)) u.uid: u
+          });
 });
 
 /// Admin aggregate view of all alumni employment history — read-only. Alumni
 /// keep their own records up to date from their Employment screen; this list
-/// groups those records by alumnus for the university's graduate tracking.
-class EmploymentHistoryAdminScreen extends ConsumerWidget {
+/// groups those records by graduation batch, then by alumnus, for the
+/// university's graduate tracking.
+class EmploymentHistoryAdminScreen extends ConsumerStatefulWidget {
   const EmploymentHistoryAdminScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmploymentHistoryAdminScreen> createState() =>
+      _EmploymentHistoryAdminScreenState();
+}
+
+class _EmploymentHistoryAdminScreenState
+    extends ConsumerState<EmploymentHistoryAdminScreen> {
+  /// Selected graduation-batch filter key (`null` shows every batch).
+  String? _selectedBatch;
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final recordsAsync = ref.watch(allEmploymentRecordsProvider);
     final usersAsync = ref.watch(usersBriefProvider);
     final users = usersAsync.value ?? {};
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
 
-    final grouped = <String, List<EmploymentRecord>>{};
+    final byUser = <String, List<EmploymentRecord>>{};
     for (final r in recordsAsync.value ?? []) {
-      grouped.putIfAbsent(r.userId, () => []).add(r);
+      byUser.putIfAbsent(r.userId, () => []).add(r);
     }
-    final entries = grouped.entries.toList()
-      ..sort((a, b) {
-        final na = (users[a.key]?.fullName ?? '').toLowerCase();
-        final nb = (users[b.key]?.fullName ?? '').toLowerCase();
+    String batchKeyOf(String uid) {
+      final user = users[uid];
+      if (user == null) return '';
+      return graduationBatchKey(
+        academicYearGraduated: user.academicYearGraduated,
+        graduationYear: user.graduationYear,
+      );
+    }
+
+    // Alumni grouped by graduation batch (newest batches first,
+    // unspecified last); names stay alphabetical inside each batch.
+    final batchGroups = <String, List<String>>{};
+    for (final uid in byUser.keys) {
+      batchGroups.putIfAbsent(batchKeyOf(uid), () => []).add(uid);
+    }
+    for (final uids in batchGroups.values) {
+      uids.sort((a, b) {
+        final na = (users[a]?.fullName ?? '').toLowerCase();
+        final nb = (users[b]?.fullName ?? '').toLowerCase();
         return na.compareTo(nb);
       });
+    }
+    final orderedBatches = batchGroups.keys.toList()
+      ..sort((a, b) {
+        final (aYear, _) = graduationBatchInfo(a);
+        final (bYear, _) = graduationBatchInfo(b);
+        if (aYear == null && bYear == null) return a.compareTo(b);
+        if (aYear == null) return 1;
+        if (bYear == null) return -1;
+        return bYear.compareTo(aYear);
+      });
+    final visibleBatches = _selectedBatch == null
+        ? orderedBatches
+        : orderedBatches.where((k) => k == _selectedBatch).toList();
+    final totalRecords =
+        byUser.values.fold<int>(0, (sum, list) => sum + list.length);
 
     return Scaffold(
       backgroundColor: bg,
@@ -76,7 +124,7 @@ class EmploymentHistoryAdminScreen extends ConsumerWidget {
       ),
       body: recordsAsync.when(
         data: (_) {
-          if (entries.isEmpty) {
+          if (byUser.isEmpty) {
             return const EmptyStateWidget(
               icon: Icons.work_history_outlined,
               title: 'No Employment History Yet',
@@ -88,15 +136,44 @@ class EmploymentHistoryAdminScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               Text(
-                '${entries.length} alumni with employment \u2022 ${grouped.values.fold<int>(0, (s, l) => s + l.length)} records',
+                '${byUser.length} alumni with employment \u2022 $totalRecords records \u2022 ${AppStrings.focusCourse}',
                 style: GoogleFonts.poppins(
                   fontSize: 12.5,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                 ),
               ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String?>(
+                initialValue: _selectedBatch,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Graduation Batch',
+                  prefixIcon: Icon(Icons.school_outlined),
+                ),
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('All batches (${byUser.length})'),
+                  ),
+                  for (final key in orderedBatches)
+                    DropdownMenuItem<String?>(
+                      value: key,
+                      child: Text(
+                          '${graduationBatchInfo(key).$2} (${batchGroups[key]!.length})'),
+                    ),
+                ],
+                onChanged: (value) =>
+                    setState(() => _selectedBatch = value),
+              ),
               const SizedBox(height: 12),
-              for (final entry in entries)
-                _AlumnusSection(user: users[entry.key], records: entry.value),
+              for (final batch in visibleBatches) ...[
+                BatchSectionHeader(
+                  label: graduationBatchInfo(batch).$2,
+                  count: batchGroups[batch]!.length,
+                ),
+                for (final uid in batchGroups[batch]!)
+                  _AlumnusSection(user: users[uid], records: byUser[uid]!),
+              ],
               if (usersAsync.isLoading || usersAsync.hasError)
                 const SizedBox(height: 12),
             ],
@@ -179,7 +256,7 @@ class _AlumnusSection extends StatelessWidget {
                           fontSize: 11.5,
                           color: isDark
                               ? const Color(0xFF94A3B8)
-                              : const Color(0xFF64748B),
+                              : AppColors.textSecondary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -193,8 +270,12 @@ class _AlumnusSection extends StatelessWidget {
                       : Icons.work_history_outlined,
                   size: 18,
                   color: records.any((r) => r.isCurrent)
-                      ? AppColors.success
-                      : AppColors.warning,
+                      ? (isDark
+                          ? AppColors.successLight
+                          : AppColors.success)
+                      : (isDark
+                          ? AppColors.warningLight
+                          : AppColors.warning),
                 ),
                 const SizedBox(width: 4),
                 const Icon(Icons.chevron_right_rounded, size: 18),

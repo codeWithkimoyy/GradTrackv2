@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS users (
   gender ENUM('Male', 'Female', 'Other', 'PreferNotToSay') DEFAULT 'PreferNotToSay',
   birthdate DATE NULL,
   phone_number VARCHAR(32),
+  contact_email VARCHAR(255) NULL,
   current_address TEXT,
   permanent_address TEXT,
   biography TEXT,
@@ -161,6 +162,11 @@ CREATE TABLE IF NOT EXISTS surveys (
   title VARCHAR(255) NOT NULL,
   description TEXT,
   target_graduation_year INT NULL,
+  target_batch_year INT NULL,
+  opening_date DATETIME NULL,
+  closing_date DATETIME NULL,
+  status ENUM('draft','published','closed') NOT NULL DEFAULT 'draft',
+  allow_update TINYINT(1) NOT NULL DEFAULT 0,
   questions_json JSON NOT NULL,
   visibility ENUM('public', 'private') DEFAULT 'public',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -168,6 +174,43 @@ CREATE TABLE IF NOT EXISTS surveys (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_survey_active (is_active),
+  INDEX idx_survey_status (status),
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+  deleted_at DATETIME NULL
+) ENGINE=InnoDB;
+
+-- 8b. Normalized survey questions (BISU CS dynamic survey)
+CREATE TABLE IF NOT EXISTS survey_questions (
+  id VARCHAR(36) PRIMARY KEY,
+  survey_id VARCHAR(36) NOT NULL,
+  question_text TEXT NOT NULL,
+  question_type ENUM('short_text','long_text','single_select','multi_select','yes_no','number','date') NOT NULL DEFAULT 'short_text',
+  placeholder VARCHAR(255) NULL,
+  character_limit INT NULL,
+  is_required TINYINT(1) NOT NULL DEFAULT 0,
+  is_published TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0,
+  conditional_parent_id VARCHAR(36) NULL,
+  conditional_trigger_value TEXT NULL,
+  allow_other TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE,
+  INDEX idx_sq_survey (survey_id, sort_order),
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+  deleted_at DATETIME NULL
+) ENGINE=InnoDB;
+
+-- 8c. Options for single/multi-select questions
+CREATE TABLE IF NOT EXISTS survey_question_options (
+  id VARCHAR(36) PRIMARY KEY,
+  question_id VARCHAR(36) NOT NULL,
+  option_text VARCHAR(255) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_other TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (question_id) REFERENCES survey_questions(id) ON DELETE CASCADE,
+  INDEX idx_sqo_question (question_id, sort_order),
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   deleted_at DATETIME NULL
 ) ENGINE=InnoDB;
@@ -179,10 +222,32 @@ CREATE TABLE IF NOT EXISTS survey_responses (
   user_id VARCHAR(128) NOT NULL,
   answers_json JSON NOT NULL,
   submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  is_archived TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('draft','submitted') NOT NULL DEFAULT 'submitted',
   FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY uq_survey_user (survey_id, user_id),
   INDEX idx_response_survey (survey_id),
+  INDEX idx_response_archived (is_archived),
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+  deleted_at DATETIME NULL
+) ENGINE=InnoDB;
+
+-- 9b. Normalized answers (one row per question per submission)
+CREATE TABLE IF NOT EXISTS survey_answers (
+  id VARCHAR(36) PRIMARY KEY,
+  submission_id VARCHAR(36) NOT NULL,
+  question_id VARCHAR(36) NOT NULL,
+  answer_text TEXT NULL,
+  answer_json JSON NULL,
+  custom_other_text VARCHAR(500) NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (submission_id) REFERENCES survey_responses(id) ON DELETE CASCADE,
+  FOREIGN KEY (question_id) REFERENCES survey_questions(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_submission_question (submission_id, question_id),
+  INDEX idx_sa_question (question_id),
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   deleted_at DATETIME NULL
 ) ENGINE=InnoDB;
@@ -279,6 +344,7 @@ CREATE TABLE IF NOT EXISTS messages (
   user_id VARCHAR(128),
   participant_ids_json JSON NULL,
   text MEDIUMTEXT NOT NULL,
+  image_url TEXT NULL,
   is_read TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,

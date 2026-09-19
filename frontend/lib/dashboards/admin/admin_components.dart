@@ -136,20 +136,21 @@ class _AdminMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardContent = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: metric.color.withValues(alpha: .24),
-          width: 1.2,
+          color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+          width: 1.5,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x0E0B1F3A),
-            blurRadius: 16,
-            offset: Offset(0, 6),
+            color: Colors.black.withValues(alpha: isDark ? .18 : .05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -161,12 +162,14 @@ class _AdminMetricCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: metric.color.withValues(alpha: .12),
-                  borderRadius: BorderRadius.circular(10),
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryBlue,
+                  shape: BoxShape.circle,
                 ),
-                child: Icon(metric.icon, color: metric.color, size: 20),
+                child: Icon(metric.icon, color: Colors.white, size: 19),
               ),
               if (metric.onTap != null)
                 Icon(
@@ -310,33 +313,45 @@ class AdminActionGrid extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final action = actions[index];
+            final tint = action.color ?? AppColors.primaryBlue;
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
             return Material(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(18),
               child: InkWell(
                 onTap: action.onTap,
                 borderRadius: BorderRadius.circular(18),
+                splashColor: tint.withValues(alpha: .14),
+                highlightColor: tint.withValues(alpha: .06),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppColors.bisuBlue700.withValues(alpha: .12),
+                      color: tint.withValues(alpha: isDark ? .28 : .16),
+                      width: 1.1,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: tint.withValues(alpha: isDark ? .06 : .04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 42,
-                        height: 42,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.bisuBlue700.withValues(alpha: .11),
-                          borderRadius: BorderRadius.circular(13),
+                          color: tint.withValues(alpha: isDark ? .20 : .12),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Icon(action.icon,
-                            color: AppColors.bisuBlue700, size: 22),
+                        child: Icon(action.icon, color: tint, size: 22),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -345,7 +360,7 @@ class AdminActionGrid extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
-                          fontSize: 11,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -362,11 +377,12 @@ class AdminActionGrid extends StatelessWidget {
 }
 
 class AdminAction {
-  const AdminAction(this.label, this.icon, this.onTap);
+  const AdminAction(this.label, this.icon, this.onTap, {this.color});
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+  final Color? color;
 }
 
 Widget adminAvatar(UserModel user, {double radius = 25}) {

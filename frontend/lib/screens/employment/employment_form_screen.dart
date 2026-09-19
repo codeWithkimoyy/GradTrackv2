@@ -12,6 +12,7 @@ import '../../repositories/content_repository.dart';
 import '../../routes/app_router.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/navigation_utils.dart';
 
 const _employmentTypes = [
   'Full-time',
@@ -240,7 +241,7 @@ class _EmploymentFormScreenState extends ConsumerState<EmploymentFormScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final fg = isDark ? Colors.white : AppColors.primaryNavy;
     final muted =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+        isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -250,7 +251,7 @@ class _EmploymentFormScreenState extends ConsumerState<EmploymentFormScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded,
               color: isDark ? Colors.white : AppColors.primaryNavy),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => popOrGoHome(context),
         ),
         title: Text(
           widget.isEdit ? 'Edit Employment' : 'Add Employment',

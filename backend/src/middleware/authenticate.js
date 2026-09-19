@@ -7,6 +7,7 @@ function toPublicUser(row) {
   return {
     uid: row.id,
     email: row.email,
+    contactEmail: row.contact_email ?? null,
     fullName: row.full_name,
     role: row.role,
     photoUrl: row.photo_url ?? null,

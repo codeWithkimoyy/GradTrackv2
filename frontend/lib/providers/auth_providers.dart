@@ -17,7 +17,9 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 /// Emits the current session (null when signed out).
 final authStateProvider = StreamProvider<AuthSession?>((ref) {
-  return ref.watch(authServiceProvider).authStateChanges;
+  final service = ref.watch(authServiceProvider);
+  service.ensureInitialState();
+  return service.authStateChanges;
 });
 
 /// Holds a locally-saved profile, updated by edit screens when the backend

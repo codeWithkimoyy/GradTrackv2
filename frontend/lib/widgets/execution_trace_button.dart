@@ -154,12 +154,24 @@ class _TraceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final (Color color, IconData icon) = switch (entry.phase) {
-      TracePhase.start => (AppColors.info, Icons.play_arrow_rounded),
-      TracePhase.loading => (AppColors.warning, Icons.hourglass_top_rounded),
-      TracePhase.data => (AppColors.success, Icons.check_circle_rounded),
-      TracePhase.error => (AppColors.error, Icons.error_rounded),
-      TracePhase.call => (AppColors.teal, Icons.bolt_rounded),
+    final (Color color, IconData icon) = switch ((entry.phase, isDark)) {
+      (TracePhase.start, true) =>
+        (AppColors.bisuBlue300, Icons.play_arrow_rounded),
+      (TracePhase.start, false) =>
+        (AppColors.info, Icons.play_arrow_rounded),
+      (TracePhase.loading, true) =>
+        (AppColors.warningLight, Icons.hourglass_top_rounded),
+      (TracePhase.loading, false) =>
+        (AppColors.warning, Icons.hourglass_top_rounded),
+      (TracePhase.data, true) =>
+        (AppColors.successLight, Icons.check_circle_rounded),
+      (TracePhase.data, false) =>
+        (AppColors.success, Icons.check_circle_rounded),
+      (TracePhase.error, true) =>
+        (AppColors.errorLight, Icons.error_rounded),
+      (TracePhase.error, false) => (AppColors.error, Icons.error_rounded),
+      (TracePhase.call, true) => (AppColors.tealLight, Icons.bolt_rounded),
+      (TracePhase.call, false) => (AppColors.tealDeep, Icons.bolt_rounded),
     };
 
     final time =
@@ -217,7 +229,7 @@ class _TraceRow extends StatelessWidget {
                       fontSize: 10,
                       color: isDark
                           ? const Color(0xFF94A3B8)
-                          : const Color(0xFF64748B),
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -229,7 +241,7 @@ class _TraceRow extends StatelessWidget {
             time,
             style: GoogleFonts.jetBrainsMono(
               fontSize: 9.5,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
             ),
           ),
         ],

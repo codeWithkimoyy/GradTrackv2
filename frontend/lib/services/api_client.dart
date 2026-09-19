@@ -77,6 +77,10 @@ class ApiException implements Exception {
           return 'Could not reach Google to verify the sign-in. Try again.';
         case 'email_not_verified':
           return 'Your Google account email is not verified.';
+        case 'database_unavailable':
+          return 'Database service is temporarily unavailable. Please try again shortly.';
+        case 'rate_limited':
+          return 'Too many attempts. Please wait a minute before trying again.';
         case 'not_found':
           return error.message.isNotEmpty ? error.message : 'Not found.';
       }

@@ -106,17 +106,18 @@ class AdminSettingsScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+          width: 1.5,
         ),
         boxShadow: isDark
             ? []
             : const [
                 BoxShadow(
-                  color: Color(0x0C0F172A),
-                  blurRadius: 18,
-                  offset: Offset(0, 6),
+                  color: Color(0x0A0052CC),
+                  blurRadius: 16,
+                  offset: Offset(0, 4),
                 ),
               ],
       ),
@@ -152,7 +153,7 @@ class AdminSettingsScreen extends ConsumerWidget {
             user.role.label,
             style: GoogleFonts.poppins(
               fontSize: 12.5,
-              color: AppColors.teal,
+              color: isDark ? AppColors.tealLight : AppColors.tealDeep,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -162,7 +163,7 @@ class AdminSettingsScreen extends ConsumerWidget {
             style: GoogleFonts.poppins(
               fontSize: 12.5,
               color:
-                  isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
             ),
           ),
         ],
@@ -210,7 +211,9 @@ class _SectionLabel extends StatelessWidget {
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.3,
-          color: AppColors.teal,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.tealLight
+              : AppColors.tealDeep,
         ),
       ),
     );
@@ -249,7 +252,8 @@ class _SettingsTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                color: isDark ? AppColors.borderDark : AppColors.outlineCard,
+                width: 1.5,
               ),
             ),
             child: Row(

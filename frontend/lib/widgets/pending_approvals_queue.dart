@@ -91,18 +91,18 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: (queue == null || queue.isEmpty)
-              ? AppColors.bisuBlue700.withValues(alpha: .10)
+              ? AppColors.outlineCard
               : AppColors.warning.withValues(alpha: .35),
-          width: (queue == null || queue.isEmpty) ? 1 : 1.2,
+          width: 1.5,
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x120B1F3A),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            color: Color(0x0A0052CC),
+            blurRadius: 16,
+            offset: Offset(0, 4),
           ),
         ],
       ),
