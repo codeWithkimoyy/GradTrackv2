@@ -125,7 +125,7 @@ class AdminSettingsScreen extends ConsumerWidget {
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+            backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
             backgroundImage:
                 user.photoUrl != null ? avatarProvider(user.photoUrl) : null,
             child: user.photoUrl == null
@@ -264,7 +264,7 @@ class _SettingsTile extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color:
-                        AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.10),
+                        AppColors.primaryBlue.withOpacity(isDark ? 0.16 : 0.10),
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(icon, color: AppColors.primaryBlue, size: 21),

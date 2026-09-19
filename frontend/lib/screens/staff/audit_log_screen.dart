@@ -38,7 +38,7 @@ class AuditLogScreen extends ConsumerWidget {
                   children: [
                     Icon(Icons.history_rounded,
                         size: 64,
-                        color: AppColors.primaryBlue.withValues(alpha: .25)),
+                        color: AppColors.primaryBlue.withOpacity(.25)),
                     const SizedBox(height: 14),
                     const Text('No audit entries yet.'),
                     const SizedBox(height: 6),
@@ -100,7 +100,7 @@ class _AuditEntryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: .10),
+          backgroundColor: color.withOpacity(.10),
           child: Icon(icon, color: color, size: 22),
         ),
         title: Text(

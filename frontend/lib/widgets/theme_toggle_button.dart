@@ -36,7 +36,7 @@ class ThemeToggleButton extends ConsumerWidget {
       color: Theme.of(context)
           .colorScheme
           .surface
-          .withValues(alpha: 0.85),
+          .withOpacity(0.85),
       shape: const CircleBorder(),
       elevation: 3,
       child: IconButton(

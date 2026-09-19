@@ -208,7 +208,7 @@ class _AdminSidebar extends ConsumerWidget {
                 color: isDark ? AppColors.bisuBlue900 : AppColors.primaryBlue,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.20),
+                  color: Colors.white.withOpacity(0.20),
                   width: 1.5,
                 ),
                 boxShadow: const [
@@ -227,7 +227,7 @@ class _AdminSidebar extends ConsumerWidget {
                     height: 32,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.20),
+                      color: Colors.white.withOpacity(0.20),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -323,11 +323,11 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 
     if (widget.selected) {
       backgroundColor = isDark
-          ? AppColors.bisuBlue800.withValues(alpha: 0.35)
+          ? AppColors.bisuBlue800.withOpacity(0.35)
           : AppColors.primarySoft;
       borderSide = BorderSide(
         color: isDark
-            ? AppColors.primaryLightSkyCyan.withValues(alpha: 0.45)
+            ? AppColors.primaryLightSkyCyan.withOpacity(0.45)
             : AppColors.outlineCardActive,
         width: 1.5,
       );
@@ -732,7 +732,7 @@ class _AdminBottomNavigation extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inactiveColor =
-        isDark ? Colors.white.withValues(alpha: .68) : const Color(0xFF667085);
+        isDark ? Colors.white.withOpacity(.68) : const Color(0xFF667085);
     final unreadMessages = ref.watch(unreadAdminMessagesCountProvider);
 
     return DecoratedBox(
@@ -741,8 +741,8 @@ class _AdminBottomNavigation extends ConsumerWidget {
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withValues(alpha: .40)
-                : const Color(0xFF0B1F3A).withValues(alpha: .12),
+                ? Colors.black.withOpacity(.40)
+                : const Color(0xFF0B1F3A).withOpacity(.12),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -757,12 +757,12 @@ class _AdminBottomNavigation extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF131720).withValues(alpha: .96)
-                  : Colors.white.withValues(alpha: .96),
+                  ? const Color(0xFF131720).withOpacity(.96)
+                  : Colors.white.withOpacity(.96),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withValues(alpha: .08)
+                    ? Colors.white.withOpacity(.08)
                     : AppColors.outlineCard,
                 width: 1.5,
               ),
@@ -784,8 +784,8 @@ class _AdminBottomNavigation extends ConsumerWidget {
                       child: InkWell(
                         onTap: () => onSelected(index),
                         borderRadius: BorderRadius.circular(18),
-                        splashColor: activeColor.withValues(alpha: .14),
-                        highlightColor: activeColor.withValues(alpha: .06),
+                        splashColor: activeColor.withOpacity(.14),
+                        highlightColor: activeColor.withOpacity(.06),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 220),
                           curve: Curves.easeOutCubic,
@@ -806,8 +806,7 @@ class _AdminBottomNavigation extends ConsumerWidget {
                                     ),
                                     decoration: BoxDecoration(
                                       color: selected
-                                          ? activeColor.withValues(
-                                              alpha: isDark ? .22 : .12,
+                                          ? activeColor.withOpacity(isDark ? .22 : .12,
                                             )
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(14),

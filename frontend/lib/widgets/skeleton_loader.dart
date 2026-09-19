@@ -53,7 +53,7 @@ class _SkeletonCardState extends State<SkeletonCard>
             color: Theme.of(context)
                 .colorScheme
                 .surfaceContainerHighest
-                .withValues(alpha: 0.3 + _animation.value * 0.3),
+                .withOpacity(0.3 + _animation.value * 0.3),
           ),
         );
       },
@@ -114,7 +114,7 @@ class _SkeletonLineState extends State<SkeletonLine>
             color: Theme.of(context)
                 .colorScheme
                 .surfaceContainerHighest
-                .withValues(alpha: 0.3 + _animation.value * 0.3),
+                .withOpacity(0.3 + _animation.value * 0.3),
           ),
         );
       },
@@ -165,7 +165,7 @@ class _SkeletonAvatarState extends State<SkeletonAvatar>
           backgroundColor: Theme.of(context)
               .colorScheme
               .surfaceContainerHighest
-              .withValues(alpha: 0.3 + _animation.value * 0.3),
+              .withOpacity(0.3 + _animation.value * 0.3),
         );
       },
     );
@@ -240,7 +240,7 @@ class _SkeletonListItemState extends State<_SkeletonListItem>
             color: Theme.of(context)
                 .colorScheme
                 .surfaceContainerHighest
-                .withValues(alpha: 0.2 + _animation.value * 0.25),
+                .withOpacity(0.2 + _animation.value * 0.25),
           ),
           child: Row(
             children: [
@@ -249,7 +249,7 @@ class _SkeletonListItemState extends State<_SkeletonListItem>
                 backgroundColor: Theme.of(context)
                     .colorScheme
                     .surfaceContainerHighest
-                    .withValues(alpha: 0.4 + _animation.value * 0.3),
+                    .withOpacity(0.4 + _animation.value * 0.3),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -265,7 +265,7 @@ class _SkeletonListItemState extends State<_SkeletonListItem>
                         color: Theme.of(context)
                             .colorScheme
                             .surfaceContainerHighest
-                            .withValues(alpha: 0.4 + _animation.value * 0.3),
+                            .withOpacity(0.4 + _animation.value * 0.3),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -277,7 +277,7 @@ class _SkeletonListItemState extends State<_SkeletonListItem>
                         color: Theme.of(context)
                             .colorScheme
                             .surfaceContainerHighest
-                            .withValues(alpha: 0.3 + _animation.value * 0.3),
+                            .withOpacity(0.3 + _animation.value * 0.3),
                       ),
                     ),
                   ],

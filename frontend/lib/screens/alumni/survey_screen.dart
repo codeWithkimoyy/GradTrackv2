@@ -30,14 +30,14 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
         data: (surveys) {
           // only published, active, public already filtered by backend for alumni, but double filter
           final visible = surveys.where((s) => (s['status']?.toString().toLowerCase() ?? 'published') == 'published').toList();
-          if (visible.isEmpty) return Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [Container(width: 64, height: 64, decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha: 0.12), shape: BoxShape.circle), child: const Icon(Icons.fact_check_outlined, size: 32, color: AppColors.primaryBlue)), const SizedBox(height: 14), Text('No surveys published yet.', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)), const SizedBox(height: 6), Text('Check back soon for the Computer Science tracer survey.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center)])));
+          if (visible.isEmpty) return Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [Container(width: 64, height: 64, decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(0.12), shape: BoxShape.circle), child: const Icon(Icons.fact_check_outlined, size: 32, color: AppColors.primaryBlue)), const SizedBox(height: 14), Text('No surveys published yet.', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)), const SizedBox(height: 6), Text('Check back soon for the Computer Science tracer survey.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center)])));
           return responsesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Padding(padding: const EdgeInsets.all(32), child: Text('Your responses could not be loaded.\n\n$e', textAlign: TextAlign.center))),
             data: (responses) {
               final myMap = {for (final r in responses) r['surveyId']?.toString() ?? '': r};
               return ListView(padding: const EdgeInsets.all(16), children: [
-                Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.15))), child: Row(children: [const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primaryBlue), const SizedBox(width: 8), Expanded(child: Text('Answer published surveys to help BISU track Computer Science graduate outcomes. Your responses are private.', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textSecondary)))])),
+                Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.primaryBlue.withOpacity(0.15))), child: Row(children: [const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primaryBlue), const SizedBox(width: 8), Expanded(child: Text('Answer published surveys to help BISU track Computer Science graduate outcomes. Your responses are private.', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textSecondary)))])),
                 const SizedBox(height: 16),
                 ...visible.map((survey) {
                   final id = survey['id']?.toString() ?? '';
@@ -101,12 +101,12 @@ class _SurveyCard extends StatelessWidget {
     else { badge='Not yet answered'; c=AppColors.warning; }
     return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: isDark? AppColors.cardDark: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark? AppColors.borderDark: AppColors.outlineCard, width:1.2)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
       Row(children:[
-        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: (isSubmitted? AppColors.success: AppColors.primaryBlue).withValues(alpha:0.12), borderRadius: BorderRadius.circular(12)), child: Icon(isSubmitted? Icons.task_alt_rounded: Icons.fact_check_outlined, color: isSubmitted? AppColors.success: AppColors.primaryBlue)),
+        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: (isSubmitted? AppColors.success: AppColors.primaryBlue).withOpacity(0.12), borderRadius: BorderRadius.circular(12)), child: Icon(isSubmitted? Icons.task_alt_rounded: Icons.fact_check_outlined, color: isSubmitted? AppColors.success: AppColors.primaryBlue)),
         const SizedBox(width:12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
           Text(survey['title']?.toString()??'Survey', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize:14, color: isDark?Colors.white:AppColors.primaryNavy)),
           const SizedBox(height:2),
-          Container(padding: const EdgeInsets.symmetric(horizontal:8, vertical:2), decoration: BoxDecoration(color: c.withValues(alpha:0.12), borderRadius: BorderRadius.circular(8)), child: Text(badge, style: GoogleFonts.poppins(fontSize:10, fontWeight: FontWeight.w700, color: c))),
+          Container(padding: const EdgeInsets.symmetric(horizontal:8, vertical:2), decoration: BoxDecoration(color: c.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(badge, style: GoogleFonts.poppins(fontSize:10, fontWeight: FontWeight.w700, color: c))),
         ])),
       ]),
       if((survey['description']?.toString()??'').isNotEmpty)...[
@@ -381,10 +381,10 @@ class _AnswerSurveyPageState extends State<_AnswerSurveyPage> {
       decoration: BoxDecoration(color: isDark? AppColors.cardDark: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark? AppColors.borderDark: AppColors.outlineCard, width:1.2), boxShadow: isDark? []: const [BoxShadow(color: Color(0x0A0052CC), blurRadius: 12, offset: Offset(0,2))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
         Row(children:[
-          Container(width:28, height:28, alignment: Alignment.center, decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha:0.12), borderRadius: BorderRadius.circular(8)), child: Text('${idx+1}', style: GoogleFonts.poppins(fontSize:12, fontWeight: FontWeight.w700, color: AppColors.primaryBlue))),
+          Container(width:28, height:28, alignment: Alignment.center, decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text('${idx+1}', style: GoogleFonts.poppins(fontSize:12, fontWeight: FontWeight.w700, color: AppColors.primaryBlue))),
           const SizedBox(width:10),
           Expanded(child: Text(text, style: GoogleFonts.poppins(fontSize:13.5, fontWeight: FontWeight.w600, color: isDark?Colors.white:AppColors.primaryNavy))),
-          if(isRequired) Container(margin: const EdgeInsets.only(left:6), padding: const EdgeInsets.symmetric(horizontal:6, vertical:2), decoration: BoxDecoration(color: AppColors.error.withValues(alpha:0.12), borderRadius: BorderRadius.circular(6)), child: Text('*', style: GoogleFonts.poppins(fontSize:11, fontWeight: FontWeight.w700, color: AppColors.error))),
+          if(isRequired) Container(margin: const EdgeInsets.only(left:6), padding: const EdgeInsets.symmetric(horizontal:6, vertical:2), decoration: BoxDecoration(color: AppColors.error.withOpacity(0.12), borderRadius: BorderRadius.circular(6)), child: Text('*', style: GoogleFonts.poppins(fontSize:11, fontWeight: FontWeight.w700, color: AppColors.error))),
         ]),
         const SizedBox(height:12),
         if(type=='short_text') ...[
@@ -406,7 +406,7 @@ class _AnswerSurveyPageState extends State<_AnswerSurveyPage> {
           // compact multi-select via FilterChips + dropdown button
           Wrap(spacing:6, runSpacing:6, children: opts.map((o){
             final selected=_multiValues[id]?.contains(o)??false;
-            return FilterChip(label: Text(o, style: GoogleFonts.poppins(fontSize:11)), selected: selected, selectedColor: AppColors.primaryBlue.withValues(alpha:0.15), onSelected: (v){ setState((){ _multiValues[id] ??= <String>{}; if(v) _multiValues[id]!.add(o); else _multiValues[id]!.remove(o); }); });
+            return FilterChip(label: Text(o, style: GoogleFonts.poppins(fontSize:11)), selected: selected, selectedColor: AppColors.primaryBlue.withOpacity(0.15), onSelected: (v){ setState((){ _multiValues[id] ??= <String>{}; if(v) _multiValues[id]!.add(o); else _multiValues[id]!.remove(o); }); });
           }).toList()),
           if(opts.isEmpty) Text('No options configured.', style: GoogleFonts.poppins(fontSize:11, color: Colors.grey)),
           if(allowOther && (_multiValues[id]?.contains('Other')==true)) ...[
@@ -447,12 +447,12 @@ class _AnswerSurveyPageState extends State<_AnswerSurveyPage> {
       backgroundColor: isDark? const Color(0xFF031A48): AppColors.surfaceLight,
       appBar: AppBar(backgroundColor: isDark? const Color(0xFF031A48): AppColors.surfaceLight, foregroundColor: isDark? Colors.white: AppColors.primaryNavy, elevation:0, title: Text(widget.title, maxLines:1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontWeight: FontWeight.w700))),
       body: Stack(children:[
-        Positioned.fill(child: Image.asset('assets/images/landing.jpg', fit: BoxFit.cover, color: Colors.black.withValues(alpha:0.35), colorBlendMode: BlendMode.darken, errorBuilder: (_,__,___)=>const SizedBox.shrink())),
+        Positioned.fill(child: Image.asset('assets/images/landing.jpg', fit: BoxFit.cover, color: Colors.black.withOpacity(0.35), colorBlendMode: BlendMode.darken, errorBuilder: (_,__,___)=>const SizedBox.shrink())),
         SafeArea(child: Column(children:[
-          Container(padding: const EdgeInsets.fromLTRB(16,12,16,12), decoration: BoxDecoration(color: isDark? const Color(0xCC031A48): Colors.white.withValues(alpha:0.92), border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha:0.12)))), child: Column(children:[
+          Container(padding: const EdgeInsets.fromLTRB(16,12,16,12), decoration: BoxDecoration(color: isDark? const Color(0xCC031A48): Colors.white.withOpacity(0.92), border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.12)))), child: Column(children:[
             Row(children:[Expanded(child: Text('Progress', style: GoogleFonts.poppins(fontSize:11, fontWeight: FontWeight.w600, color: isDark? Colors.white: AppColors.primaryNavy))), Text('${(_progress*100).round()}% • ${_answeredCount(visible)}/$total answered', style: GoogleFonts.poppins(fontSize:11, color: isDark? const Color(0xFF94A3B8): AppColors.textSecondary))]),
             const SizedBox(height:6),
-            ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: _progress, minHeight:6, backgroundColor: Colors.white.withValues(alpha:0.25), valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)))),
+            ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: _progress, minHeight:6, backgroundColor: Colors.white.withOpacity(0.25), valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)))),
             if(paginated) ...[
               const SizedBox(height:8),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(pageCount, (i){
@@ -481,7 +481,7 @@ class _AnswerSurveyPageState extends State<_AnswerSurveyPage> {
               Expanded(child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical:14)), onPressed: _submit, icon: const Icon(Icons.send_rounded, size:16), label: Text('Submit Survey', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)))),
             ]),
             const SizedBox(height:8),
-            Text('Your responses help improve the Computer Science program.', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize:10, color: Colors.white.withValues(alpha:0.7))),
+            Text('Your responses help improve the Computer Science program.', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize:10, color: Colors.white.withOpacity(0.7))),
           ]))),
         ])),
       ]),

@@ -82,11 +82,10 @@ class BatchSectionHeader extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withValues(
-                  alpha: isDark ? 0.22 : 0.10),
+              color: AppColors.primaryBlue.withOpacity(isDark ? 0.22 : 0.10),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.primaryBlue.withValues(alpha: 0.30),
+                color: AppColors.primaryBlue.withOpacity(0.30),
               ),
             ),
             child: Text(

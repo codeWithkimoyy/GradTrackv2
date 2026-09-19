@@ -194,7 +194,7 @@ class _NotificationPanel extends ConsumerWidget {
               border: Border.all(
                 color: Theme.of(context)
                     .dividerColor
-                    .withValues(alpha: 0.3),
+                    .withOpacity(0.3),
               ),
             ),
             child: _NotificationPanelBody(
@@ -304,7 +304,7 @@ class _NotificationModal extends ConsumerWidget {
         height: 620,
         decoration: BoxDecoration(
           border: Border.all(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            color: Theme.of(context).dividerColor.withOpacity(0.3),
           ),
         ),
         child: _NotificationPanelBody(
@@ -379,7 +379,7 @@ class _NotificationPanelBody extends ConsumerWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            color: Theme.of(context).dividerColor.withOpacity(0.3),
           ),
         ),
       ),
@@ -514,7 +514,7 @@ class _NotificationPanelBody extends ConsumerWidget {
         height: 1,
         indent: 16,
         endIndent: 16,
-        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+        color: Theme.of(context).dividerColor.withOpacity(0.2),
       ),
       itemBuilder: (context, i) {
         final n = notifications[i];
@@ -555,7 +555,7 @@ class _NotificationItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         color: notification.isRead
             ? Colors.transparent
-            : theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
+            : theme.colorScheme.primaryContainer.withOpacity(0.25),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -563,7 +563,7 @@ class _NotificationItem extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: notification.priority.color.withValues(alpha: 0.15),
+                color: notification.priority.color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -593,7 +593,7 @@ class _NotificationItem extends StatelessWidget {
                     notification.description,
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -603,7 +603,7 @@ class _NotificationItem extends StatelessWidget {
                     timeago.format(notification.createdAt),
                     style: GoogleFonts.poppins(
                       fontSize: 10,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
                     ),
                   ),
                 ],
@@ -613,7 +613,7 @@ class _NotificationItem extends StatelessWidget {
               icon: Icon(
                 Icons.close,
                 size: 16,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                color: theme.colorScheme.onSurface.withOpacity(0.3),
               ),
               onPressed: onDelete,
               visualDensity: VisualDensity.compact,

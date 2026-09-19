@@ -41,14 +41,14 @@ class DashboardStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark
-              ? color.withValues(alpha: 0.30)
+              ? color.withOpacity(0.30)
               : AppColors.outlineCard,
           width: 1.5,
         ),
         boxShadow: isDark
             ? [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.08),
+                  color: color.withOpacity(0.08),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -72,10 +72,10 @@ class DashboardStatCard extends StatelessWidget {
                 height: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: isDark ? 0.20 : 0.10),
+                  color: color.withOpacity(isDark ? 0.20 : 0.10),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: color.withValues(alpha: 0.28),
+                    color: color.withOpacity(0.28),
                     width: 1.5,
                   ),
                 ),
@@ -89,10 +89,10 @@ class DashboardStatCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: effectiveBadgeColor.withValues(alpha: isDark ? 0.18 : 0.10),
+                    color: effectiveBadgeColor.withOpacity(isDark ? 0.18 : 0.10),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: effectiveBadgeColor.withValues(alpha: 0.30),
+                      color: effectiveBadgeColor.withOpacity(0.30),
                       width: 1,
                     ),
                   ),
@@ -112,10 +112,10 @@ class DashboardStatCard extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.15 : 0.08),
+                    color: AppColors.primaryBlue.withOpacity(isDark ? 0.15 : 0.08),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.25),
+                      color: AppColors.primaryBlue.withOpacity(0.25),
                     ),
                   ),
                   child: Row(
@@ -189,8 +189,8 @@ class DashboardStatCard extends StatelessWidget {
                     value: progressValue,
                     minHeight: 6,
                     backgroundColor: isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : AppColors.primaryBlue.withValues(alpha: 0.1),
+                        ? Colors.white.withOpacity(0.1)
+                        : AppColors.primaryBlue.withOpacity(0.1),
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),

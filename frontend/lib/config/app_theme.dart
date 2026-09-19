@@ -149,7 +149,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isDark ? AppColors.cardDark : Colors.white,
-        indicatorColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+        indicatorColor: AppColors.primaryBlue.withOpacity(0.15),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return GoogleFonts.poppins(

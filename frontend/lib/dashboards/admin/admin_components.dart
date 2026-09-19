@@ -43,7 +43,7 @@ class AdminDashboardPage extends StatelessWidget {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: accent.withValues(alpha: .13),
+                      color: accent.withOpacity(.13),
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: Icon(icon, color: accent, size: 28),
@@ -68,7 +68,7 @@ class AdminDashboardPage extends StatelessWidget {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withValues(alpha: .60),
+                                .withOpacity(.60),
                             fontSize: 13,
                             height: 1.4,
                           ),
@@ -148,7 +148,7 @@ class _AdminMetricCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? .18 : .05),
+            color: Colors.black.withOpacity(isDark ? .18 : .05),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -175,7 +175,7 @@ class _AdminMetricCard extends StatelessWidget {
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 12,
-                  color: metric.color.withValues(alpha: 0.7),
+                  color: metric.color.withOpacity(0.7),
                 ),
             ],
           ),
@@ -207,7 +207,7 @@ class _AdminMetricCard extends StatelessWidget {
                   color: Theme.of(context)
                       .colorScheme
                       .onSurface
-                      .withValues(alpha: .58),
+                      .withOpacity(.58),
                 ),
               ),
             ],
@@ -254,7 +254,7 @@ class AdminSectionCard extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppColors.bisuBlue700.withValues(alpha: .10),
+          color: AppColors.bisuBlue700.withOpacity(.10),
         ),
         boxShadow: const [
           BoxShadow(
@@ -322,20 +322,20 @@ class AdminActionGrid extends StatelessWidget {
               child: InkWell(
                 onTap: action.onTap,
                 borderRadius: BorderRadius.circular(18),
-                splashColor: tint.withValues(alpha: .14),
-                highlightColor: tint.withValues(alpha: .06),
+                splashColor: tint.withOpacity(.14),
+                highlightColor: tint.withOpacity(.06),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: tint.withValues(alpha: isDark ? .28 : .16),
+                      color: tint.withOpacity(isDark ? .28 : .16),
                       width: 1.1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: tint.withValues(alpha: isDark ? .06 : .04),
+                        color: tint.withOpacity(isDark ? .06 : .04),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -348,7 +348,7 @@ class AdminActionGrid extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: tint.withValues(alpha: isDark ? .20 : .12),
+                          color: tint.withOpacity(isDark ? .20 : .12),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(action.icon, color: tint, size: 22),
@@ -388,7 +388,7 @@ class AdminAction {
 Widget adminAvatar(UserModel user, {double radius = 25}) {
   return CircleAvatar(
     radius: radius,
-    backgroundColor: AppColors.bisuBlue700.withValues(alpha: .14),
+    backgroundColor: AppColors.bisuBlue700.withOpacity(.14),
     backgroundImage: user.photoUrl == null
         ? null
         : avatarProvider(user.photoUrl!),

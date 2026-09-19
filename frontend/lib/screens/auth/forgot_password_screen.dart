@@ -214,7 +214,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             'Alumni IDs are verified against the registry; password resets '
             'are processed by the administrator.',
             style: GoogleFonts.poppins(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: Colors.white.withOpacity(0.7),
                 fontSize: 11,
                 height: 1.4),
           ),

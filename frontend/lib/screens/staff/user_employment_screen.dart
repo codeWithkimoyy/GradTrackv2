@@ -97,7 +97,7 @@ class _UserHeader extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+                backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
                   style: const TextStyle(

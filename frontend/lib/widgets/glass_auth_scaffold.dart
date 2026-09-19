@@ -288,7 +288,7 @@ class _SecurityFooter extends StatelessWidget {
         Text(
           'Powered by BISU Bilar Campus',
           style: GoogleFonts.poppins(
-            color: Colors.white.withValues(alpha: .76),
+            color: Colors.white.withOpacity(.76),
             fontSize: 11.5,
           ),
         ),
