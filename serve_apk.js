@@ -1,6 +1,6 @@
 // Serves the built APK over LAN so a phone on same Wi-Fi can download without USB.
 // Usage: node serve_apk.js  (then open http://<PC-IP>:8080 on phone)
-// Boss Kim — now serves v1.0.2 (versionCode 3, targetSdk 34, minSdk 21) with robust headers, HTML landing, and split-ABI support.
+// Boss Kim — now serves v1.0.3 (versionCode 4, targetSdk 34, minSdk 21) with robust headers, HTML landing, and split-ABI support.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -56,7 +56,7 @@ function serveFile(res, filePath, fileName) {
 function landingHtml() {
   const universalStat = safeStat(UNIVERSAL_APK);
   const universalSize = universalStat ? (universalStat.size / (1024 * 1024)).toFixed(1) + ' MB' : 'missing — run flutter build apk --release';
-  const universalName = 'GradTrack-v1.0.2+3-universal.apk';
+  const universalName = 'GradTrack-v1.0.3+3-universal.apk';
   // check for split apks
   const splits = ['app-arm64-v8a-release.apk', 'app-armeabi-v7a-release.apk', 'app-x86_64-release.apk']
     .map((n) => ({ name: n, stat: safeStat(path.join(APK_DIR, n)) }))
@@ -66,7 +66,7 @@ function landingHtml() {
     : '<p>Split APKs not built. Run <code>flutter build apk --split-per-abi --release</code> to generate smaller per-ABI apks.</p>';
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GradTrack APK — v1.0.2</title>
+<title>GradTrack APK — v1.0.3</title>
 <style>
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6;color:#1a1a1a}
   a.button{display:inline-block;padding:14px 22px;background:#0b57d0;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;margin:8px 8px 8px 0}
@@ -76,7 +76,7 @@ function landingHtml() {
   .ok{color:#137333;font-weight:700} .warn{color:#b3261e}
   ul{padding-left:20px}
 </style></head><body>
-<h1>GradTrack v1.0.2 (versionCode 3)</h1>
+<h1>GradTrack v1.0.3 (versionCode 4)</h1>
 <p>Built: ${universalStat ? new Date(universalStat.mtime).toLocaleString() : '—'} — <span class="${universalStat ? 'ok' : 'warn'}">${universalSize}</span></p>
 <div class="card">
   <h2>Install on your phone</h2>
@@ -127,23 +127,23 @@ const server = http.createServer((req, res) => {
   }
   if (url === '/health' || url === '/ping') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ ok: true, version: '1.0.2+3', universal: !!safeStat(UNIVERSAL_APK) }));
+    return res.end(JSON.stringify({ ok: true, version: '1.0.3+4', universal: !!safeStat(UNIVERSAL_APK) }));
   }
   // APK routes
   let filePath = null;
   let fileName = null;
   if (url === '/apk/universal' || url === '/app' || url === '/app-release.apk' || url === '/GradTrack.apk' || url.startsWith('/app')) {
     filePath = UNIVERSAL_APK;
-    fileName = 'GradTrack-v1.0.2+3-universal.apk';
+    fileName = 'GradTrack-v1.0.3+3-universal.apk';
   } else if (url === '/apk/arm64' || url === '/apk/app-arm64-v8a-release.apk') {
     filePath = path.join(APK_DIR, 'app-arm64-v8a-release.apk');
-    fileName = 'GradTrack-v1.0.2-arm64-v8a.apk';
+    fileName = 'GradTrack-v1.0.3-arm64-v8a.apk';
   } else if (url === '/apk/armeabi' || url === '/apk/app-armeabi-v7a-release.apk') {
     filePath = path.join(APK_DIR, 'app-armeabi-v7a-release.apk');
-    fileName = 'GradTrack-v1.0.2-armeabi-v7a.apk';
+    fileName = 'GradTrack-v1.0.3-armeabi-v7a.apk';
   } else if (url === '/apk/x86_64' || url === '/apk/app-x86_64-release.apk') {
     filePath = path.join(APK_DIR, 'app-x86_64-release.apk');
-    fileName = 'GradTrack-v1.0.2-x86_64.apk';
+    fileName = 'GradTrack-v1.0.3-x86_64.apk';
   } else if (url.startsWith('/apk/')) {
     const base = path.basename(url);
     // sanitize
@@ -176,7 +176,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   const ips = getLocalIps();
-  console.log(`\n=== GradTrack APK server v1.0.2+3 (targetSdk 34, minSdk 21) ===`);
+  console.log(`\n=== GradTrack APK server v1.0.3+3 (targetSdk 34, minSdk 21) ===`);
   console.log(`Universal APK: ${UNIVERSAL_APK} (${safeStat(UNIVERSAL_APK) ? (safeStat(UNIVERSAL_APK).size / (1024 * 1024)).toFixed(1) + ' MB' : 'MISSING'})`);
   console.log(`Listening on port ${PORT}`);
   ips.forEach((ip) => console.log(`  http://${ip}:${PORT}/  -> download on phone`));
