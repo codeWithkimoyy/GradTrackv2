@@ -249,11 +249,7 @@ class _LandingHero extends StatelessWidget {
         children: [
           Positioned.fill(
             child: Image.asset(
-<<<<<<< HEAD
               'assets/images/landing.jpg',
-=======
-              'assets/images/Splash.jpg',
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Image.asset(
                 'assets/images/Splash3.jpeg',

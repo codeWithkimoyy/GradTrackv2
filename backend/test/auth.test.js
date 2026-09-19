@@ -146,7 +146,6 @@ test('POST /api/auth/register requires an email or phone number', async () => {
   });
   const body = await response.json();
 
-<<<<<<< HEAD
   assert.equal(response.status, 400);
   assert.equal(body.error, 'contact_required');
 });
@@ -192,9 +191,7 @@ test('POST /api/auth/login reports 503 database_unavailable on connection outage
     assert.equal(body.error, 'database_unavailable');
   } finally {
     mysql.query = originalQuery;
-=======
-  assert.equal(response.status, 401);
-  assert.equal(body.error, 'invalid_credentials');
+  }
 });
 
 test('POST /api/auth/login accepts a short admin username', async () => {
@@ -212,6 +209,5 @@ test('POST /api/auth/login accepts a short admin username', async () => {
     // Resilient when the seed admin is absent in the test database: the route
     // must still answer with a structured login error, never crash.
     assert.equal(body.error, 'invalid_credentials');
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
   }
 });

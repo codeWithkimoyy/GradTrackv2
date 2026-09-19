@@ -51,7 +51,6 @@ class UserRepository {
   /// Keeps only the fields the self-profile endpoint accepts.
   Map<String, dynamic> _editableBody(Map<String, dynamic> json) {
     const allowed = {
-      'email',
       'fullName',
       'photoUrl',
       'studentNumber',

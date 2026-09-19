@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:excel/excel.dart' deferred as excel_pkg hide StringExt, BoolParsing;
+import 'package:excel/excel.dart' as excel_pkg;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,11 +112,6 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
 
     try {
       final repo = ref.read(userRepositoryProvider);
-      if (result.single.name.toLowerCase().endsWith('.xlsx')) {
-        // The spreadsheet parser is a deferred library: load it on demand
-        // so the first paint never pays for it.
-        await excel_pkg.loadLibrary();
-      }
       final records = _parseFile(result.single.name, pickedBytes);
 
       var added = 0;
@@ -663,15 +658,11 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                   ? Center(
                       child: Text(
                         'No alumni in this batch yet.',
-<<<<<<< HEAD
                         style: GoogleFonts.outfit(
                           color: isDark
                               ? const Color(0xFF94A3B8)
                               : AppColors.textSecondary,
                         ),
-=======
-                        style: GoogleFonts.poppins(color: AppColors.textSecondary),
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
                       ),
                     )
                   : (constraints.maxWidth >= 900
@@ -849,19 +840,11 @@ class _StatChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('$value ',
-<<<<<<< HEAD
               style: GoogleFonts.outfit(
                   color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
           Text(label,
               style:
                   GoogleFonts.outfit(color: textColor, fontSize: 12.5)),
-=======
-              style: GoogleFonts.poppins(
-                  color: color, fontWeight: FontWeight.w800, fontSize: 14)),
-          Text(label,
-              style: GoogleFonts.poppins(
-                  color: color.withValues(alpha: 0.85), fontSize: 12.5)),
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
         ],
       ),
     );
@@ -889,11 +872,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         status.label,
-<<<<<<< HEAD
         style: GoogleFonts.outfit(
-=======
-        style: GoogleFonts.poppins(
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
           fontSize: 10.5,
           fontWeight: FontWeight.w600,
           color: _chipTextColor(color, isDark),
@@ -980,24 +959,13 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
   late final TextEditingController _course;
   String? _batch;
 
+  /// Same range as the Alumni-module batch grid.
   static const int _firstBatchYear = 2020;
 
-  /// Batch choices, newest first. Kept in the stored "YYYY-YYYY" (hyphen)
-  /// format and always includes the current [_batch] so the dropdown can
-  /// display an existing value even when it falls outside the range or was
-  /// stored with a different separator.
-  List<String> get _batchOptions {
-    final years = <String>{};
-    for (var year = (DateTime.now().year - 1); year >= _firstBatchYear; year--) {
-      years.add('$year-${year + 1}');
-    }
-    final stored = _batch?.trim().replaceAll('–', '-');
-    if (stored != null && stored.isNotEmpty) years.add(stored);
-    final list = years.toList()
-      ..sort((a, b) => (academicYearStart(b) ?? 0)
-          .compareTo(academicYearStart(a) ?? 0));
-    return list;
-  }
+  List<String> get _batchOptions => [
+        for (var year = (DateTime.now().year - 1); year >= _firstBatchYear; year--)
+          academicYearLabel(year),
+      ];
 
   /// Matches a stored academic-year value to a dropdown option. Stored
   /// values may use a hyphen ("2023-2024") while options use the display
@@ -1021,19 +989,11 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
     _fullName = TextEditingController(text: existing?.fullName ?? '');
     _course = TextEditingController(
         text: existing?.course ?? AppStrings.defaultCourse);
-<<<<<<< HEAD
     _batch = _normalizeBatch(existing?.academicYearGraduated) ??
         (existing?.graduationYear == null
             ? null
             : _normalizeBatch(
                 academicYearLabel(existing!.graduationYear! - 1)));
-=======
-    final storedBatch = existing?.academicYearGraduated ??
-        (existing?.graduationYear == null
-            ? null
-            : academicYearLabel(existing!.graduationYear! - 1));
-    _batch = storedBatch?.trim().replaceAll('–', '-');
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
   }
 
   @override
@@ -1200,11 +1160,7 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
             Text(
               'Set a new password for this alumni. Share the temporary '
               'password with them and ask them to change it after signing in.',
-<<<<<<< HEAD
               style: GoogleFonts.outfit(fontSize: 12.5, height: 1.4),
-=======
-              style: GoogleFonts.poppins(fontSize: 12.5, height: 1.4),
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
             ),
             const SizedBox(height: 14),
             TextFormField(
