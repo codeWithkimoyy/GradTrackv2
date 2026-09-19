@@ -4,6 +4,7 @@ const authenticate = require('../middleware/authenticate');
 
 const { requireAdmin } = authenticate;
 const mysql = require('../config/mysql');
+const db = require('../db/procedures');
 
 const router = express.Router();
 
@@ -97,16 +98,18 @@ function toMilestone(row) {
 router.use(authenticate);
 
 async function recordsFor(userId) {
-  const [records, jobs] = await Promise.all([
-    mysql.query(
-      'SELECT * FROM employment_records WHERE user_id = ? AND is_deleted = 0',
-      [userId],
-    ),
-    mysql.query(
-      'SELECT * FROM jobs WHERE created_by = ? AND is_deleted = 0',
-      [userId],
-    ),
-  ]);
+  let records, jobs;
+  try {
+    [records, jobs] = await Promise.all([
+      db.employmentRecords.listByUser(userId),
+      db.jobs.listByUser(userId),
+    ]);
+  } catch (_) {
+    [records, jobs] = await Promise.all([
+      mysql.query('SELECT * FROM employment_records WHERE user_id = ? AND is_deleted = 0', [userId]),
+      mysql.query('SELECT * FROM jobs WHERE created_by = ? AND is_deleted = 0', [userId]),
+    ]);
+  }
   const merged = [
     ...records.map(toRecord),
     ...jobs.map(toRecordFromJob),
@@ -165,68 +168,54 @@ router.post('/', async (req, res, next) => {
     }
     const id = crypto.randomUUID();
     const isCurrent = body.isCurrent !== false && !body.endDate;
-    await mysql.query(
-      `INSERT INTO employment_records
-         (id, user_id, company, position, industry, employment_type,
-          salary_range, date_hired, end_date, country, province, city,
-          work_setup, job_description, is_current)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        userId,
-        String(body.company),
-        String(body.position),
-        body.industry ? String(body.industry) : null,
-        body.employmentType ? String(body.employmentType) : null,
-        body.salaryRange ? String(body.salaryRange) : null,
-        isoDate(body.dateHired) ?? new Date().toISOString().slice(0, 10),
-        isoDate(body.endDate),
-        body.country ? String(body.country) : null,
-        body.province ? String(body.province) : null,
-        body.city ? String(body.city) : null,
-        normalizeWorkSetup(body.workSetup),
-        body.jobDescription ? String(body.jobDescription) : null,
-        isCurrent ? 1 : 0,
-      ],
-    );
+    try {
+      await db.employmentRecords.create({
+        id, user_id: userId, company: String(body.company), position: String(body.position),
+        industry: body.industry ? String(body.industry) : null,
+        employment_type: body.employmentType ? String(body.employmentType) : null,
+        salary_range: body.salaryRange ? String(body.salaryRange) : null,
+        date_hired: isoDate(body.dateHired) ?? new Date().toISOString().slice(0, 10),
+        end_date: isoDate(body.endDate),
+        country: body.country ? String(body.country) : null,
+        province: body.province ? String(body.province) : null,
+        city: body.city ? String(body.city) : null,
+        work_setup: normalizeWorkSetup(body.workSetup),
+        job_description: body.jobDescription ? String(body.jobDescription) : null,
+        is_current: isCurrent ? 1 : 0,
+      });
+    } catch (_) {
+      await mysql.query(
+        `INSERT INTO employment_records
+           (id, user_id, company, position, industry, employment_type,
+            salary_range, date_hired, end_date, country, province, city,
+            work_setup, job_description, is_current)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, userId, String(body.company), String(body.position), body.industry ? String(body.industry) : null, body.employmentType ? String(body.employmentType) : null, body.salaryRange ? String(body.salaryRange) : null, isoDate(body.dateHired) ?? new Date().toISOString().slice(0, 10), isoDate(body.endDate), body.country ? String(body.country) : null, body.province ? String(body.province) : null, body.city ? String(body.city) : null, normalizeWorkSetup(body.workSetup), body.jobDescription ? String(body.jobDescription) : null, isCurrent ? 1 : 0],
+      );
+    }
 
     if (isCurrent) {
-      await mysql.query(
-        'UPDATE employment_records SET is_current = 0 WHERE user_id = ? AND id <> ? AND is_deleted = 0',
-        [userId, id],
-      );
-      await mysql.query(
-        'UPDATE jobs SET is_current = 0 WHERE created_by = ? AND is_deleted = 0',
-        [userId],
-      );
-      await mysql.query(
-        "UPDATE users SET employment_status = 'employed' WHERE id = ?",
-        [userId],
-      );
-      const existing = await mysql.query(
-        'SELECT id FROM career_milestones WHERE user_id = ? AND is_deleted = 0 LIMIT 1',
-        [userId],
-      );
+      try {
+        await db.employmentRecords.clearCurrent(userId, id);
+        await db.users.setEmploymentStatus(userId, 'employed');
+      } catch (_) {
+        await mysql.query('UPDATE employment_records SET is_current = 0 WHERE user_id = ? AND id <> ? AND is_deleted = 0', [userId, id]);
+        await mysql.query('UPDATE jobs SET is_current = 0 WHERE created_by = ? AND is_deleted = 0', [userId]);
+        await mysql.query("UPDATE users SET employment_status = 'employed' WHERE id = ?", [userId]);
+      }
+      let existing;
+      try { existing = await db.careerMilestones.hasAny(userId); const c = existing[0]?.c ?? existing.length ?? 0; existing = c === 0 ? [] : [{}]; } catch (_) { existing = await mysql.query('SELECT id FROM career_milestones WHERE user_id = ? AND is_deleted = 0 LIMIT 1', [userId]); }
       if (existing.length === 0) {
-        await mysql.query(
-          `INSERT INTO career_milestones
-             (id, user_id, type, title, description, milestone_date)
-           VALUES (?, ?, 'firstJob', ?, ?, ?)`,
-          [
-            crypto.randomUUID(),
-            userId,
-            `Started at ${body.company}`,
-            body.position ? String(body.position) : null,
-            isoDate(body.dateHired) ?? new Date().toISOString().slice(0, 10),
-          ],
-        );
+        try {
+          await db.careerMilestones.create({ id: crypto.randomUUID(), user_id: userId, type: 'firstJob', title: `Started at ${body.company}`, description: body.position ? String(body.position) : null, milestone_date: isoDate(body.dateHired) ?? new Date().toISOString().slice(0, 10) });
+        } catch (_) {
+          await mysql.query(`INSERT INTO career_milestones (id, user_id, type, title, description, milestone_date) VALUES (?, ?, 'firstJob', ?, ?, ?)`, [crypto.randomUUID(), userId, `Started at ${body.company}`, body.position ? String(body.position) : null, isoDate(body.dateHired) ?? new Date().toISOString().slice(0, 10)]);
+        }
       }
     }
 
-    const rows = await mysql.query(
-      'SELECT * FROM employment_records WHERE id = ? LIMIT 1',
-      [id],
-    );
+    let rows;
+    try { rows = await db.employmentRecords.getById(id); } catch (_) { rows = await mysql.query('SELECT * FROM employment_records WHERE id = ? LIMIT 1', [id]); }
     return res.status(201).json(toRecord(rows[0]));
   } catch (err) {
     return next(err);

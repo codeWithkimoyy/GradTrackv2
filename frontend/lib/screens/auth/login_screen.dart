@@ -47,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       final identifier = _emailController.text.trim();
       await ref.read(authServiceProvider).signInWithEmail(
-            email: identifier,
+            email: AuthService.resolveIdentifier(identifier),
             password: _passwordController.text,
           );
 
@@ -122,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         color: const Color(0xCC031A48),
         border: Border(
           bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.14),
+            color: Colors.white.withOpacity(0.14),
             width: 1.5,
           ),
         ),
@@ -138,7 +138,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 color: const Color(0xD9071E4A),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppColors.gold.withValues(alpha: 0.4),
+                  color: AppColors.gold.withOpacity(0.4),
                   width: 1,
                 ),
               ),
@@ -189,7 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.1,
-                color: Colors.white.withValues(alpha: 0.85),
+                color: Colors.white.withOpacity(0.85),
               ),
             ),
             const SizedBox(height: 2),
@@ -345,7 +345,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 label: 'Graduates Tracked',
                 desc: 'All academic programs',
               ),
-<<<<<<< HEAD
               _StatPill(
                 value: '73.6%',
                 label: 'Employment Rate',
@@ -355,37 +354,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 value: '6',
                 label: 'Graduation Batches',
                 desc: 'Cohorts 2021 to 2026',
-=======
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 104,
-                child: Image.asset(
-                  'assets/images/logo_full.png',
-                  fit: BoxFit.contain,
-                  alignment: Alignment.centerLeft,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text.rich(
-                const TextSpan(
-                  children: [
-                    TextSpan(
-                        text: 'Empowering Graduates, Connecting '),
-                    TextSpan(
-                      text: 'Futures.',
-                      style: TextStyle(color: AppColors.gold),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.left,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: fontSize,
-                  height: 1.1,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
               ),
               _StatPill(
                 value: '5',
@@ -436,7 +404,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required bool isCompact,
     bool showLogoInForm = false,
   }) {
-<<<<<<< HEAD
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: cardWidth),
       child: Container(
@@ -512,94 +479,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: AppColors.textSecondary,
                 ),
               ),
-=======
-    return Form(
-      key: _formKey,
-      child: SizedBox(
-        width: cardContentWidth,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-              const SizedBox(height: 18),
-              if (showLogoInForm) _AuthLogo(),
-              if (showLogoInForm) const SizedBox(height: 12),
-              _AuthTitle(isCompact: isCompact),
-              const SizedBox(height: 8),
-              _AuthSubtitle(isCompact: isCompact),
-              const SizedBox(height: 18),
-              _glassField(
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.text,
-                  autocorrect: false,
-                  style: _bodyStyle(),
-                  cursorColor: _focusCyan,
-                  decoration: _inputDecoration(
-                    hintText: 'Admin or Alumni ID',
-                    prefixWidget: const Icon(Icons.badge_outlined, size: 20),
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Enter your Admin or Alumni ID'
-                      : null,
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 12, top: 4),
-                child: Text(
-                  'Admins sign in with their Admin ID. Alumni sign in with their Alumni ID.',
-                  style: TextStyle(color: Color(0xFFCEE7FF), fontSize: 10.5),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _glassField(
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscure,
-                  style: _bodyStyle(),
-                  cursorColor: _focusCyan,
-                  decoration: _inputDecoration(
-                    hintText: 'Password',
-                    prefixWidget: const Icon(Icons.lock_outline, size: 20),
-                    suffixWidget: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      transitionBuilder: (child, animation) => ScaleTransition(
-                        scale: animation,
-                        child: FadeTransition(opacity: animation, child: child),
-                      ),
-                      child: IconButton(
-                        key: ValueKey(_obscure),
-                        tooltip: _obscure ? 'Show password' : 'Hide password',
-                        icon: Icon(
-                          _obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: _secondaryText,
-                          size: 20,
-                        ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
-                    ),
-                  ),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? 'Minimum 6 characters'
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _AccountActionsRow(
-                rememberMe: _rememberMe,
-                isCompact: isCompact,
-                onRememberChanged: (value) => setState(() => _rememberMe = value),
-                onForgotPassword: () => context.push(AppRoutes.forgotPassword),
-              ),
-              const SizedBox(height: 16),
-              _PrimaryButton(
-                loading: _loading,
-                onPressed: _loading ? null : _submit,
-                label: 'Sign In',
-              ),
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
               const SizedBox(height: 18),
 
               // Alumni ID or Email

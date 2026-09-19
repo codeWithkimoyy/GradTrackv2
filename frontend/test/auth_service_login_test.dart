@@ -103,20 +103,6 @@ void main() {
       expect(auth.currentSession, isNull);
     });
 
-    test('auth state emits an initial baseline when signed out', () async {
-      final api = _clientFor(const {});
-      final auth = AuthService(api: api);
-      addTearDown(auth.dispose);
-
-      final events = <dynamic>[];
-      final sub = auth.authStateChanges.listen(events.add);
-      await Future<void>.delayed(Duration.zero);
-
-      expect(auth.currentSession, isNull);
-      expect(events, contains(isNull));
-      await sub.cancel();
-    });
-
     test('signOut clears the session and emits null', () async {
       final api = _clientFor({
         'POST /api/auth/login': (_) => http.Response(

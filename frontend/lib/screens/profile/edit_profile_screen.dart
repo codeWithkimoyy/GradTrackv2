@@ -21,8 +21,8 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
   final _nameController = TextEditingController();
+  final _studentNumberController = TextEditingController();
   final _courseController = TextEditingController();
   final _phoneController = TextEditingController();
   final _currentAddressController = TextEditingController();
@@ -30,8 +30,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _bioController = TextEditingController();
   final _linkedInController = TextEditingController();
   final _githubController = TextEditingController();
-
-  static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
   final ImagePicker _picker = ImagePicker();
 
@@ -43,8 +41,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void _hydrate(UserModel user) {
     if (_initialized) return;
     setState(() {
-      _emailController.text = user.email;
       _nameController.text = user.fullName;
+      _studentNumberController.text = user.studentNumber ?? '';
       _courseController.text = user.course?.trim().isNotEmpty == true
           ? user.course!
           : AppStrings.defaultCourse;
@@ -113,9 +111,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final success = await controller.save(
       current: current,
       updated: current.copyWith(
-        email: _emailController.text.trim(),
         fullName: _nameController.text.trim(),
-        studentNumber: current.studentNumber,
+        studentNumber: _studentNumberController.text.trim(),
         course: _courseController.text.trim().isEmpty
             ? AppStrings.defaultCourse
             : _courseController.text.trim(),
@@ -202,7 +199,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       CircleAvatar(
                         radius: 54,
-                        backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
                         backgroundImage: _selectedPhotoBytes != null
                             ? MemoryImage(_selectedPhotoBytes!) as ImageProvider<Object>
                             : (user.photoUrl != null
@@ -258,17 +255,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                _field('Email Address', _emailController, required: true,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      final value = v?.trim() ?? '';
-                      if (value.isEmpty) return 'Required';
-                      if (!_emailPattern.hasMatch(value)) {
-                        return 'Enter a valid email address';
-                      }
-                      return null;
-                    }),
                 _field('Full Name', _nameController, required: true),
+                _field('Student Number', _studentNumberController),
                 _field('Course', _courseController),
                 _field('Phone Number', _phoneController,
                     keyboardType: TextInputType.phone),
@@ -360,7 +348,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     bool required = false,
     int maxLines = 1,
     TextInputType? keyboardType,
-    FormFieldValidator<String>? validator,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -375,18 +362,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           fontSize: 13.5,
         ),
         decoration: InputDecoration(labelText: label),
-        validator: validator ??
-            (required
-                ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
-                : null),
+        validator: required
+            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            : null,
       ),
     );
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
     _nameController.dispose();
+    _studentNumberController.dispose();
     _courseController.dispose();
     _phoneController.dispose();
     _currentAddressController.dispose();

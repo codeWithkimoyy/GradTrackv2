@@ -99,14 +99,14 @@ class SplashAtmospherePainter extends CustomPainter {
         circle.$1,
         circle.$2 * pulse,
         Paint()
-          ..color = Colors.white.withValues(alpha: i == 0 ? .035 : .025)
+          ..color = Colors.white.withOpacity(i == 0 ? .035 : .025)
           ..style = PaintingStyle.fill,
       );
       canvas.drawCircle(
         circle.$1,
         circle.$2 * pulse,
         Paint()
-          ..color = Colors.white.withValues(alpha: .06)
+          ..color = Colors.white.withOpacity(.06)
           ..style = PaintingStyle.stroke
           ..strokeWidth = .8,
       );
@@ -126,13 +126,13 @@ class SplashAtmospherePainter extends CustomPainter {
         Offset(x, y),
         particle.size * 2.4,
         Paint()
-          ..color = color.withValues(alpha: .12)
+          ..color = color.withOpacity(.12)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
       );
       canvas.drawCircle(
         Offset(x, y),
         particle.size,
-        Paint()..color = color.withValues(alpha: .48),
+        Paint()..color = color.withOpacity(.48),
       );
     }
   }
@@ -156,7 +156,7 @@ class SplashAtmospherePainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = i == 0 ? 1.25 : .75
-          ..color = Colors.white.withValues(alpha: .12 - i * .018),
+          ..color = Colors.white.withOpacity(.12 - i * .018),
       );
     }
   }

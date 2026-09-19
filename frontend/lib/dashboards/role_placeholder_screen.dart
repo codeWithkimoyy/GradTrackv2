@@ -35,7 +35,7 @@ class RolePlaceholderScreen extends StatelessWidget {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withValues(alpha: .13),
+                      color: AppColors.primaryBlue.withOpacity(.13),
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: const Icon(Icons.construction_outlined,
@@ -61,7 +61,7 @@ class RolePlaceholderScreen extends StatelessWidget {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withValues(alpha: .60),
+                                .withOpacity(.60),
                             fontSize: 13,
                             height: 1.4,
                           ),
@@ -84,7 +84,7 @@ class RolePlaceholderScreen extends StatelessWidget {
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: AppColors.bisuBlue700.withValues(alpha: .10),
+                      color: AppColors.bisuBlue700.withOpacity(.10),
                     ),
                   ),
                   child: Column(

@@ -22,9 +22,9 @@ android {
     defaultConfig {
         applicationId = "com.gradtracker.app"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 34
+        versionCode = 3
+        versionName = "1.0.2"
         multiDexEnabled = true
     }
 
@@ -34,6 +34,10 @@ android {
             storePassword = "gradtrack123"
             keyAlias = "release"
             keyPassword = "gradtrack123"
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = false
         }
     }
 
@@ -42,10 +46,14 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            isDebuggable = true
         }
     }
 }

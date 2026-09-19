@@ -184,7 +184,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: AppColors.bisuBlue700.withValues(alpha: .12),
+            color: AppColors.bisuBlue700.withOpacity(.12),
             borderRadius: BorderRadius.circular(13),
           ),
           child: const Icon(Icons.school_outlined,
@@ -296,7 +296,7 @@ class _BatchYearCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
-              color: AppColors.bisuBlue700.withValues(alpha: .22),
+              color: AppColors.bisuBlue700.withOpacity(.22),
               width: 1.2,
             ),
             boxShadow: const [
@@ -328,7 +328,7 @@ class _BatchYearCard extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.bisuBlue700.withValues(alpha: .12),
+                      color: AppColors.bisuBlue700.withOpacity(.12),
                       borderRadius: BorderRadius.circular(11),
                     ),
                     child: const Icon(Icons.school_outlined,

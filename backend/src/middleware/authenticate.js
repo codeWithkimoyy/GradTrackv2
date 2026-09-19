@@ -1,4 +1,5 @@
 const mysql = require('../config/mysql');
+const db = require('../db/procedures');
 const passwords = require('../config/passwords');
 
 // Row -> camelCase public user shape (never includes password_hash).
@@ -72,14 +73,21 @@ async function authenticate(request, response, next) {
 
   try {
     const tokenHash = passwords.sha256Hex(token);
-    const rows = await mysql.query(
-      `SELECT s.user_id, s.expires_at, s.revoked, u.*
-       FROM auth_sessions s
-       JOIN users u ON u.id = s.user_id
-       WHERE s.token_hash = ? AND u.is_deleted = 0
-       LIMIT 1`,
-      [tokenHash],
-    );
+    let rows;
+    try {
+      // Prefer stored procedure sp_auth_sessions_get_valid (JOINS users + checks expiry/revoked)
+      rows = await db.authSessions.getValid(tokenHash);
+    } catch (_) {
+      // Fallback to raw SQL when SP not yet deployed (local dev, tests mocking mysql.query)
+      rows = await mysql.query(
+        `SELECT s.user_id, s.expires_at, s.revoked, u.*
+         FROM auth_sessions s
+         JOIN users u ON u.id = s.user_id
+         WHERE s.token_hash = ? AND u.is_deleted = 0
+         LIMIT 1`,
+        [tokenHash],
+      );
+    }
     const row = rows[0];
     if (!row || row.revoked === 1 || new Date(row.expires_at) < new Date()) {
       return response.status(401).json({
@@ -93,11 +101,20 @@ async function authenticate(request, response, next) {
         message: 'This account has been disabled. Contact the administrator.',
       });
     }
-    // Sliding expiration.
-    await mysql.query(
-      'UPDATE auth_sessions SET last_used_at = ?, expires_at = ? WHERE token_hash = ?',
-      [passwords.utcNowSql(), passwords.expiresAtSql(), tokenHash],
-    );
+    // Sliding expiration — prefers SP sp_auth_sessions_extend (single atomic UPDATE)
+    try {
+      await db.authSessions.extend(tokenHash, passwords.expiresAtSql());
+    } catch (_) {
+      try {
+        await mysql.call('sp_auth_sessions_touch', [tokenHash]);
+        await mysql.query('UPDATE auth_sessions SET expires_at = ? WHERE token_hash = ?', [passwords.expiresAtSql(), tokenHash]);
+      } catch (_) {
+        await mysql.query(
+          'UPDATE auth_sessions SET last_used_at = ?, expires_at = ? WHERE token_hash = ?',
+          [passwords.utcNowSql(), passwords.expiresAtSql(), tokenHash],
+        );
+      }
+    }
     request.user = toPublicUser(row);
     request.sessionHash = tokenHash;
     return next();

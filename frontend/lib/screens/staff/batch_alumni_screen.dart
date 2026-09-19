@@ -191,7 +191,7 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.bisuBlue700.withValues(alpha: .12),
+            color: AppColors.bisuBlue700.withOpacity(.12),
             borderRadius: BorderRadius.circular(15),
           ),
           child:
@@ -247,7 +247,7 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
             width: 88,
             height: 88,
             decoration: BoxDecoration(
-              color: AppColors.bisuBlue700.withValues(alpha: .12),
+              color: AppColors.bisuBlue700.withOpacity(.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.school_outlined,
@@ -295,7 +295,7 @@ Widget _verificationChip(bool verified) {
         const Icon(Icons.pending_outlined, size: 16, color: AppColors.warning),
       const SizedBox(width: 4),
       Text(verified ? 'Verified' : 'Pending',
-          style: GoogleFonts.poppins(fontSize: 12)),
+          style: const TextStyle(fontSize: 12)),
     ],
   );
 }
@@ -328,10 +328,10 @@ class _BatchAlumniTableSource extends DataTableSource {
           children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
+              backgroundColor: AppColors.bisuBlue700.withOpacity(.12),
               child: Text(
                 _initials(name),
-                style: GoogleFonts.poppins(
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: AppColors.bisuBlue700,
@@ -339,7 +339,7 @@ class _BatchAlumniTableSource extends DataTableSource {
               ),
             ),
             const SizedBox(width: 8),
-            Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
           ],
         )),
         DataCell(Text(user.alumniId ?? '—')),
@@ -401,9 +401,9 @@ class _BatchAlumniTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
+          backgroundColor: AppColors.bisuBlue700.withOpacity(.12),
           child: Text(_initials(name),
-              style: GoogleFonts.poppins(
+              style: const TextStyle(
                   color: AppColors.bisuBlue700, fontWeight: FontWeight.bold)),
         ),
         title: Row(
@@ -412,7 +412,7 @@ class _BatchAlumniTile extends StatelessWidget {
               child: Text(name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
             const SizedBox(width: 6),
             _verificationChip(verified),
@@ -474,9 +474,9 @@ class _ViewAlumniDialog extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
+            backgroundColor: AppColors.bisuBlue700.withOpacity(.12),
             child: Text(_initials(name),
-                style: GoogleFonts.poppins(
+                style: const TextStyle(
                     color: AppColors.bisuBlue700,
                     fontWeight: FontWeight.w700,
                     fontSize: 17)),
@@ -487,7 +487,7 @@ class _ViewAlumniDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: GoogleFonts.poppins(
+                    style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 3),
                 _verificationChip(verified),
@@ -550,14 +550,14 @@ class _InfoRow extends StatelessWidget {
           SizedBox(
             width: 150,
             child: Text(label,
-                style: GoogleFonts.poppins(
+                style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary)),
           ),
           Expanded(
             child: Text(value,
-                style: GoogleFonts.poppins(
+                style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary)),

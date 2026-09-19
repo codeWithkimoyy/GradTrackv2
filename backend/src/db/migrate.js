@@ -75,6 +75,44 @@ function splitStatements(sql) {
     .filter(Boolean);
 }
 
+function splitProcedures(sql) {
+  // Remove DELIMITER client directives if present
+  sql = sql.replace(/^DELIMITER.*$/gim, '');
+  const blocks = [];
+  const regex = /(DROP PROCEDURE IF EXISTS[^;]+;|CREATE PROCEDURE[\s\S]*?END;)/g;
+  let m;
+  while ((m = regex.exec(sql)) !== null) {
+    const stmt = m[1].trim();
+    if (stmt) blocks.push(stmt.replace(/;$/, ''));
+  }
+  return blocks;
+}
+
+async function applyStoredProcedures(conn) {
+  const spFile = path.join(__dirname, 'stored_procedures.sql');
+  if (!fs.existsSync(spFile)) {
+    console.log('[migrate] stored_procedures.sql not found, skipping SP deploy.');
+    return;
+  }
+  const sql = fs.readFileSync(spFile, 'utf8');
+  const blocks = splitProcedures(sql);
+  console.log(`[migrate] deploying ${blocks.length} stored procedures...`);
+  for (const stmt of blocks) {
+    const head = stmt.slice(0, 80).replace(/\s+/g, ' ');
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await conn.query(stmt);
+      if (stmt.trimStart().startsWith('CREATE PROCEDURE')) {
+        const name = stmt.match(/CREATE PROCEDURE\s+(\w+)/i)?.[1] ?? head;
+        console.log(`[migrate]  ✓ ${name}`);
+      }
+    } catch (err) {
+      console.log(`[migrate] SP notice (${head}...): ${err.message}`);
+    }
+  }
+  console.log('[migrate] stored procedures deployed.');
+}
+
 async function columnExists(conn, database, table, column) {
   const [rows] = await conn.query(
     'SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
@@ -145,6 +183,9 @@ async function main() {
     // student_number / alumni_id must be nullable-unique (older schema had
     // plain UNIQUE which is still compatible; nothing to do here).
     console.log('[migrate] schema is up to date.');
+
+    // Deploy stored procedures for every table (CALL sp_* from backend)
+    await applyStoredProcedures(conn);
   } finally {
     await conn.end();
   }

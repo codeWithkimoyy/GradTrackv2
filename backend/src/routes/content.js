@@ -4,6 +4,7 @@ const authenticate = require('../middleware/authenticate');
 
 const { requireAdmin } = authenticate;
 const mysql = require('../config/mysql');
+const db = require('../db/procedures');
 
 const router = express.Router();
 
@@ -133,15 +134,21 @@ router.get('/:collection', async (req, res, next) => {
         message: 'Unknown content collection.',
       });
     }
-    let sql = `SELECT * FROM \`${def.table}\` WHERE is_deleted = 0`;
-    const params = [];
-    if (req.query.visibility === 'public' && def.fields.includes('visibility')) {
-      sql += ' AND visibility = ?';
-      params.push('public');
+    let rows;
+    try {
+      // Prefer SP sp_content_list which dispatches by table name
+      rows = await db.content.list(def.table, req.query.visibility === 'public' ? 'public' : null, 500);
+    } catch (_) {
+      let sql = `SELECT * FROM \`${def.table}\` WHERE is_deleted = 0`;
+      const params = [];
+      if (req.query.visibility === 'public' && def.fields.includes('visibility')) {
+        sql += ' AND visibility = ?';
+        params.push('public');
+      }
+      const orderCol = def.table === 'jobs' ? 'created_at' : 'created_at';
+      sql += ` ORDER BY \`${orderCol}\` DESC LIMIT 500`;
+      rows = await mysql.query(sql, params);
     }
-    const orderCol = def.table === 'jobs' ? 'created_at' : 'created_at';
-    sql += ` ORDER BY \`${orderCol}\` DESC LIMIT 500`;
-    const rows = await mysql.query(sql, params);
     return res.json(rows.map((r) => toItem(req.params.collection, r)));
   } catch (err) {
     return next(err);

@@ -163,7 +163,7 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                color: AppColors.primaryBlue.withOpacity(0.15),
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.primaryBlue, width: 1.5),
               ),
@@ -215,7 +215,7 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
           // Informational Notice Banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.12 : 0.06),
+            color: AppColors.primaryBlue.withOpacity(isDark ? 0.12 : 0.06),
             child: Row(
               children: [
                 const Icon(Icons.info_outline_rounded,
@@ -251,7 +251,7 @@ class _AlumniChatScreenState extends ConsumerState<AlumniChatScreen> {
                             width: 68,
                             height: 68,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryBlue.withValues(alpha: 0.12),
+                              color: AppColors.primaryBlue.withOpacity(0.12),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -461,16 +461,12 @@ class _ChatMessageBubble extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
                     color: (isDark ? AppColors.tealLight : AppColors.tealDeep)
-                        .withValues(alpha: 0.15),
+                        .withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     message.senderRole.toUpperCase(),
-<<<<<<< HEAD
                     style: TextStyle(
-=======
-                    style: GoogleFonts.poppins(
->>>>>>> 7bc5174b2ee3a5144e46557288b8ceade5dcff3e
                       fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                       color: isDark

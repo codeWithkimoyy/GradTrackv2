@@ -63,6 +63,55 @@ module.exports = {
     const [rows] = await pool.execute(sql, params);
     return rows;
   },
+  /**
+   * CALL <proc>(?, ?, ...) helper.
+   * Uses pool.query (not execute) so MySQL can return multiple resultsets.
+   * Normalizes return value:
+   *  - SELECT inside procedure => returns rows array (first resultset)
+   *  - UPDATE/INSERT-only procedures => returns OkPacket / affectedRows
+   *  - Auto-drains extra resultsets to avoid "commands out of sync"
+   */
+  async call(procedure, params = []) {
+    if (!pool) {
+      throw new Error('MySQL connection pool is not initialized.');
+    }
+    const placeholders = params.map(() => '?').join(', ');
+    const sql = `CALL ${procedure}(${placeholders})`;
+    const [results] = await pool.query(sql, params);
+    // results is typically [ [rows], OkPacket ] for SELECT procedures,
+    // or [ OkPacket ] for non-SELECT procedures. Normalize to first rows array.
+    if (Array.isArray(results)) {
+      // CALL that did SELECT(s): results[0] is rows array
+      if (results.length > 0 && Array.isArray(results[0])) {
+        return results[0];
+      }
+      // Non-SELECT: results[0] is OkPacket with affectedRows
+      if (results.length > 0 && results[0] && typeof results[0].affectedRows === 'number') {
+        return results[0];
+      }
+      // Single resultset already unwrapped by mysql2 (no nesting)
+      return results;
+    }
+    return results;
+  },
+  /**
+   * Alias that mirrors `call` but keeps legacy naming `callProcedure`.
+   */
+  async callProcedure(procedure, params = []) {
+    return this.call(procedure, params);
+  },
+  /**
+   * Raw CALL that returns all resultsets (useful for procedures returning multiple SELECTs).
+   */
+  async callRaw(procedure, params = []) {
+    if (!pool) {
+      throw new Error('MySQL connection pool is not initialized.');
+    }
+    const placeholders = params.map(() => '?').join(', ');
+    const sql = `CALL ${procedure}(${placeholders})`;
+    const [results] = await pool.query(sql, params);
+    return results;
+  },
   async close() {
     if (pool) {
       await pool.end();

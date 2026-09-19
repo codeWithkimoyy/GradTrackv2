@@ -7,10 +7,7 @@ import '../../constants/app_constants.dart';
 import '../../models/employment_model.dart';
 import '../../models/notification_model.dart';
 import '../../models/user_model.dart' show parseApiDate;
-import '../../providers/auth_providers.dart';
-import '../../providers/employment_providers.dart';
 import '../../providers/notification_providers.dart';
-import '../../providers/role_providers.dart';
 import '../../repositories/content_repository.dart';
 import '../../routes/app_router.dart';
 import '../../services/auth_service.dart';
@@ -183,57 +180,12 @@ class _EmploymentFormScreenState extends ConsumerState<EmploymentFormScreen> {
     };
 
     try {
-      final isAdmin = ref.read(isAdminProvider);
-      if (isAdmin) {
-        final repo = ref.read(contentRepositoryProvider);
-        if (widget.isEdit) {
-          await repo.updateItem(
-              'jobs', widget.existing!['id']?.toString() ?? '', data);
-        } else {
-          await repo.createItem('jobs', data);
-        }
+      final repo = ref.read(contentRepositoryProvider);
+      if (widget.isEdit) {
+        await repo.updateItem(
+            'jobs', widget.existing!['id']?.toString() ?? '', data);
       } else {
-        final empRepo = ref.read(employmentRepositoryProvider);
-        if (widget.isEdit) {
-          await empRepo.updateRecord(
-            widget.existing!['id']?.toString() ?? '',
-            <String, dynamic>{
-              'company': _companyController.text.trim(),
-              'position': _positionController.text.trim(),
-              'industry': _industryController.text.trim(),
-              'employmentType': _employmentType,
-              if (_salaryRange != null) 'salaryRange': _salaryRange,
-              'dateHired': dateOnly(_startDate!),
-              'workSetup': _workSetup.name,
-              'isCurrent': _isCurrent,
-              if (!_isCurrent && _endDate != null)
-                'endDate': dateOnly(_endDate!),
-              if (_isCurrent) 'endDate': null,
-              'city': _locationController.text.trim(),
-              'jobDescription': _descriptionController.text.trim(),
-            },
-          );
-        } else {
-          await empRepo.addRecord(EmploymentRecord(
-            id: '',
-            userId:
-                ref.read(currentUserProfileProvider).value?.uid ?? '',
-            company: _companyController.text.trim(),
-            position: _positionController.text.trim(),
-            industry: _industryController.text.trim(),
-            employmentType: _employmentType,
-            salaryRange: _salaryRange,
-            dateHired: _startDate!,
-            endDate: _isCurrent ? null : _endDate,
-            country: '',
-            province: null,
-            city: _locationController.text.trim(),
-            workSetup: _workSetup,
-            jobDescription: _descriptionController.text.trim(),
-            isCurrent: _isCurrent,
-            createdAt: DateTime.now(),
-          ));
-        }
+        await repo.createItem('jobs', data);
       }
       if (!widget.isEdit) {
         await _notifyAlumni(data);

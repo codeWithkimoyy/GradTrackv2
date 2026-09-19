@@ -88,7 +88,7 @@ class _CertificateGalleryScreenState
                                 color: selected ? Colors.white : AppColors.primaryBlue)),
                         selected: selected,
                         selectedColor: AppColors.primaryBlue,
-                        backgroundColor: Colors.white.withValues(alpha: 0.12),
+                        backgroundColor: Colors.white.withOpacity(0.12),
                         onSelected: (_) => setDialogState(() => provider = p),
                       );
                     }).toList(),
@@ -258,7 +258,7 @@ class _CertificateGalleryScreenState
           if (_uploading)
             LinearProgressIndicator(
               value: _progress,
-              backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.primaryBlue.withValues(alpha: 0.1),
+              backgroundColor: isDark ? Colors.white.withOpacity(0.1) : AppColors.primaryBlue.withOpacity(0.1),
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
             ),
           Expanded(
@@ -302,7 +302,7 @@ class _CertificateGalleryScreenState
                                 height: 44,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: AppColors.gold.withValues(alpha: isDark ? 0.16 : 0.12),
+                                  color: AppColors.gold.withOpacity(isDark ? 0.16 : 0.12),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(Icons.verified_rounded,

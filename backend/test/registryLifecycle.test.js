@@ -57,7 +57,7 @@ test('alumni registry life-cycle: delete + re-add resets to pending and allows r
   const created = await jsonRequest('/api/alumni/registry', {
     method: 'POST',
     headers: { authorization: `Bearer ${adminToken}` },
-    body: JSON.stringify({ alumniId, fullName: 'Regression Alum', course: 'BS CS' }),
+    body: JSON.stringify({ alumniId, fullName: 'Alum, Regression', course: 'BS CS' }),
   });
   assert.equal(created.response.status, 201, JSON.stringify(created.body));
   assert.equal(created.body.status, 'pending');
@@ -65,7 +65,7 @@ test('alumni registry life-cycle: delete + re-add resets to pending and allows r
   // Register -> the ID becomes active with a users row.
   const registered = await jsonRequest('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ alumniId, password: 'secret123' }),
+    body: JSON.stringify({ alumniId, password: 'secret123', fullName: 'Alum, Regression', phoneNumber: '+639171234567', birthdate: '2000-01-01' }),
   });
   assert.equal(registered.response.status, 201, JSON.stringify(registered.body));
 
@@ -87,7 +87,7 @@ test('alumni registry life-cycle: delete + re-add resets to pending and allows r
   const restored = await jsonRequest('/api/alumni/registry', {
     method: 'POST',
     headers: { authorization: `Bearer ${adminToken}` },
-    body: JSON.stringify({ alumniId, fullName: 'Regression Alum', course: 'BS CS' }),
+    body: JSON.stringify({ alumniId, fullName: 'Alum, Regression', course: 'BS CS' }),
   });
   assert.equal(restored.response.status, 201, JSON.stringify(restored.body));
   assert.equal(
@@ -99,7 +99,7 @@ test('alumni registry life-cycle: delete + re-add resets to pending and allows r
   // The prior users row is soft-deleted, so a brand-new registration works.
   const reRegistered = await jsonRequest('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ alumniId, password: 'secret456' }),
+    body: JSON.stringify({ alumniId, password: 'secret456', fullName: 'Alum, Regression', phoneNumber: '+639171234567', birthdate: '2000-01-01' }),
   });
   assert.equal(reRegistered.response.status, 201, JSON.stringify(reRegistered.body));
 

@@ -143,7 +143,7 @@ class PendingApprovalScreen extends ConsumerWidget {
                       width: 88,
                       height: 88,
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.14),
+                        color: AppColors.warning.withOpacity(0.14),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
