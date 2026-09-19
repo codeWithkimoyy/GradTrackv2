@@ -319,7 +319,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
 
                 return ListTile(
                   selected: isSelected,
-                  selectedTileColor: AppColors.primaryBlue.withOpacity(0.1),
+                  selectedTileColor: AppColors.primaryBlue.withValues(alpha: 0.1),
                   onTap: () => onSelect(conv),
                   leading: CircleAvatar(
                     backgroundColor: AppColors.primaryBlue,
@@ -399,7 +399,7 @@ class _AdminMessagesScreenState extends ConsumerState<AdminMessagesScreen> {
             width: 70,
             height: 70,
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withOpacity(0.1),
+              color: AppColors.primaryBlue.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(

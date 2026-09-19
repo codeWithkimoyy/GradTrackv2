@@ -196,7 +196,7 @@ class AnalyticsScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: color.withOpacity(.25)),
+          border: Border.all(color: color.withValues(alpha: .25)),
         ),
         child: Column(
           children: [
@@ -289,7 +289,7 @@ class _TrendCard extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(.55))),
+                          .withValues(alpha: .55))),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -324,7 +324,7 @@ class _TrendCard extends StatelessWidget {
                           ),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: color.withOpacity(0.12),
+                            color: color.withValues(alpha: 0.12),
                           ),
                         ),
                       ],
@@ -336,7 +336,7 @@ class _TrendCard extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
-                              .withOpacity(.07),
+                              .withValues(alpha: .07),
                           strokeWidth: 1,
                         ),
                       ),
@@ -374,7 +374,7 @@ class _TrendCard extends StatelessWidget {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
-                                        .withOpacity(.6),
+                                        .withValues(alpha: .6),
                                   ),
                                 ),
                               );
@@ -409,7 +409,7 @@ class _TrendCard extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(.5),
+                            .withValues(alpha: .5),
                       ),
                     ),
                   ),
@@ -465,7 +465,7 @@ class _EmploymentByYearChart extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(.55))),
+                          .withValues(alpha: .55))),
               const SizedBox(width: 14),
               _legendDot(AppColors.borderLight, 'Batch size'),
               const SizedBox(width: 5),
@@ -475,7 +475,7 @@ class _EmploymentByYearChart extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(.55))),
+                          .withValues(alpha: .55))),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -510,7 +510,7 @@ class _EmploymentByYearChart extends StatelessWidget {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurface
-                                  .withOpacity(.6),
+                                  .withValues(alpha: .6),
                             ),
                           ),
                         );
@@ -535,7 +535,7 @@ class _EmploymentByYearChart extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
-                              .withOpacity(.12),
+                              .withValues(alpha: .12),
                           width: 14,
                           borderRadius: BorderRadius.circular(4),
                         ),

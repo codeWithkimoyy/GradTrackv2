@@ -154,7 +154,7 @@ class _SurveyResponsesScreenState
                         color: (isDark
                                 ? AppColors.tealLight
                                 : AppColors.primaryBlue)
-                            .withOpacity(.5)),
+                            .withValues(alpha: .5)),
                     const SizedBox(height: 14),
                     const Text('No responses yet.'),
                     const SizedBox(height: 6),
@@ -241,7 +241,7 @@ class _SurveyResponsesScreenState
                         color: (isDark
                                 ? AppColors.tealLight
                                 : AppColors.primaryBlue)
-                            .withOpacity(.5)),
+                            .withValues(alpha: .5)),
                     const SizedBox(height: 14),
                     const Text('No responses yet.'),
                     const SizedBox(height: 6),
@@ -472,7 +472,7 @@ class _ResponseCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   backgroundColor:
-                      AppColors.primaryBlue.withOpacity(.10),
+                      AppColors.primaryBlue.withValues(alpha: .10),
                   child: const Icon(Icons.person_outline_rounded,
                       color: AppColors.primaryBlue),
                 ),
@@ -545,7 +545,7 @@ class _ResponseCard extends StatelessWidget {
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(horizontal:12, vertical:8),
-                            decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(isDark?0.15:0.08), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2))),
+                            decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha: isDark?0.15:0.08), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.primaryBlue.withValues(alpha:0.2))),
                             child: Row(children:[ const Icon(Icons.edit_note_rounded, size:14, color: AppColors.primaryBlue), const SizedBox(width:6), Expanded(child: Text('Other: ${map['${entry.key}_other']}', style: const TextStyle(fontSize:12, color: AppColors.primaryBlue, fontStyle: FontStyle.italic))) ]),
                           ),
                         ),

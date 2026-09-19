@@ -56,10 +56,10 @@ class EmploymentRecordCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.15),
+                    color: AppColors.success.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(AppRadius.chip),
                     border: Border.all(
-                        color: AppColors.success.withOpacity(0.3)),
+                        color: AppColors.success.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     'Current Job',
@@ -108,10 +108,10 @@ class EmploymentRecordCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryBlue.withOpacity(isDark ? 0.15 : 0.08),
+        color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.15 : 0.08),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primaryBlue.withOpacity(0.20),
+          color: AppColors.primaryBlue.withValues(alpha: 0.20),
         ),
       ),
       child: Row(

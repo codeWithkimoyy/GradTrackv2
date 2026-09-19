@@ -686,7 +686,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
           Icon(Icons.school_outlined,
               size: 56,
               color: (isDark ? AppColors.tealLight : AppColors.primaryBlue)
-                  .withOpacity(0.65)),
+                  .withValues(alpha: 0.65)),
           const SizedBox(height: 12),
           Text(
             'No alumni in the registry yet.',
@@ -773,7 +773,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor:
-                    AppColors.primaryBlue.withOpacity(.12),
+                    AppColors.primaryBlue.withValues(alpha: .12),
                 child: const Icon(Icons.school_outlined, color: AppColors.primaryBlue),
               ),
               title: Row(
@@ -833,7 +833,7 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -867,7 +867,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -1236,12 +1236,12 @@ class _BatchCard extends StatelessWidget {
               : Colors.white,
           borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1253,7 +1253,7 @@ class _BatchCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.13),
+                color: color.withValues(alpha: 0.13),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: accent, size: 22),

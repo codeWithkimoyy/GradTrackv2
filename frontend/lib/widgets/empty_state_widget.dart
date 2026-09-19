@@ -37,11 +37,11 @@ class EmptyStateWidget extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: isDark
-                    ? AppColors.primaryBlue.withOpacity(0.12)
+                    ? AppColors.primaryBlue.withValues(alpha: 0.12)
                     : AppColors.primarySoft,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.primaryBlue.withOpacity(0.20),
+                  color: AppColors.primaryBlue.withValues(alpha: 0.20),
                 ),
               ),
               child: Icon(

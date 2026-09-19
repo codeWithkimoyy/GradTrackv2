@@ -215,10 +215,10 @@ class _AlumnusSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withOpacity(isDark ? 0.15 : 0.07),
+              color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.15 : 0.07),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: AppColors.primaryBlue.withOpacity(0.20),
+                color: AppColors.primaryBlue.withValues(alpha: 0.20),
               ),
             ),
             child: Row(

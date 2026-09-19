@@ -95,7 +95,7 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
         border: Border.all(
           color: (queue == null || queue.isEmpty)
               ? AppColors.outlineCard
-              : AppColors.warning.withOpacity(.35),
+              : AppColors.warning.withValues(alpha: .35),
           width: 1.5,
         ),
         boxShadow: const [
@@ -131,10 +131,10 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withOpacity(0.14),
+                    color: AppColors.warning.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: AppColors.warning.withOpacity(0.3)),
+                        color: AppColors.warning.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     '${queue.length}',
@@ -167,7 +167,7 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(.12),
+                    color: AppColors.success.withValues(alpha: .12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check_circle_outline_rounded,
@@ -205,7 +205,7 @@ class _PendingApprovalsQueueState extends ConsumerState<PendingApprovalsQueue> {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(.55),
+                          .withValues(alpha: .55),
                     ),
                   ),
                 ),
@@ -252,14 +252,14 @@ class _PendingUserTile extends StatelessWidget {
         color: isDark ? AppColors.surfaceDarkAlt : AppColors.surfaceLightAlt,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.warning.withOpacity(.22),
+          color: AppColors.warning.withValues(alpha: .22),
         ),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 19,
-            backgroundColor: AppColors.warning.withOpacity(.16),
+            backgroundColor: AppColors.warning.withValues(alpha: .16),
             child: Text(
               _initials(name),
               style: const TextStyle(
@@ -293,7 +293,7 @@ class _PendingUserTile extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(.55),
+                        .withValues(alpha: .55),
                   ),
                 ),
               ],

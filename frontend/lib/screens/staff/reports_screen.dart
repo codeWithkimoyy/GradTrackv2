@@ -120,7 +120,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   children: [
                     Icon(Icons.assessment_outlined,
                         size: 64,
-                        color: AppColors.primaryBlue.withOpacity(.25)),
+                        color: AppColors.primaryBlue.withValues(alpha: .25)),
                     const SizedBox(height: 14),
                     const Text('No reports yet.'),
                     const SizedBox(height: 6),
@@ -211,7 +211,7 @@ class _LiveSummaryCard extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
         side: BorderSide(
-          color: AppColors.primaryBlue.withOpacity(0.35),
+          color: AppColors.primaryBlue.withValues(alpha: 0.35),
           width: 1.5,
         ),
       ),
@@ -225,7 +225,8 @@ class _LiveSummaryCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withOpacity(isDark ? 0.22 : 0.10),
+                    color: AppColors.primaryBlue.withValues(
+                        alpha: isDark ? 0.22 : 0.10),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.verified_rounded,
@@ -251,7 +252,8 @@ class _LiveSummaryCard extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(isDark ? 0.20 : 0.12),
+                    color: AppColors.success.withValues(
+                        alpha: isDark ? 0.20 : 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -318,7 +320,7 @@ class _LiveSummaryCard extends ConsumerWidget {
                                     .clamp(0.0, 1.0),
                             minHeight: 8,
                             backgroundColor: AppColors.primaryBlue
-                                .withOpacity(isDark ? 0.25 : 0.12),
+                                .withValues(alpha: isDark ? 0.25 : 0.12),
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(barColor),
                           ),
@@ -370,7 +372,7 @@ class _ReportCard extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(9),
           decoration: BoxDecoration(
-            color: AppColors.primaryBlue.withOpacity(.10),
+            color: AppColors.primaryBlue.withValues(alpha: .10),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(Icons.assessment_outlined,

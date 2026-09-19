@@ -132,7 +132,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
                     children: [
                       LinearProgressIndicator(
                         value: _progress,
-                        backgroundColor: isDark ? Colors.white.withOpacity(0.1) : AppColors.primaryBlue.withOpacity(0.1),
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.primaryBlue.withValues(alpha: 0.1),
                         valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                       ),
                       const SizedBox(height: 8),
@@ -219,7 +219,7 @@ class _ResumeCard extends StatelessWidget {
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(isDark ? 0.16 : 0.10),
+              color: AppColors.error.withValues(alpha: isDark ? 0.16 : 0.10),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error, size: 24),

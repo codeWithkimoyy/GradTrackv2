@@ -60,13 +60,13 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primaryBlue.withOpacity(0.15),
-                  AppColors.teal.withOpacity(0.08),
+                  AppColors.primaryBlue.withValues(alpha: 0.15),
+                  AppColors.teal.withValues(alpha: 0.08),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primaryBlue.withOpacity(0.3),
+                color: AppColors.primaryBlue.withValues(alpha: 0.3),
               ),
             ),
             child: Row(

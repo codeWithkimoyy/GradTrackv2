@@ -67,7 +67,8 @@ class _SearchOverlayState extends State<SearchOverlay>
                     color: AppColors.cardDark,
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: AppColors.primaryBlue.withOpacity(0.4 + _animation.value * 0.4),
+                      color: AppColors.primaryBlue.withValues(
+                          alpha: 0.4 + _animation.value * 0.4),
                     ),
                   ),
                   child: Row(

@@ -239,7 +239,7 @@ class _SurveyEditorScreenState extends ConsumerState<SurveyEditorScreen> {
     final isDark=Theme.of(context).brightness==Brightness.dark;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: q.isPublished? (isDark? AppColors.borderDark: AppColors.outlineCard) : AppColors.warning.withOpacity(0.5), width: q.isPublished?1.2:1.5)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: q.isPublished? (isDark? AppColors.borderDark: AppColors.outlineCard) : AppColors.warning.withValues(alpha: 0.5), width: q.isPublished?1.2:1.5)),
       child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle_rounded, size: 20, color: Colors.grey)),

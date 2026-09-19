@@ -98,10 +98,10 @@ class _LandingNavBar extends StatelessWidget {
           height: 72,
           padding: const EdgeInsets.symmetric(horizontal: 48),
           decoration: BoxDecoration(
-            color: kLandingNavy.withOpacity(0.94),
+            color: kLandingNavy.withValues(alpha: 0.94),
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -126,7 +126,7 @@ class _LandingNavBar extends StatelessWidget {
                       onPressed: () => context.go(AppRoutes.verifyAlumniId),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: Colors.white.withOpacity(0.66),
+                          color: Colors.white.withValues(alpha: 0.66),
                         ),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -197,7 +197,7 @@ class _NavLink extends StatelessWidget {
       style: TextButton.styleFrom(
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        overlayColor: kLandingGold.withOpacity(0.12),
+        overlayColor: kLandingGold.withValues(alpha: 0.12),
       ),
       child: Text(
         label,
@@ -286,9 +286,9 @@ class _HeroIntro extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: kLandingGold.withOpacity(0.15),
+            color: kLandingGold.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: kLandingGold.withOpacity(0.35)),
+            border: Border.all(color: kLandingGold.withValues(alpha: 0.35)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -343,7 +343,7 @@ class _HeroIntro extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 15,
             height: 1.6,
-            color: Colors.white.withOpacity(0.82),
+            color: Colors.white.withValues(alpha: 0.82),
           ),
         ),
         const SizedBox(height: 32),
@@ -372,7 +372,7 @@ class _HeroIntro extends StatelessWidget {
             OutlinedButton(
               onPressed: onLearnMore,
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white.withOpacity(0.66)),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.66)),
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
@@ -425,7 +425,7 @@ class _HeroMockupCard extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 colors: [
-                  kLandingBlue.withOpacity(0.4),
+                  kLandingBlue.withValues(alpha: 0.4),
                   const Color(0x002563EB),
                 ],
               ),
@@ -444,12 +444,12 @@ class _HeroMockupCard extends StatelessWidget {
                 color: const Color(0xF207162C),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.16),
+                  color: Colors.white.withValues(alpha: 0.16),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.45),
+                    color: Colors.black.withValues(alpha: 0.45),
                     blurRadius: 36,
                     offset: const Offset(0, 18),
                   ),
@@ -479,7 +479,7 @@ class _MockDashboard extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: kLandingGold.withOpacity(0.15),
+                color: kLandingGold.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.school, color: kLandingGold, size: 20),
@@ -510,7 +510,7 @@ class _MockDashboard extends StatelessWidget {
           height: 96,
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const _MockBars(),
@@ -519,7 +519,7 @@ class _MockDashboard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -548,7 +548,7 @@ class _MockDashboard extends StatelessWidget {
               Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: kLandingGold.withOpacity(0.8),
+                color: kLandingGold.withValues(alpha: 0.8),
               ),
             ],
           ),
@@ -569,7 +569,7 @@ class _MockAvatar extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: kLandingGold.withOpacity(0.18),
+            color: kLandingGold.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.notifications_none,
@@ -606,7 +606,7 @@ class _MiniStat extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -623,7 +623,7 @@ class _MiniStat extends StatelessWidget {
               label,
               style: GoogleFonts.poppins(
                 fontSize: 10,
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -662,11 +662,11 @@ class _MockBars extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   if (i % 3 == 0) ...[
-                    kLandingGold.withOpacity(0.55),
-                    kLandingGold.withOpacity(0.95),
+                    kLandingGold.withValues(alpha: 0.55),
+                    kLandingGold.withValues(alpha: 0.95),
                   ] else ...[
-                    kLandingBlue.withOpacity(0.55),
-                    kLandingBlue.withOpacity(0.95),
+                    kLandingBlue.withValues(alpha: 0.55),
+                    kLandingBlue.withValues(alpha: 0.95),
                   ],
                 ],
                 begin: Alignment.topCenter,
@@ -813,7 +813,7 @@ class _SectionHeading extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 15,
               height: 1.6,
-              color: Colors.white.withOpacity(0.72),
+              color: Colors.white.withValues(alpha: 0.72),
             ),
           ),
         ),
@@ -857,15 +857,15 @@ class _FeatureCardState extends State<_FeatureCard> {
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: _hovered
-                ? kLandingGold.withOpacity(0.45)
-                : Colors.white.withOpacity(0.16),
+                ? kLandingGold.withValues(alpha: 0.45)
+                : Colors.white.withValues(alpha: 0.16),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
               color: _hovered
-                  ? kLandingGold.withOpacity(0.18)
-                  : Colors.black.withOpacity(0.3),
+                  ? kLandingGold.withValues(alpha: 0.18)
+                  : Colors.black.withValues(alpha: 0.3),
               blurRadius: _hovered ? 28 : 16,
               offset: const Offset(0, 10),
             ),
@@ -879,7 +879,7 @@ class _FeatureCardState extends State<_FeatureCard> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: kLandingGold.withOpacity(0.15),
+                color: kLandingGold.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(widget.icon, color: kLandingGold, size: 26),
@@ -900,7 +900,7 @@ class _FeatureCardState extends State<_FeatureCard> {
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   height: 1.55,
-                  color: kLandingSky.withOpacity(0.9),
+                  color: kLandingSky.withValues(alpha: 0.9),
                 ),
               ),
             ),
@@ -999,14 +999,14 @@ class _StatCardState extends State<_StatCard> {
       color: const Color(0xF20D1F3F),
       borderRadius: BorderRadius.circular(24),
       border: Border.all(
-        color: _hovered ? kLandingGold : Colors.white.withOpacity(0.16),
+        color: _hovered ? kLandingGold : Colors.white.withValues(alpha: 0.16),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
           color: _hovered
-              ? kLandingGold.withOpacity(0.22)
-              : Colors.black.withOpacity(0.3),
+              ? kLandingGold.withValues(alpha: 0.22)
+              : Colors.black.withValues(alpha: 0.3),
           blurRadius: _hovered ? 26 : 14,
           offset: const Offset(0, 8),
         ),
@@ -1021,7 +1021,7 @@ class _StatCardState extends State<_StatCard> {
       borderRadius: BorderRadius.circular(24),
       boxShadow: [
         BoxShadow(
-          color: kLandingGold.withOpacity(0.3),
+          color: kLandingGold.withValues(alpha: 0.3),
           blurRadius: 26,
           offset: const Offset(0, 8),
         ),
@@ -1064,7 +1064,7 @@ class _StatCardState extends State<_StatCard> {
                 fontSize: 13,
                 color: _hovered
                     ? const Color(0xFF031A48)
-                    : Colors.white.withOpacity(0.7),
+                    : Colors.white.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -1222,10 +1222,10 @@ class _StepCard extends StatelessWidget {
         color: const Color(0xF20D1F3F),
         borderRadius: BorderRadius.circular(24),
         border:
-            Border.all(color: Colors.white.withOpacity(0.16), width: 1.2),
+            Border.all(color: Colors.white.withValues(alpha: 0.16), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 10),
           ),
@@ -1249,7 +1249,7 @@ class _StepCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: kLandingGold.withOpacity(0.15),
+                  color: kLandingGold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: kLandingGold, size: 24),
@@ -1271,7 +1271,7 @@ class _StepCard extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 13,
               height: 1.55,
-              color: kLandingSky.withOpacity(0.9),
+              color: kLandingSky.withValues(alpha: 0.9),
             ),
           ),
         ],
@@ -1293,7 +1293,7 @@ class _StepConnector extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                kLandingGold.withOpacity(0.25),
+                kLandingGold.withValues(alpha: 0.25),
                 kLandingGold,
               ],
             ),
@@ -1326,7 +1326,7 @@ class _LandingCTA extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: kLandingBlue.withOpacity(0.35),
+                  color: kLandingBlue.withValues(alpha: 0.35),
                   blurRadius: 40,
                   offset: const Offset(0, 20),
                 ),
@@ -1351,7 +1351,7 @@ class _LandingCTA extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     height: 1.6,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -1385,7 +1385,7 @@ class _LandingCTA extends StatelessWidget {
                       onPressed: () => context.go(AppRoutes.verifyAlumniId),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
@@ -1488,7 +1488,7 @@ class _LandingFooter extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 48),
-          Divider(color: Colors.white.withOpacity(0.12)),
+          Divider(color: Colors.white.withValues(alpha: 0.12)),
           const SizedBox(height: 20),
           Text(
             '\u00a9 ${DateTime.now().year} GradTrack \u00b7 BISU Bilar Campus '
@@ -1496,7 +1496,7 @@ class _LandingFooter extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -1539,8 +1539,8 @@ class _FooterColumn extends StatelessWidget {
                 fontSize: 13,
                 height: 1.5,
                 color: highlight
-                    ? Colors.white.withOpacity(0.75)
-                    : Colors.white.withOpacity(0.55),
+                    ? Colors.white.withValues(alpha: 0.75)
+                    : Colors.white.withValues(alpha: 0.55),
               ),
             ),
           ),

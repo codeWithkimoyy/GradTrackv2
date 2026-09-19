@@ -32,7 +32,7 @@ class ExecutionTraceButton extends ConsumerWidget {
     }
 
     return Material(
-      color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
       shape: const CircleBorder(),
       elevation: 3,
       child: Badge(
@@ -182,7 +182,7 @@ class _TraceRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.cardDark
-            : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

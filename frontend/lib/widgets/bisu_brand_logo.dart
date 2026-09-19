@@ -23,7 +23,7 @@ class BisuBrandLogo extends StatelessWidget {
     final trackColor =
         inverted ? AppColors.logoCyanLight : AppColors.primaryBlue;
     final dividerColor =
-        inverted ? Colors.white.withOpacity(0.25) : AppColors.borderLight;
+        inverted ? Colors.white.withValues(alpha: 0.25) : AppColors.borderLight;
     final subtitleColor =
         inverted ? const Color(0xFFBFDBFE) : AppColors.textSecondary;
 

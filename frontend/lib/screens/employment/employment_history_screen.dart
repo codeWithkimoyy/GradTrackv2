@@ -178,9 +178,9 @@ class _HistoryList extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.15),
+                          color: AppColors.success.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(AppRadius.chip),
-                          border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           'Current Job',
@@ -240,10 +240,10 @@ class _HistoryList extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryBlue.withOpacity(isDark ? 0.15 : 0.08),
+        color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.15 : 0.08),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primaryBlue.withOpacity(0.20),
+          color: AppColors.primaryBlue.withValues(alpha: 0.20),
         ),
       ),
       child: Row(
@@ -314,7 +314,7 @@ class _CareerTimeline extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: _colorFor(m.type).withOpacity(0.15),
+                      color: _colorFor(m.type).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(_iconFor(m.type), size: 18, color: _colorFor(m.type)),

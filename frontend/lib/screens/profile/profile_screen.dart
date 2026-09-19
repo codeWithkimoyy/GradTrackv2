@@ -84,7 +84,7 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                           radius: 48,
-                          backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
+                          backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
                           backgroundImage: user.photoUrl != null
                               ? avatarProvider(user.photoUrl)
                               : null,
@@ -129,10 +129,10 @@ class ProfileScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.gold.withOpacity(0.15),
+                            color: AppColors.gold.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
-                              color: AppColors.goldDark.withOpacity(0.3),
+                              color: AppColors.goldDark.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -276,7 +276,7 @@ class _InfoTile extends StatelessWidget {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withOpacity(isDark ? 0.16 : 0.10),
+              color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.primaryBlue, size: 20),

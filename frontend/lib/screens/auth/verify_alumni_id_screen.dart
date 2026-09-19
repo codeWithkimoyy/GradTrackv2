@@ -171,7 +171,7 @@ class _VerifyAlumniIdScreenState extends ConsumerState<VerifyAlumniIdScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryBlue.withOpacity(0.35),
+                    color: AppColors.primaryBlue.withValues(alpha: 0.35),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),

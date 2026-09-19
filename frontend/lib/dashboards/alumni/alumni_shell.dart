@@ -68,7 +68,7 @@ class _AlumniBottomNavigation extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inactiveColor =
-        isDark ? Colors.white.withOpacity(.68) : const Color(0xFF667085);
+        isDark ? Colors.white.withValues(alpha: .68) : const Color(0xFF667085);
     final user = ref.watch(currentUserProfileProvider).valueOrNull;
     final unreadCount = user != null
         ? ref.watch(unreadCountProvider(user.uid))
@@ -83,8 +83,8 @@ class _AlumniBottomNavigation extends ConsumerWidget {
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(.40)
-                : const Color(0xFF0B1F3A).withOpacity(.12),
+                ? Colors.black.withValues(alpha: .40)
+                : const Color(0xFF0B1F3A).withValues(alpha: .12),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -99,12 +99,12 @@ class _AlumniBottomNavigation extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF131720).withOpacity(.96)
-                  : Colors.white.withOpacity(.96),
+                  ? const Color(0xFF131720).withValues(alpha: .96)
+                  : Colors.white.withValues(alpha: .96),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(.08)
+                    ? Colors.white.withValues(alpha: .08)
                     : AppColors.outlineCard,
                 width: 1.5,
               ),
@@ -126,8 +126,8 @@ class _AlumniBottomNavigation extends ConsumerWidget {
                       child: InkWell(
                         onTap: () => onSelected(index),
                         borderRadius: BorderRadius.circular(18),
-                        splashColor: activeColor.withOpacity(.14),
-                        highlightColor: activeColor.withOpacity(.06),
+                        splashColor: activeColor.withValues(alpha: .14),
+                        highlightColor: activeColor.withValues(alpha: .06),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 220),
                           curve: Curves.easeOutCubic,
@@ -148,7 +148,8 @@ class _AlumniBottomNavigation extends ConsumerWidget {
                                     ),
                                     decoration: BoxDecoration(
                                       color: selected
-                                          ? activeColor.withOpacity(isDark ? .22 : .12,
+                                          ? activeColor.withValues(
+                                              alpha: isDark ? .22 : .12,
                                             )
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(14),

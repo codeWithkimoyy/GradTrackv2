@@ -40,13 +40,14 @@ class SplashBrandContent extends StatelessWidget {
                       padding: EdgeInsets.all(logoSize * .06),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(.08),
+                        color: Colors.white.withValues(alpha: .08),
                         border: Border.all(
-                          color: Colors.white.withOpacity(.17),
+                          color: Colors.white.withValues(alpha: .17),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0A66FF).withOpacity(.24 + glow.value * .16,
+                            color: const Color(0xFF0A66FF).withValues(
+                              alpha: .24 + glow.value * .16,
                             ),
                             blurRadius: 34 + glow.value * 18,
                             spreadRadius: 2 + glow.value * 3,
@@ -118,7 +119,7 @@ class SplashBrandContent extends StatelessWidget {
                         'GRADUATE TRACKING SYSTEM',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(.88),
+                          color: Colors.white.withValues(alpha: .88),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.7,
@@ -129,7 +130,7 @@ class SplashBrandContent extends StatelessWidget {
                         'Bohol Island State University - Bilar Campus',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(.68),
+                          color: Colors.white.withValues(alpha: .68),
                           fontSize: 11.5,
                           height: 1.45,
                           fontWeight: FontWeight.w500,
@@ -172,7 +173,7 @@ class _LoadingMark extends StatelessWidget {
         Text(
           'Preparing your experience',
           style: TextStyle(
-            color: Colors.white.withOpacity(.48),
+            color: Colors.white.withValues(alpha: .48),
             fontSize: 10.5,
             fontWeight: FontWeight.w500,
           ),

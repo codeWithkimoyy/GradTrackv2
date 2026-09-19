@@ -4,7 +4,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-feature android:name="android.hardware.camera" android:required="false" tools:replace="required"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
-    <uses-sdk tools:overrideLibrary="androidx.core, androidx.camera, androidx.camera_camera2, androidx.camera_lifecycle, androidx.sqlite, io.flutter.plugins.camera, io.flutter.plugins.sharedpreferences, com.example.mobile_scanner, com.jh.image_picker, io.flutter.plugins.flutter_plugin_android_lifecycle, androidx.window, androidx.emoji2"/>
     <application
         android:label="GradTrack"
         android:name="${applicationName}"

@@ -199,7 +199,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       CircleAvatar(
                         radius: 54,
-                        backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
+                        backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
                         backgroundImage: _selectedPhotoBytes != null
                             ? MemoryImage(_selectedPhotoBytes!) as ImageProvider<Object>
                             : (user.photoUrl != null

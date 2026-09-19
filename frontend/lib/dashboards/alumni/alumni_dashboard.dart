@@ -66,13 +66,13 @@ class AlumniDashboard extends ConsumerWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primaryBlue.withOpacity(0.15),
-                  AppColors.secondaryBlue.withOpacity(0.08),
+                  AppColors.primaryBlue.withValues(alpha: 0.15),
+                  AppColors.secondaryBlue.withValues(alpha: 0.08),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primaryBlue.withOpacity(0.3),
+                color: AppColors.primaryBlue.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -134,13 +134,13 @@ class AlumniDashboard extends ConsumerWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFFF43F5E).withOpacity(0.15),
-                  AppColors.primaryBlue.withOpacity(0.08),
+                  const Color(0xFFF43F5E).withValues(alpha: 0.15),
+                  AppColors.primaryBlue.withValues(alpha: 0.08),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFFF43F5E).withOpacity(0.3),
+                color: const Color(0xFFF43F5E).withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -202,9 +202,9 @@ class AlumniDashboard extends ConsumerWidget {
           action: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.14),
+              color: AppColors.success.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.success.withOpacity(0.3)),
+              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -251,7 +251,7 @@ class AlumniDashboard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
                   value: completion / 100,
-                  backgroundColor: AppColors.bisuBlue100.withOpacity(0.6),
+                  backgroundColor: AppColors.bisuBlue100.withValues(alpha: 0.6),
                   valueColor: const AlwaysStoppedAnimation<Color>(
                       AppColors.bisuBlue700),
                   minHeight: 6,

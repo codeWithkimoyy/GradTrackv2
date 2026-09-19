@@ -122,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         color: const Color(0xCC031A48),
         border: Border(
           bottom: BorderSide(
-            color: Colors.white.withOpacity(0.14),
+            color: Colors.white.withValues(alpha: 0.14),
             width: 1.5,
           ),
         ),
@@ -138,7 +138,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 color: const Color(0xD9071E4A),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppColors.gold.withOpacity(0.4),
+                  color: AppColors.gold.withValues(alpha: 0.4),
                   width: 1,
                 ),
               ),
@@ -189,7 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.1,
-                color: Colors.white.withOpacity(0.85),
+                color: Colors.white.withValues(alpha: 0.85),
               ),
             ),
             const SizedBox(height: 2),

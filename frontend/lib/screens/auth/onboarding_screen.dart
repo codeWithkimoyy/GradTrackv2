@@ -305,7 +305,7 @@ class _FixedOnboardingLayout extends StatelessWidget {
                       maxLines: compact ? 4 : 5,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
-                        color: Colors.white.withOpacity(.90),
+                        color: Colors.white.withValues(alpha: .90),
                         fontSize: compact ? 13.0 : 14.5,
                         height: 1.45,
                         fontWeight: FontWeight.w400,
@@ -463,8 +463,8 @@ class _FeatureCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: Colors.white.withOpacity(0.14),
-        border: Border.all(color: Colors.white.withOpacity(0.22)),
+        color: Colors.white.withValues(alpha: 0.14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -476,7 +476,7 @@ class _FeatureCard extends StatelessWidget {
               height: compact ? 36 : 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryBlue.withOpacity(0.20),
+                color: AppColors.primaryBlue.withValues(alpha: 0.20),
               ),
               child: Icon(
                 feature.icon,
@@ -581,7 +581,7 @@ class _NextButton extends StatelessWidget {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.20),
+                color: Colors.white.withValues(alpha: 0.20),
               ),
               child: const Icon(
                 Icons.arrow_forward_rounded,
@@ -613,7 +613,7 @@ class _OnboardingAtmospherePainter extends CustomPainter {
         Offset(x, y),
         gold ? 2.2 : 1.4,
         Paint()
-          ..color = color.withOpacity(gold ? .42 : .28)
+          ..color = color.withValues(alpha: gold ? .42 : .28)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
       );
     }
@@ -634,7 +634,7 @@ class _OnboardingAtmospherePainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = i == 0 ? 1.1 : .7
-          ..color = Colors.white.withOpacity(.11 - i * .025),
+          ..color = Colors.white.withValues(alpha: .11 - i * .025),
       );
     }
 
@@ -645,7 +645,7 @@ class _OnboardingAtmospherePainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = .8
-        ..color = Colors.white.withOpacity(.06),
+        ..color = Colors.white.withValues(alpha: .06),
     );
   }
 
