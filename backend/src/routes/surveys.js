@@ -128,18 +128,52 @@ async function fetchQuestions(surveyId) {
 }
 
 async function syncQuestions(surveyId, questions) {
-  // soft-delete existing
+  const existingRows = await mysql.query(
+    `SELECT q.id AS question_id, o.id AS option_id
+     FROM survey_questions q
+     LEFT JOIN survey_question_options o ON o.question_id = q.id
+     WHERE q.survey_id = ?`,
+    [surveyId]
+  );
+  const existingQuestionIds = new Set(existingRows.map((row) => row.question_id));
+  const existingOptionIds = new Set(
+    existingRows.map((row) => row.option_id).filter(Boolean)
+  );
+  const questionIdMap = new Map();
+  const preparedQuestions = questions.map((question) => {
+    const sourceId = question.id;
+    const id = sourceId && existingQuestionIds.has(sourceId)
+      ? sourceId
+      : crypto.randomUUID();
+    if (sourceId) questionIdMap.set(sourceId, id);
+    return { question, id };
+  });
+
+  await mysql.query(
+    `UPDATE survey_question_options o
+     INNER JOIN survey_questions q ON q.id = o.question_id
+     SET o.is_deleted = 1, o.deleted_at = NOW()
+     WHERE q.survey_id = ? AND o.is_deleted = 0`,
+    [surveyId]
+  );
   await mysql.query('UPDATE survey_questions SET is_deleted = 1, deleted_at = NOW() WHERE survey_id = ? AND is_deleted = 0', [surveyId]);
-  // also soft-delete options via cascade? need explicit
-  // insert new
-  for (let i = 0; i < questions.length; i++) {
-    const q = questions[i];
-    const qid = q.id || crypto.randomUUID();
+
+  for (let i = 0; i < preparedQuestions.length; i++) {
+    const { question: q, id: qid } = preparedQuestions[i];
     const type = normalizeType(q.type);
+    const parentId = q.conditionalParentId || q.conditional_parent_id || null;
     await mysql.query(
       `INSERT INTO survey_questions
         (id, survey_id, question_text, question_type, placeholder, character_limit, is_required, is_published, sort_order, conditional_parent_id, conditional_trigger_value, allow_other)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         survey_id = VALUES(survey_id), question_text = VALUES(question_text),
+         question_type = VALUES(question_type), placeholder = VALUES(placeholder),
+         character_limit = VALUES(character_limit), is_required = VALUES(is_required),
+         is_published = VALUES(is_published), sort_order = VALUES(sort_order),
+         conditional_parent_id = VALUES(conditional_parent_id),
+         conditional_trigger_value = VALUES(conditional_trigger_value),
+         allow_other = VALUES(allow_other), is_deleted = 0, deleted_at = NULL`,
       [
         qid,
         surveyId,
@@ -150,7 +184,7 @@ async function syncQuestions(surveyId, questions) {
         q.isRequired || q.required ? 1 : 0,
         q.isPublished === false || q.is_published === false ? 0 : 1,
         q.sortOrder != null ? Number(q.sortOrder) : i,
-        q.conditionalParentId || q.conditional_parent_id || null,
+        questionIdMap.get(parentId) || parentId,
         q.conditionalTriggerValue || q.conditional_trigger_value || null,
         q.allowOther || q.allow_other ? 1 : 0,
       ]
@@ -161,9 +195,17 @@ async function syncQuestions(surveyId, questions) {
       const text = typeof opt === 'string' ? opt : (opt.text || opt.option_text || '');
       if (!text || !String(text).trim()) continue;
       const isOther = typeof opt === 'object' ? !!opt.isOther : String(text).toLowerCase() === 'other';
+      const optionId = typeof opt === 'object' && opt.id && existingOptionIds.has(opt.id)
+        ? opt.id
+        : crypto.randomUUID();
       await mysql.query(
-        `INSERT INTO survey_question_options (id, question_id, option_text, sort_order, is_other) VALUES (?, ?, ?, ?, ?)`,
-        [opt.id || crypto.randomUUID(), qid, sanitizeText(text, 300), opt.sortOrder != null ? Number(opt.sortOrder) : j, isOther ? 1 : 0]
+        `INSERT INTO survey_question_options (id, question_id, option_text, sort_order, is_other)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           question_id = VALUES(question_id), option_text = VALUES(option_text),
+           sort_order = VALUES(sort_order), is_other = VALUES(is_other),
+           is_deleted = 0, deleted_at = NULL`,
+        [optionId, qid, sanitizeText(text, 300), opt.sortOrder != null ? Number(opt.sortOrder) : j, isOther ? 1 : 0]
       );
     }
     // if allowOther and no Other option exists, add it
