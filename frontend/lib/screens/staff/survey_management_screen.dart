@@ -47,7 +47,7 @@ class SurveyManagementScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Container(width: 72, height: 72, decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha: 0.12), shape: BoxShape.circle), child: const Icon(Icons.fact_check_outlined, size: 36, color: AppColors.primaryBlue)),
+                  Container(width: 72, height: 72, decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(0.12), shape: BoxShape.circle), child: const Icon(Icons.fact_check_outlined, size: 36, color: AppColors.primaryBlue)),
                   const SizedBox(height: 16),
                   Text('No surveys yet', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? Colors.white : AppColors.primaryNavy)),
                   const SizedBox(height: 6),
@@ -89,9 +89,9 @@ class SurveyManagementScreen extends ConsumerWidget {
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: badgeColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999), border: Border.all(color: badgeColor.withValues(alpha: 0.3))), child: Text(status.toUpperCase(), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: badgeColor))),
+                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: badgeColor.withOpacity(0.12), borderRadius: BorderRadius.circular(999), border: Border.all(color: badgeColor.withOpacity(0.3))), child: Text(status.toUpperCase(), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: badgeColor))),
                     const SizedBox(width: 8),
-                    if (targetBatch != null) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(8)), child: Text('Batch $targetBatch', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryBlue))),
+                    if (targetBatch != null) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(0.10), borderRadius: BorderRadius.circular(8)), child: Text('Batch $targetBatch', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryBlue))),
                     const Spacer(),
                     IconButton(visualDensity: VisualDensity.compact, tooltip: 'View responses', icon: const Icon(Icons.analytics_outlined, size: 18), onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => SurveyResponsesScreen(survey: Map<String,dynamic>.from(s))));

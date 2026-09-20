@@ -107,7 +107,7 @@ class ProfileMenu extends ConsumerWidget {
                         user?.role.label ?? 'Alumni',
                         style: GoogleFonts.poppins(
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
+                              .withOpacity(0.6),
                           fontSize: 12,
                         ),
                       ),

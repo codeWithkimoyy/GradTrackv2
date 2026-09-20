@@ -205,6 +205,17 @@ test('POST /api/auth/login accepts a short admin username', async () => {
   if (response.status === 200) {
     assert.equal(body.user.role, 'admin');
     assert.ok(typeof body.token === 'string' && body.token.length > 0);
+
+    const headers = { authorization: `Bearer ${body.token}` };
+    const profileResponse = await fetch(`${baseUrl}/api/profile`, { headers });
+    const profile = await profileResponse.json();
+    assert.equal(profileResponse.status, 200);
+    assert.equal(profile.uid, body.user.uid);
+
+    const conversationsResponse = await fetch(`${baseUrl}/api/conversations`, {
+      headers,
+    });
+    assert.equal(conversationsResponse.status, 200);
   } else {
     // Resilient when the seed admin is absent in the test database: the route
     // must still answer with a structured login error, never crash.

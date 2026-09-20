@@ -127,7 +127,7 @@ class _DocumentSection extends StatelessWidget {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.16),
+                  color: AppColors.primaryBlue.withOpacity(0.16),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 padding: const EdgeInsets.all(12),

@@ -483,7 +483,7 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
                       Container(
                         padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryBlue.withValues(alpha: .12),
+                          color: AppColors.primaryBlue.withOpacity(.12),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.work_outline_rounded,
@@ -520,7 +520,7 @@ class _CollectionListScreenState extends ConsumerState<CollectionListScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(widget.content.icon,
-                        size: 64, color: AppColors.primaryBlue.withValues(alpha: .25)),
+                        size: 64, color: AppColors.primaryBlue.withOpacity(.25)),
                     const SizedBox(height: 14),
                     Text('No ${widget.content.title.toLowerCase()} yet.'),
                     const SizedBox(height: 6),
@@ -639,7 +639,7 @@ class _RecordCard extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(9),
           decoration: BoxDecoration(
-            color: AppColors.primaryBlue.withValues(alpha: .10),
+            color: AppColors.primaryBlue.withOpacity(.10),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: AppColors.primaryBlue, size: 22),
@@ -755,7 +755,7 @@ class _EmploymentRecordCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withValues(alpha: .10),
+                      color: AppColors.primaryBlue.withOpacity(.10),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.business_center_outlined,
@@ -810,7 +810,7 @@ class _EmploymentRecordCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withValues(alpha: .15),
+                          color: AppColors.success.withOpacity(.15),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
@@ -852,9 +852,9 @@ class _EmploymentRecordCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryBlue.withValues(alpha: .08),
+        color: AppColors.primaryBlue.withOpacity(.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primaryBlue.withValues(alpha: .20)),
+        border: Border.all(color: AppColors.primaryBlue.withOpacity(.20)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -914,7 +914,7 @@ class _EmploymentDetailsSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withValues(alpha: .3),
+                    color: AppColors.primaryBlue.withOpacity(.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1059,7 +1059,7 @@ class _MonthYearPickerDialogState extends State<_MonthYearPickerDialog> {
                       decoration: BoxDecoration(
                         color: _month == i + 1
                             ? AppColors.primaryBlue
-                            : AppColors.primaryBlue.withValues(alpha: .10),
+                            : AppColors.primaryBlue.withOpacity(.10),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(

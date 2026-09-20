@@ -121,7 +121,7 @@ class _NotificationCard extends StatelessWidget {
       child: ListTile(
         onTap: onOpen,
         leading: CircleAvatar(
-          backgroundColor: notification.priority.color.withValues(alpha: .22),
+          backgroundColor: notification.priority.color.withOpacity(.22),
           child: Icon(notification.type.icon,
               size: 21,
               color: notification.priority.color),

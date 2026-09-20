@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -5,6 +7,16 @@ plugins {
     // NOTE: google-services + crashlytics intentionally NOT applied:
     // no Firebase packages are used and google-services.json is absent.
 }
+
+val keystoreProperties = Properties().apply {
+    val propertiesFile = rootProject.file("key.properties")
+    if (propertiesFile.exists()) {
+        propertiesFile.inputStream().use(::load)
+    }
+}
+
+fun signingValue(propertyName: String, environmentName: String): String? =
+    keystoreProperties.getProperty(propertyName) ?: System.getenv(environmentName)
 
 android {
     namespace = "com.gradtracker.app"
@@ -28,7 +40,7 @@ android {
     defaultConfig {
         applicationId = "com.gradtracker.app"
         minSdk = flutter.minSdkVersion
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 4
         versionName = "1.0.3"
         multiDexEnabled = true
@@ -36,10 +48,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
-            storePassword = "gradtrack123"
-            keyAlias = "release"
-            keyPassword = "gradtrack123"
+            storeFile = file(signingValue("storeFile", "ANDROID_KEYSTORE_PATH") ?: "release.keystore")
+            storePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+            keyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS") ?: "release"
+            keyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
             enableV1Signing = true
             enableV2Signing = true
             enableV3Signing = true

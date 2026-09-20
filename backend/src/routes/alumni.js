@@ -97,7 +97,7 @@ router.get('/', async (req, res, next) => {
     let rows;
     try {
       rows = await db.users.listAlumni(course || null, year ? Number(year) : null, search || null, limit);
-      return res.json({ source: 'sp', data: rows });
+      return res.json(rows);
     } catch (_) {
       let sql = `
         SELECT id, full_name, email, course_name, graduation_year,
@@ -122,7 +122,7 @@ router.get('/', async (req, res, next) => {
       sql += ' ORDER BY graduation_year DESC, full_name ASC LIMIT ?';
       params.push(Math.min(Number(limit) || 50, 200));
       rows = await mysql.query(sql, params);
-      return res.json({ source: 'mysql', data: rows });
+      return res.json(rows);
     }
   } catch (err) {
     return next(err);

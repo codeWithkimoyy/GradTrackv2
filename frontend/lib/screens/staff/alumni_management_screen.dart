@@ -26,7 +26,8 @@ class AlumniManagementScreen extends ConsumerStatefulWidget {
       _AlumniManagementScreenState();
 }
 
-class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen> {
+class _AlumniManagementScreenState
+    extends ConsumerState<AlumniManagementScreen> {
   bool _importing = false;
   bool _showUnassigned = false;
 
@@ -39,8 +40,12 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
 
   /// Batch start years to render, newest first: last finished school year
   /// down to [_firstBatchYear].
-  List<int> get _batchStartYears =>
-      [for (var year = (DateTime.now().year - 1); year >= _firstBatchYear; year--) year];
+  List<int> get _batchStartYears => [
+        for (var year = (DateTime.now().year - 1);
+            year >= _firstBatchYear;
+            year--)
+          year
+      ];
 
   /// Derives the batch (academic-year start) an entry belongs to. Legacy
   /// records with only a numeric graduation year are treated as graduating
@@ -81,14 +86,15 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
         ref,
         action: 'create',
         title: 'Alumni added',
-        description:
-            'Added Alumni ID ${entry.alumniId} for ${entry.fullName} '
+        description: 'Added Alumni ID ${entry.alumniId} for ${entry.fullName} '
             '(${entry.course}, ${entry.graduationYear ?? '—'}).',
         targetId: entry.alumniId,
         targetType: 'alumni_registry',
       );
       if (!mounted) return;
-      showAppSnackBar(context, 'Alumni ID ${entry.alumniId} added. '
+      showAppSnackBar(
+          context,
+          'Alumni ID ${entry.alumniId} added. '
           'Status: Pending.',
           backgroundColor: AppColors.success);
     } catch (e) {
@@ -124,8 +130,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
           invalid++;
           continue;
         }
-        final existing =
-            await repo.fetchRegistryEntry(record.alumniId);
+        final existing = await repo.fetchRegistryEntry(record.alumniId);
         if (existing != null) {
           skipped++;
           continue;
@@ -170,15 +175,19 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
     final entries = <AlumniRegistryEntry>[];
     final lines = content.split(RegExp(r'\r?\n'));
     for (final line in lines) {
-      final cells =
-          line.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty).toList();
+      final cells = line
+          .split(',')
+          .map((c) => c.trim())
+          .where((c) => c.isNotEmpty)
+          .toList();
       if (cells.isEmpty) continue;
       final alumniId = cells[0];
       final fullName = cells.length > 1 ? cells[1] : '';
       final course = cells.length > 2 && cells[2].isNotEmpty
           ? cells[2]
           : AppStrings.defaultCourse;
-      final year = cells.length > 3 ? int.tryParse(cells[3].replaceAll('"', '')) : null;
+      final year =
+          cells.length > 3 ? int.tryParse(cells[3].replaceAll('"', '')) : null;
       // Skip header rows that don't look like Alumni IDs.
       if (!AppStrings.alumniIdPattern.hasMatch(alumniId) &&
           alumniId.toLowerCase().contains('alumni')) {
@@ -200,8 +209,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
     for (final table in workbook.tables.values) {
       for (final row in table.rows) {
         if (row.length < 2) continue;
-        String cell(int index) =>
-            row[index]?.value?.toString().trim() ?? '';
+        String cell(int index) => row[index]?.value?.toString().trim() ?? '';
         final alumniId = cell(0);
         final fullName = cell(1);
         if (alumniId.isEmpty) continue;
@@ -209,9 +217,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
             alumniId.toLowerCase().contains('alumni')) {
           continue;
         }
-        final course = cell(2).isNotEmpty
-            ? cell(2)
-            : AppStrings.defaultCourse;
+        final course = cell(2).isNotEmpty ? cell(2) : AppStrings.defaultCourse;
         final year = int.tryParse(cell(3).replaceAll(RegExp(r'[^0-9]'), ''));
         entries.add(AlumniRegistryEntry(
           alumniId: alumniId,
@@ -251,7 +257,9 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
     final hasAccount = accountUid != null;
 
     final nextStatus = isDisabled
-        ? (hasAccount ? AlumniAccountStatus.active : AlumniAccountStatus.pending)
+        ? (hasAccount
+            ? AlumniAccountStatus.active
+            : AlumniAccountStatus.pending)
         : AlumniAccountStatus.disabled;
 
     try {
@@ -263,8 +271,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
         ref,
         action: 'update',
         title: isDisabled ? 'Alumni re-enabled' : 'Alumni disabled',
-        description:
-            '${isDisabled ? 'Re-enabled' : 'Disabled'} Alumni ID '
+        description: '${isDisabled ? 'Re-enabled' : 'Disabled'} Alumni ID '
             '${entry.alumniId} (${entry.fullName}).',
         targetId: entry.alumniId,
         targetType: 'alumni_registry',
@@ -315,8 +322,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
         ref,
         action: 'update',
         title: 'Password reset',
-        description:
-            'Reset the password for Alumni ID ${entry.alumniId} '
+        description: 'Reset the password for Alumni ID ${entry.alumniId} '
             '(${entry.fullName}).',
         targetId: entry.alumniId,
         targetType: 'alumni_registry',
@@ -384,8 +390,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
         ref,
         action: 'delete',
         title: 'Alumni record deleted',
-        description:
-            'Deleted Alumni ID ${entry.alumniId} (${entry.fullName}).',
+        description: 'Deleted Alumni ID ${entry.alumniId} (${entry.fullName}).',
         targetId: entry.alumniId,
         targetType: 'alumni_registry',
       );
@@ -434,10 +439,12 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
           final entries = (snapshot.data ?? const <AlumniRegistryEntry>[])
               .where((e) => AppStrings.isFocusCourse(e.course))
               .toList();
-          final pending =
-              entries.where((e) => e.status == AlumniAccountStatus.pending).length;
-          final active =
-              entries.where((e) => e.status == AlumniAccountStatus.active).length;
+          final pending = entries
+              .where((e) => e.status == AlumniAccountStatus.pending)
+              .length;
+          final active = entries
+              .where((e) => e.status == AlumniAccountStatus.active)
+              .length;
           final disabled = entries
               .where((e) => e.status == AlumniAccountStatus.disabled)
               .length;
@@ -452,13 +459,21 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _StatChip(label: 'Total', value: entries.length,
+                    _StatChip(
+                        label: 'Total',
+                        value: entries.length,
                         color: AppColors.primaryBlue),
-                    _StatChip(label: 'Pending', value: pending,
+                    _StatChip(
+                        label: 'Pending',
+                        value: pending,
                         color: AppColors.warning),
-                    _StatChip(label: 'Active', value: active,
+                    _StatChip(
+                        label: 'Active',
+                        value: active,
                         color: AppColors.success),
-                    _StatChip(label: 'Disabled', value: disabled,
+                    _StatChip(
+                        label: 'Disabled',
+                        value: disabled,
                         color: AppColors.error),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -494,7 +509,8 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.upload_file_outlined, size: 18),
-                      label: Text(_importing ? 'Importing…' : 'Import CSV / Excel'),
+                      label: Text(
+                          _importing ? 'Importing…' : 'Import CSV / Excel'),
                     ),
                   ],
                 ),
@@ -505,8 +521,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                     ? _buildEmptyState()
                     : LayoutBuilder(
                         builder: (context, constraints) {
-                          if (_showUnassigned ||
-                              _selectedBatchStart != null) {
+                          if (_showUnassigned || _selectedBatchStart != null) {
                             return _buildBatchDetail(entries);
                           }
                           if (constraints.maxWidth >= 900) {
@@ -523,7 +538,8 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
     );
   }
 
-  Widget _buildBatchGrid(BuildContext context, List<AlumniRegistryEntry> entries) {
+  Widget _buildBatchGrid(
+      BuildContext context, List<AlumniRegistryEntry> entries) {
     final counts = <int, int>{for (final y in _batchStartYears) y: 0};
     var unassigned = 0;
     for (final entry in entries) {
@@ -634,7 +650,8 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                           style: GoogleFonts.outfit(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : AppColors.primaryNavy,
+                            color:
+                                isDark ? Colors.white : AppColors.primaryNavy,
                           ),
                         ),
                         Text(
@@ -686,11 +703,12 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
           Icon(Icons.school_outlined,
               size: 56,
               color: (isDark ? AppColors.tealLight : AppColors.primaryBlue)
-                  .withValues(alpha: 0.65)),
+                  .withOpacity(0.65)),
           const SizedBox(height: 12),
           Text(
             'No alumni in the registry yet.',
-            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600),
+            style:
+                GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           Text(
@@ -739,12 +757,9 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
               for (final entry in entries)
                 DataRow(cells: [
                   DataCell(Text(entry.alumniId,
-                      style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w600))),
-                  DataCell(Text(entry.fullName,
-                      style: GoogleFonts.outfit())),
-                  DataCell(Text(entry.course,
-                      style: GoogleFonts.outfit())),
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600))),
+                  DataCell(Text(entry.fullName, style: GoogleFonts.outfit())),
+                  DataCell(Text(entry.course, style: GoogleFonts.outfit())),
                   DataCell(Text(entry.graduationYear?.toString() ?? '—',
                       style: GoogleFonts.outfit())),
                   DataCell(_StatusChip(status: entry.status)),
@@ -772,9 +787,9 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
             margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor:
-                    AppColors.primaryBlue.withValues(alpha: .12),
-                child: const Icon(Icons.school_outlined, color: AppColors.primaryBlue),
+                backgroundColor: AppColors.primaryBlue.withOpacity(.12),
+                child: const Icon(Icons.school_outlined,
+                    color: AppColors.primaryBlue),
               ),
               title: Row(
                 children: [
@@ -782,8 +797,7 @@ class _AlumniManagementScreenState extends ConsumerState<AlumniManagementScreen>
                     child: Text(entry.alumniId,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.w600)),
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
                   ),
                   const SizedBox(width: 8),
                   _StatusChip(status: entry.status),
@@ -820,7 +834,8 @@ Color _chipTextColor(Color color, bool isDark) {
 }
 
 class _StatChip extends StatelessWidget {
-  const _StatChip({required this.label, required this.value, required this.color});
+  const _StatChip(
+      {required this.label, required this.value, required this.color});
 
   final String label;
   final int value;
@@ -833,7 +848,7 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -843,8 +858,7 @@ class _StatChip extends StatelessWidget {
               style: GoogleFonts.outfit(
                   color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
           Text(label,
-              style:
-                  GoogleFonts.outfit(color: textColor, fontSize: 12.5)),
+              style: GoogleFonts.outfit(color: textColor, fontSize: 12.5)),
         ],
       ),
     );
@@ -867,7 +881,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
+        color: color.withOpacity(0.14),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -962,10 +976,19 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
   /// Same range as the Alumni-module batch grid.
   static const int _firstBatchYear = 2020;
 
-  List<String> get _batchOptions => [
-        for (var year = (DateTime.now().year - 1); year >= _firstBatchYear; year--)
-          academicYearLabel(year),
-      ];
+  List<String> get _batchOptions {
+    final existing = widget.existing;
+    final storedBatch = existing?.academicYearGraduated?.trim();
+    final legacyBatch = existing?.graduationYear == null
+        ? null
+        : academicYearLabel(existing!.graduationYear! - 1);
+
+    return academicYearOptions(
+      firstStartYear: _firstBatchYear,
+      lastStartYear: DateTime.now().year - 1,
+      include: storedBatch?.isNotEmpty == true ? storedBatch : legacyBatch,
+    );
+  }
 
   /// Matches a stored academic-year value to a dropdown option. Stored
   /// values may use a hyphen ("2023-2024") while options use the display
@@ -1092,14 +1115,12 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
                 items: [
                   DropdownMenuItem<String>(
                     value: '',
-                    child: Text('Not Specified',
-                        style: GoogleFonts.outfit()),
+                    child: Text('Not Specified', style: GoogleFonts.outfit()),
                   ),
                   for (final option in _batchOptions)
                     DropdownMenuItem<String>(
                       value: option,
-                      child: Text('S.Y. $option',
-                          style: GoogleFonts.outfit()),
+                      child: Text('S.Y. $option', style: GoogleFonts.outfit()),
                     ),
                 ],
                 onChanged: (value) => setState(() => _batch = value),
@@ -1231,17 +1252,15 @@ class _BatchCard extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark
-              ? Theme.of(context).colorScheme.surface
-              : Colors.white,
+          color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
           borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
-            color: color.withValues(alpha: 0.3),
+            color: color.withOpacity(0.3),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1253,7 +1272,7 @@ class _BatchCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.13),
+                color: color.withOpacity(0.13),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: accent, size: 22),

@@ -81,7 +81,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: orb.color.withValues(alpha: 0.3),
+                  color: orb.color.withOpacity(0.3),
                   blurRadius: orb.size * 0.5,
                   spreadRadius: orb.size * 0.2,
                 ),
@@ -131,7 +131,7 @@ class _ParticlePainter extends CustomPainter {
       canvas.drawCircle(
         Offset(x, y),
         p.radius,
-        Paint()..color = Colors.white.withValues(alpha: 0.04 + p.radius * 0.015),
+        Paint()..color = Colors.white.withOpacity(0.04 + p.radius * 0.015),
       );
     }
   }

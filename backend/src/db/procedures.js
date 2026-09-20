@@ -305,12 +305,17 @@ const surveys = {
       data.target_graduation_year ?? data.targetGraduationYear ?? null,
       data.target_batch_year ?? data.targetBatchYear ?? null,
       data.opening_date ?? data.openingDate ?? null,
+      data.opening_date === null || data.openingDate === null ? 1 : 0,
       data.closing_date ?? data.closingDate ?? null,
+      data.closing_date === null || data.closingDate === null ? 1 : 0,
       data.status ?? null,
       data.allow_update ?? data.allowUpdate ?? null,
       data.visible_batches_json !== undefined || data.visibleBatches !== undefined
         ? toJson(data.visible_batches_json ?? data.visibleBatches)
         : null,
+      data.visible_batches_json === null || data.visibleBatches === null
+        ? 1
+        : 0,
       data.questions_json !== undefined || data.questions !== undefined
         ? toJson(data.questions_json ?? data.questions)
         : null,

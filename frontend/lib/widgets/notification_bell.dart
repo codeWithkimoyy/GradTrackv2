@@ -34,14 +34,30 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() => setState(() {}));
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _closePanel();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {});
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _setTypeFilter(NotificationType? value) {
+    setState(() => _typeFilter = value);
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _setReadFilter(String value) {
+    setState(() => _readFilter = value);
+    _overlayEntry?.markNeedsBuild();
   }
 
   void _togglePanel() {
@@ -65,8 +81,8 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
         typeFilter: _typeFilter,
         readFilter: _readFilter,
         searchQuery: _searchController.text,
-        onTypeFilterChanged: (t) => setState(() => _typeFilter = t),
-        onReadFilterChanged: (r) => setState(() => _readFilter = r),
+        onTypeFilterChanged: _setTypeFilter,
+        onReadFilterChanged: _setReadFilter,
         searchController: _searchController,
       ),
     );
@@ -79,15 +95,15 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
     _isOpen = true;
     Navigator.of(context)
         .push(
-      MaterialPageRoute<void>(
-        builder: (_) => _AdminNotificationsFullScreen(
-          userId: widget.userId,
-          onOpenLink: (link) {
-            if (link != null && link.isNotEmpty) bellContext.go(link);
-          },
-        ),
-      ),
-    )
+          MaterialPageRoute<void>(
+            builder: (_) => _AdminNotificationsFullScreen(
+              userId: widget.userId,
+              onOpenLink: (link) {
+                if (link != null && link.isNotEmpty) bellContext.go(link);
+              },
+            ),
+          ),
+        )
         .whenComplete(() => _isOpen = false);
   }
 
@@ -128,7 +144,8 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
                         color: AppColors.error,
                         shape: BoxShape.circle,
                       ),
-                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      constraints:
+                          const BoxConstraints(minWidth: 18, minHeight: 18),
                       child: Text(
                         unreadCount > 99 ? '99+' : unreadCount.toString(),
                         style: GoogleFonts.poppins(
@@ -178,8 +195,8 @@ class _NotificationPanel extends ConsumerWidget {
       onTap: () {},
       child: CompositedTransformFollower(
         link: layerLink,
-        offset: const Offset(-320, 8),
-        targetAnchor: Alignment.topRight,
+        offset: const Offset(0, 8),
+        targetAnchor: Alignment.bottomRight,
         followerAnchor: Alignment.topRight,
         child: Material(
           elevation: 16,
@@ -192,9 +209,7 @@ class _NotificationPanel extends ConsumerWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context)
-                    .dividerColor
-                    .withValues(alpha: 0.3),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
               ),
             ),
             child: _NotificationPanelBody(
@@ -304,7 +319,7 @@ class _NotificationModal extends ConsumerWidget {
         height: 620,
         decoration: BoxDecoration(
           border: Border.all(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            color: Theme.of(context).dividerColor.withOpacity(0.3),
           ),
         ),
         child: _NotificationPanelBody(
@@ -443,16 +458,21 @@ class _NotificationPanelBody extends ConsumerWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 24,
             height: 24,
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: readFilter,
                 isDense: true,
                 items: const [
-                  DropdownMenuItem(value: 'all', child: Text('All', style: TextStyle(fontSize: 12))),
-                  DropdownMenuItem(value: 'unread', child: Text('Unread', style: TextStyle(fontSize: 12))),
-                  DropdownMenuItem(value: 'read', child: Text('Read', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(
+                      value: 'all',
+                      child: Text('All', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(
+                      value: 'unread',
+                      child: Text('Unread', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(
+                      value: 'read',
+                      child: Text('Read', style: TextStyle(fontSize: 12))),
                 ],
                 onChanged: (v) {
                   if (v != null) onReadFilterChanged(v);
@@ -483,8 +503,8 @@ class _NotificationPanelBody extends ConsumerWidget {
     );
   }
 
-  Widget _buildList(
-      BuildContext context, WidgetRef ref, List<AppNotification> notifications) {
+  Widget _buildList(BuildContext context, WidgetRef ref,
+      List<AppNotification> notifications) {
     if (notifications.isEmpty) {
       return Center(
         child: Column(
@@ -581,8 +601,9 @@ class _NotificationItem extends StatelessWidget {
                   Text(
                     notification.title,
                     style: GoogleFonts.poppins(
-                      fontWeight:
-                          notification.isRead ? FontWeight.w500 : FontWeight.w600,
+                      fontWeight: notification.isRead
+                          ? FontWeight.w500
+                          : FontWeight.w600,
                       fontSize: 13,
                     ),
                     maxLines: 1,

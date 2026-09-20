@@ -191,7 +191,7 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.bisuBlue700.withValues(alpha: .12),
+            color: AppColors.bisuBlue700.withOpacity(.12),
             borderRadius: BorderRadius.circular(15),
           ),
           child:
@@ -247,7 +247,7 @@ class _BatchAlumniScreenState extends ConsumerState<BatchAlumniScreen> {
             width: 88,
             height: 88,
             decoration: BoxDecoration(
-              color: AppColors.bisuBlue700.withValues(alpha: .12),
+              color: AppColors.bisuBlue700.withOpacity(.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.school_outlined,
@@ -328,7 +328,7 @@ class _BatchAlumniTableSource extends DataTableSource {
           children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
+              backgroundColor: AppColors.bisuBlue700.withOpacity(.12),
               child: Text(
                 _initials(name),
                 style: const TextStyle(
@@ -401,7 +401,7 @@ class _BatchAlumniTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
+          backgroundColor: AppColors.bisuBlue700.withOpacity(.12),
           child: Text(_initials(name),
               style: const TextStyle(
                   color: AppColors.bisuBlue700, fontWeight: FontWeight.bold)),
@@ -474,7 +474,7 @@ class _ViewAlumniDialog extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.bisuBlue700.withValues(alpha: .12),
+            backgroundColor: AppColors.bisuBlue700.withOpacity(.12),
             child: Text(_initials(name),
                 style: const TextStyle(
                     color: AppColors.bisuBlue700,
