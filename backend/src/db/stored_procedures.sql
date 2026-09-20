@@ -1778,7 +1778,14 @@ END;
 DROP PROCEDURE IF EXISTS sp_auth_sessions_get_valid;
 CREATE PROCEDURE sp_auth_sessions_get_valid(IN p_token_hash CHAR(64))
 BEGIN
-  SELECT s.*, u.role, u.email, u.full_name FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=p_token_hash AND s.revoked=0 AND s.expires_at > NOW() AND u.is_deleted=0 LIMIT 1;
+  SELECT u.*, s.user_id, s.expires_at, s.revoked
+  FROM auth_sessions s
+  JOIN users u ON u.id=s.user_id
+  WHERE s.token_hash=p_token_hash
+    AND s.revoked=0
+    AND s.expires_at > NOW()
+    AND u.is_deleted=0
+  LIMIT 1;
 END;
 
 -- ============================================================

@@ -88,7 +88,24 @@ async function authenticate(request, response, next) {
         [tokenHash],
       );
     }
-    const row = rows[0];
+    let row = rows[0];
+    // Older deployments of sp_auth_sessions_get_valid selected `s.*` first,
+    // so `id` was the session id and only a few user columns were returned.
+    // Hydrate the complete user until that procedure is redeployed.
+    if (row?.user_id && row.id !== row.user_id) {
+      const userRows = await mysql.query(
+        'SELECT * FROM users WHERE id = ? AND is_deleted = 0 LIMIT 1',
+        [row.user_id],
+      );
+      row = userRows[0]
+        ? {
+            ...userRows[0],
+            user_id: row.user_id,
+            expires_at: row.expires_at,
+            revoked: row.revoked,
+          }
+        : null;
+    }
     if (!row || row.revoked === 1 || new Date(row.expires_at) < new Date()) {
       return response.status(401).json({
         error: 'invalid_token',
