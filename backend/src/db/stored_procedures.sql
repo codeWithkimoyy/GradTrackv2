@@ -585,7 +585,7 @@ BEGIN
     employment_type = COALESCE(p_employment_type, employment_type),
     salary_range = COALESCE(p_salary_range, salary_range),
     date_hired = COALESCE(p_date_hired, date_hired),
-    end_date = p_end_date,
+    end_date = COALESCE(p_end_date, end_date),
     country = COALESCE(p_country, country),
     province = COALESCE(p_province, province),
     city = COALESCE(p_city, city),
@@ -735,7 +735,7 @@ BEGIN
     work_setup = COALESCE(p_work_setup, work_setup),
     description = COALESCE(p_description, description),
     start_date = COALESCE(p_start_date, start_date),
-    end_date = p_end_date,
+    end_date = COALESCE(p_end_date, end_date),
     is_current = COALESCE(p_is_current, is_current),
     visibility = COALESCE(p_visibility, visibility)
   WHERE id=p_id AND is_deleted=0;
@@ -835,8 +835,8 @@ BEGIN
     description = COALESCE(p_description, description),
     target_graduation_year = COALESCE(p_target_graduation_year, target_graduation_year),
     target_batch_year = COALESCE(p_target_batch_year, target_batch_year),
-    opening_date = p_opening_date,
-    closing_date = p_closing_date,
+    opening_date = COALESCE(p_opening_date, opening_date),
+    closing_date = COALESCE(p_closing_date, closing_date),
     status = COALESCE(p_status, status),
     allow_update = COALESCE(p_allow_update, allow_update),
     visible_batches_json = COALESCE(p_visible_batches_json, visible_batches_json),

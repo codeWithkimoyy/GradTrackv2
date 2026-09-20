@@ -61,6 +61,23 @@ int? academicYearStart(String? value) =>
 String academicYearLabel(int startYear) =>
     '$startYear\u2013${startYear + 1}';
 
+List<String> academicYearOptions({
+  required int firstStartYear,
+  required int lastStartYear,
+  String? include,
+}) {
+  final options = [
+    for (var year = lastStartYear; year >= firstStartYear; year--)
+      academicYearLabel(year),
+  ];
+  final stored = (include ?? '').trim();
+  if (stored.isNotEmpty) {
+    final normalized = displayAcademicYear(stored);
+    if (!options.contains(normalized)) options.add(normalized);
+  }
+  return options;
+}
+
 /// Human label for a graduation batch header, e.g. "S.Y. 2025–2026".
 /// Legacy alumni without an academic year are shown under
 /// "Academic Year Not Specified".

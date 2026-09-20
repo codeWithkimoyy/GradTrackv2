@@ -1,6 +1,6 @@
 // Serves the built APK over LAN so a phone on same Wi-Fi can download without USB.
 // Usage: node serve_apk.js  (then open http://<PC-IP>:8080 on phone)
-// Boss Kim — now serves v1.0.2 (versionCode 3, targetSdk 34, minSdk 21) with robust headers, HTML landing, and split-ABI support.
+// Boss Kim — now serves v1.0.2 (versionCode 3, targetSdk 36, minSdk 21) with robust headers, HTML landing, and split-ABI support.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -40,7 +40,6 @@ function serveFile(res, filePath, fileName) {
     'Content-Length': stat.size,
     'Content-Disposition': `attachment; filename="${fileName}"`,
     'Cache-Control': 'no-cache',
-    'Accept-Ranges': 'bytes',
     'Access-Control-Allow-Origin': '*',
   });
   const stream = fs.createReadStream(filePath);
@@ -86,7 +85,7 @@ function landingHtml() {
   ${splitLinks}
   <h3>Why install fails &amp; fixes</h3>
   <ul>
-    <li><strong>App not installed / Package appears invalid</strong> — Download was truncated (use stable Wi-Fi, re-download). New build is signed v2+v3 (minSdk 21 = Android 5.0+, targetSdk 34). If your phone is Android 4.x, cannot install.</li>
+    <li><strong>App not installed / Package appears invalid</strong> — Download was truncated (use stable Wi-Fi, re-download). New build is signed v2+v3 (minSdk 21 = Android 5.0+, targetSdk 36). If your phone is Android 4.x, cannot install.</li>
     <li><strong>App not installed as package conflicts</strong> — Uninstall previous <code>com.gradtracker.app</code> first: <code>Settings → Apps → GradTrack → Uninstall</code>. Debug vs release have different signatures and <em>must not</em> coexist. Then try <code>adb uninstall com.gradtracker.app</code>.</li>
     <li><strong>Play Protect blocks install</strong> — Tap <em>Install anyway</em> / disable Play Protect temporarily, or enable <code>Install unknown apps</code> for your browser/file manager (Chrome → Allow).</li>
     <li><strong>Storage</strong> — Need ~150 MB free for arm64 (32 MB apk + unpack). Universal needs 300 MB. Clear cache if needed.</li>
@@ -99,7 +98,7 @@ function landingHtml() {
     <li>Uninstall any old GradTrack first</li>
     <li>Re-download and tap APK in file manager (not just browser preview)</li>
   </ol>
-  <p>APK details: <code>package=com.gradtracker.app</code>, <code>compileSdk 36</code>, <code>targetSdk 34</code>, <code>minSdk 21 (effective 24 via libs)</code>, signed release (CN=GradTrack, BISU Bilar), v2+v3 — <code>78.4 MB universal / 32.4 MB arm64</code></p>
+  <p>APK details: <code>package=com.gradtracker.app</code>, <code>compileSdk 36</code>, <code>targetSdk 36</code>, <code>minSdk 21 (effective 24 via libs)</code>, signed release (CN=GradTrack, BISU Bilar), v2+v3 — <code>78.4 MB universal / 32.4 MB arm64</code></p>
 </div>
 <div class="card">
   <h3>Direct links</h3>
@@ -132,7 +131,7 @@ const server = http.createServer((req, res) => {
   // APK routes
   let filePath = null;
   let fileName = null;
-  if (url === '/apk/universal' || url === '/app' || url === '/app-release.apk' || url === '/GradTrack.apk' || url.startsWith('/app')) {
+  if (url === '/apk/universal' || url === '/app' || url === '/app-release.apk' || url === '/GradTrack.apk') {
     filePath = UNIVERSAL_APK;
     fileName = 'GradTrack-v1.0.2+3-universal.apk';
   } else if (url === '/apk/arm64' || url === '/apk/app-arm64-v8a-release.apk') {
@@ -163,7 +162,6 @@ const server = http.createServer((req, res) => {
         'Content-Type': 'application/vnd.android.package-archive',
         'Content-Length': stat.size,
         'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Accept-Ranges': 'bytes',
         'Access-Control-Allow-Origin': '*',
       });
       return res.end();
@@ -176,7 +174,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   const ips = getLocalIps();
-  console.log(`\n=== GradTrack APK server v1.0.2+3 (targetSdk 34, minSdk 21) ===`);
+  console.log(`\n=== GradTrack APK server v1.0.2+3 (targetSdk 36, minSdk 21) ===`);
   console.log(`Universal APK: ${UNIVERSAL_APK} (${safeStat(UNIVERSAL_APK) ? (safeStat(UNIVERSAL_APK).size / (1024 * 1024)).toFixed(1) + ' MB' : 'MISSING'})`);
   console.log(`Listening on port ${PORT}`);
   ips.forEach((ip) => console.log(`  http://${ip}:${PORT}/  -> download on phone`));
