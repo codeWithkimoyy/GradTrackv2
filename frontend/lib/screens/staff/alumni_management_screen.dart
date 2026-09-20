@@ -962,10 +962,11 @@ class _AddAlumniDialogState extends State<_AddAlumniDialog> {
   /// Same range as the Alumni-module batch grid.
   static const int _firstBatchYear = 2020;
 
-  List<String> get _batchOptions => [
-        for (var year = (DateTime.now().year - 1); year >= _firstBatchYear; year--)
-          academicYearLabel(year),
-      ];
+  List<String> get _batchOptions => academicYearOptions(
+        firstStartYear: _firstBatchYear,
+        lastStartYear: DateTime.now().year - 1,
+        include: widget.existing?.academicYearGraduated,
+      );
 
   /// Matches a stored academic-year value to a dropdown option. Stored
   /// values may use a hyphen ("2023-2024") while options use the display

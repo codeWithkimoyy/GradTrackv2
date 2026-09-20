@@ -34,14 +34,30 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() => setState(() {}));
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _closePanel();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {});
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _setTypeFilter(NotificationType? value) {
+    setState(() => _typeFilter = value);
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _setReadFilter(String value) {
+    setState(() => _readFilter = value);
+    _overlayEntry?.markNeedsBuild();
   }
 
   void _togglePanel() {
@@ -65,8 +81,8 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
         typeFilter: _typeFilter,
         readFilter: _readFilter,
         searchQuery: _searchController.text,
-        onTypeFilterChanged: (t) => setState(() => _typeFilter = t),
-        onReadFilterChanged: (r) => setState(() => _readFilter = r),
+        onTypeFilterChanged: _setTypeFilter,
+        onReadFilterChanged: _setReadFilter,
         searchController: _searchController,
       ),
     );
