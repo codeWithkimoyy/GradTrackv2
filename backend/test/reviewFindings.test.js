@@ -68,10 +68,22 @@ test('partial-update procedures preserve omitted date fields', () => {
     path.join(__dirname, '../src/db/procedures.js'),
     'utf8',
   );
+  const createProcedure = sql.match(
+    /CREATE PROCEDURE sp_surveys_create\([\s\S]*?\nEND;/,
+  )?.[0];
+  const updateProcedure = sql.match(
+    /CREATE PROCEDURE sp_surveys_update\([\s\S]*?\nEND;/,
+  )?.[0];
 
-  assert.match(sql, /opening_date\s*=\s*IF\(p_clear_opening_date=1, NULL, COALESCE\(p_opening_date, opening_date\)\)/);
-  assert.match(sql, /closing_date\s*=\s*IF\(p_clear_closing_date=1, NULL, COALESCE\(p_closing_date, closing_date\)\)/);
-  assert.match(sql, /visible_batches_json\s*=\s*IF\(p_clear_visible_batches=1, NULL, COALESCE\(p_visible_batches_json, visible_batches_json\)\)/);
+  assert.ok(createProcedure);
+  assert.ok(updateProcedure);
+  assert.doesNotMatch(createProcedure, /p_clear_/);
+  assert.match(updateProcedure, /IN p_clear_opening_date TINYINT/);
+  assert.match(updateProcedure, /IN p_clear_closing_date TINYINT/);
+  assert.match(updateProcedure, /IN p_clear_visible_batches TINYINT/);
+  assert.match(updateProcedure, /opening_date\s*=\s*IF\(p_clear_opening_date=1, NULL, COALESCE\(p_opening_date, opening_date\)\)/);
+  assert.match(updateProcedure, /closing_date\s*=\s*IF\(p_clear_closing_date=1, NULL, COALESCE\(p_closing_date, closing_date\)\)/);
+  assert.match(updateProcedure, /visible_batches_json\s*=\s*IF\(p_clear_visible_batches=1, NULL, COALESCE\(p_visible_batches_json, visible_batches_json\)\)/);
   assert.match(procedures, /data\.opening_date === null \|\| data\.openingDate === null \? 1 : 0/);
   assert.match(procedures, /data\.closing_date === null \|\| data\.closingDate === null \? 1 : 0/);
   assert.match(procedures, /data\.visible_batches_json === null \|\| data\.visibleBatches === null\s+\? 1\s+: 0/);
