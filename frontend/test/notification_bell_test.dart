@@ -50,9 +50,6 @@ void main() {
 
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
-    // The existing compact read-filter dropdown overflows independently of
-    // the overlay state regression covered here.
-    tester.takeException();
     expect(find.text('System notice'), findsOneWidget);
     expect(find.text('Employment notice'), findsOneWidget);
 

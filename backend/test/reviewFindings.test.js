@@ -64,13 +64,78 @@ test('partial-update procedures preserve omitted date fields', () => {
     path.join(__dirname, '../src/db/stored_procedures.sql'),
     'utf8',
   );
+  const procedures = fs.readFileSync(
+    path.join(__dirname, '../src/db/procedures.js'),
+    'utf8',
+  );
 
-  assert.match(sql, /opening_date\s*=\s*COALESCE\(p_opening_date, opening_date\)/);
-  assert.match(sql, /closing_date\s*=\s*COALESCE\(p_closing_date, closing_date\)/);
+  assert.match(sql, /opening_date\s*=\s*IF\(p_clear_opening_date=1, NULL, COALESCE\(p_opening_date, opening_date\)\)/);
+  assert.match(sql, /closing_date\s*=\s*IF\(p_clear_closing_date=1, NULL, COALESCE\(p_closing_date, closing_date\)\)/);
+  assert.match(sql, /visible_batches_json\s*=\s*IF\(p_clear_visible_batches=1, NULL, COALESCE\(p_visible_batches_json, visible_batches_json\)\)/);
+  assert.match(procedures, /data\.opening_date === null \|\| data\.openingDate === null \? 1 : 0/);
+  assert.match(procedures, /data\.closing_date === null \|\| data\.closingDate === null \? 1 : 0/);
+  assert.match(procedures, /data\.visible_batches_json === null \|\| data\.visibleBatches === null\s+\? 1\s+: 0/);
   assert.match(sql, /end_date\s*=\s*COALESCE\(p_end_date, end_date\)/g);
   assert.equal(
     [...sql.matchAll(/end_date\s*=\s*COALESCE\(p_end_date, end_date\)/g)].length,
     2,
+  );
+});
+
+test('clearing current employment preserves the excluded legacy job', () => {
+  const sql = fs.readFileSync(
+    path.join(__dirname, '../src/db/stored_procedures.sql'),
+    'utf8',
+  );
+  const route = fs.readFileSync(
+    path.join(__dirname, '../src/routes/employment.js'),
+    'utf8',
+  );
+
+  assert.match(
+    sql,
+    /UPDATE jobs SET is_current=0 WHERE created_by=p_user_id AND id <> p_exclude_id AND is_deleted=0/,
+  );
+  assert.match(
+    route,
+    /UPDATE jobs SET is_current = 0 WHERE created_by = \? AND id <> \? AND is_deleted = 0', \[userId, id\]/,
+  );
+});
+
+test('bulk alumni notifications retain their recipient role', () => {
+  const sql = fs.readFileSync(
+    path.join(__dirname, '../src/db/stored_procedures.sql'),
+    'utf8',
+  );
+
+  assert.match(
+    sql,
+    /INSERT INTO notifications \(id, user_id, recipient_role, type, title, description\)\s+SELECT UUID\(\), id, 'alumni', p_type, p_title, p_description/,
+  );
+});
+
+test('survey batch filters use MariaDB-compatible JSON candidates', () => {
+  const sql = fs.readFileSync(
+    path.join(__dirname, '../src/db/stored_procedures.sql'),
+    'utf8',
+  );
+  const compatibleCandidates = sql.match(
+    /JSON_CONTAINS\(visible_batches_json, JSON_ARRAY\(p_graduation_year\)\)/g,
+  );
+
+  assert.equal(compatibleCandidates?.length, 2);
+  assert.doesNotMatch(sql, /CAST\(p_graduation_year AS JSON\)/);
+});
+
+test('password reset cleanup removes expired or consumed codes', () => {
+  const sql = fs.readFileSync(
+    path.join(__dirname, '../src/db/stored_procedures.sql'),
+    'utf8',
+  );
+
+  assert.match(
+    sql,
+    /DELETE FROM password_resets WHERE expires_at < NOW\(\) OR used=1/,
   );
 });
 
@@ -81,6 +146,10 @@ test('Android release configuration keeps secrets out of source control', () => 
     'utf8',
   );
   const gitignore = fs.readFileSync(path.join(androidRoot, '.gitignore'), 'utf8');
+  const manifest = fs.readFileSync(
+    path.join(androidRoot, 'app/src/main/AndroidManifest.xml'),
+    'utf8',
+  );
 
   assert.match(gradle, /targetSdk\s*=\s*36/);
   assert.doesNotMatch(gradle, /(?:storePassword|keyPassword)\s*=\s*"[^"$]+"/);
@@ -88,4 +157,18 @@ test('Android release configuration keeps secrets out of source control', () => 
   assert.match(gitignore, /^\.env$/m);
   assert.match(gitignore, /^!\.env\.example$/m);
   assert.match(gitignore, /^key\.properties$/m);
+  assert.match(manifest, /tools:replace="android:required"/);
+});
+
+test('APK stream failures do not append text to a partial download', () => {
+  const server = fs.readFileSync(
+    path.join(__dirname, '../../serve_apk.js'),
+    'utf8',
+  );
+
+  assert.match(server, /if \(res\.headersSent\) \{\s*res\.destroy\(err\);\s*return;/);
+  assert.match(
+    server,
+    /res\.writeHead\(500, \{ 'Content-Type': 'text\/plain; charset=utf-8' \}\)/,
+  );
 });

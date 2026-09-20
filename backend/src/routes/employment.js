@@ -200,7 +200,7 @@ router.post('/', async (req, res, next) => {
         await db.users.setEmploymentStatus(userId, 'employed');
       } catch (_) {
         await mysql.query('UPDATE employment_records SET is_current = 0 WHERE user_id = ? AND id <> ? AND is_deleted = 0', [userId, id]);
-        await mysql.query('UPDATE jobs SET is_current = 0 WHERE created_by = ? AND is_deleted = 0', [userId]);
+        await mysql.query('UPDATE jobs SET is_current = 0 WHERE created_by = ? AND id <> ? AND is_deleted = 0', [userId, id]);
         await mysql.query("UPDATE users SET employment_status = 'employed' WHERE id = ?", [userId]);
       }
       let existing;

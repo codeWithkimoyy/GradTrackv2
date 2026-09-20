@@ -605,7 +605,7 @@ DROP PROCEDURE IF EXISTS sp_employment_clear_current;
 CREATE PROCEDURE sp_employment_clear_current(IN p_user_id VARCHAR(128), IN p_exclude_id VARCHAR(36))
 BEGIN
   UPDATE employment_records SET is_current=0 WHERE user_id=p_user_id AND id <> p_exclude_id AND is_deleted=0;
-  UPDATE jobs SET is_current=0 WHERE created_by=p_user_id AND is_deleted=0;
+  UPDATE jobs SET is_current=0 WHERE created_by=p_user_id AND id <> p_exclude_id AND is_deleted=0;
 END;
 
 DROP PROCEDURE IF EXISTS sp_employment_restore;
@@ -764,10 +764,13 @@ CREATE PROCEDURE sp_surveys_create(
   IN p_target_graduation_year INT,
   IN p_target_batch_year INT,
   IN p_opening_date DATETIME,
+  IN p_clear_opening_date TINYINT,
   IN p_closing_date DATETIME,
+  IN p_clear_closing_date TINYINT,
   IN p_status ENUM('draft','published','closed'),
   IN p_allow_update TINYINT,
   IN p_visible_batches_json JSON,
+  IN p_clear_visible_batches TINYINT,
   IN p_questions_json JSON,
   IN p_visibility ENUM('public','private'),
   IN p_is_active TINYINT,
@@ -801,7 +804,7 @@ BEGIN
       status='published' AND visibility='public' AND is_active=1
       AND (opening_date IS NULL OR opening_date <= NOW())
       AND (closing_date IS NULL OR closing_date >= NOW())
-      AND (visible_batches_json IS NULL OR JSON_LENGTH(visible_batches_json)=0 OR (p_graduation_year IS NOT NULL AND JSON_CONTAINS(visible_batches_json, CAST(p_graduation_year AS JSON))))
+      AND (visible_batches_json IS NULL OR JSON_LENGTH(visible_batches_json)=0 OR (p_graduation_year IS NOT NULL AND JSON_CONTAINS(visible_batches_json, JSON_ARRAY(p_graduation_year))))
     ))
   ORDER BY updated_at DESC, created_at DESC;
 END;
@@ -835,11 +838,11 @@ BEGIN
     description = COALESCE(p_description, description),
     target_graduation_year = COALESCE(p_target_graduation_year, target_graduation_year),
     target_batch_year = COALESCE(p_target_batch_year, target_batch_year),
-    opening_date = COALESCE(p_opening_date, opening_date),
-    closing_date = COALESCE(p_closing_date, closing_date),
+    opening_date = IF(p_clear_opening_date=1, NULL, COALESCE(p_opening_date, opening_date)),
+    closing_date = IF(p_clear_closing_date=1, NULL, COALESCE(p_closing_date, closing_date)),
     status = COALESCE(p_status, status),
     allow_update = COALESCE(p_allow_update, allow_update),
-    visible_batches_json = COALESCE(p_visible_batches_json, visible_batches_json),
+    visible_batches_json = IF(p_clear_visible_batches=1, NULL, COALESCE(p_visible_batches_json, visible_batches_json)),
     questions_json = COALESCE(p_questions_json, questions_json),
     visibility = COALESCE(p_visibility, visibility),
     is_active = COALESCE(p_is_active, is_active)
@@ -1488,8 +1491,8 @@ CREATE PROCEDURE sp_notifications_create_for_alumni_bulk(
   IN p_description TEXT
 )
 BEGIN
-  INSERT INTO notifications (id, user_id, type, title, description)
-  SELECT UUID(), id, p_type, p_title, p_description FROM users WHERE role='alumni' AND is_deleted=0 AND (disabled IS NULL OR disabled=0);
+  INSERT INTO notifications (id, user_id, recipient_role, type, title, description)
+  SELECT UUID(), id, 'alumni', p_type, p_title, p_description FROM users WHERE role='alumni' AND is_deleted=0 AND (disabled IS NULL OR disabled=0);
 END;
 
 DROP PROCEDURE IF EXISTS sp_notifications_get_by_id;
@@ -1715,7 +1718,7 @@ END;
 DROP PROCEDURE IF EXISTS sp_password_resets_cleanup_expired;
 CREATE PROCEDURE sp_password_resets_cleanup_expired()
 BEGIN
-  DELETE FROM password_resets WHERE expires_at < NOW() AND used=1;
+  DELETE FROM password_resets WHERE expires_at < NOW() OR used=1;
 END;
 
 -- ============================================================
@@ -1853,7 +1856,7 @@ BEGIN
     IF p_graduation_year IS NULL THEN
       SELECT COUNT(*) AS c FROM surveys WHERE is_deleted=0 AND (visible_batches_json IS NULL OR JSON_LENGTH(visible_batches_json)=0);
     ELSE
-      SELECT COUNT(*) AS c FROM surveys WHERE is_deleted=0 AND (visible_batches_json IS NULL OR JSON_LENGTH(visible_batches_json)=0 OR JSON_CONTAINS(visible_batches_json, CAST(p_graduation_year AS JSON)));
+      SELECT COUNT(*) AS c FROM surveys WHERE is_deleted=0 AND (visible_batches_json IS NULL OR JSON_LENGTH(visible_batches_json)=0 OR JSON_CONTAINS(visible_batches_json, JSON_ARRAY(p_graduation_year)));
     END IF;
   ELSE
     SELECT COUNT(*) AS c FROM surveys WHERE is_deleted=0;
