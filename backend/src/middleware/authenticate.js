@@ -3,6 +3,11 @@ const db = require('../db/procedures');
 const passwords = require('../config/passwords');
 
 // Row -> camelCase public user shape (never includes password_hash).
+// isOn accepts MySQL 0/1 and Postgres true/false/SMALLINT so both DBs work.
+function isOn(value) {
+  return value === 1 || value === true || value === '1' || value === 't' || value === 'true';
+}
+
 function toPublicUser(row) {
   if (!row) return null;
   return {
@@ -32,11 +37,11 @@ function toPublicUser(row) {
     socialLinks: safeJson(row.social_links_json, {}),
     resume: safeJson(row.resume_json, null),
     employmentStatus: row.employment_status ?? 'unemployed',
-    isVerified: row.is_verified === 1,
-    emailVerified: row.email_verified === 1,
-    disabled: row.disabled === 1,
-    approved: row.is_approved === 1,
-    hasLoggedIn: row.has_logged_in === 1,
+    isVerified: isOn(row.is_verified),
+    emailVerified: isOn(row.email_verified),
+    disabled: isOn(row.disabled),
+    approved: isOn(row.is_approved),
+    hasLoggedIn: isOn(row.has_logged_in),
     lastLoginAt: row.last_login_at
       ? new Date(row.last_login_at).toISOString()
       : null,
@@ -106,13 +111,13 @@ async function authenticate(request, response, next) {
           }
         : null;
     }
-    if (!row || row.revoked === 1 || new Date(row.expires_at) < new Date()) {
+    if (!row || isOn(row.revoked) || new Date(row.expires_at) < new Date()) {
       return response.status(401).json({
         error: 'invalid_token',
         message: 'The session has expired. Sign in again.',
       });
     }
-    if (row.disabled === 1) {
+    if (isOn(row.disabled)) {
       return response.status(403).json({
         error: 'account_disabled',
         message: 'This account has been disabled. Contact the administrator.',

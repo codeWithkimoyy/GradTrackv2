@@ -42,13 +42,23 @@ router.put('/', authenticate, requireAdmin, async (req, res, next) => {
     }
     for (const [key, value] of Object.entries(body)) {
       if (!/^[A-Za-z0-9_.-]{1,128}$/.test(key)) continue;
+      const payload = JSON.stringify(value);
       // eslint-disable-next-line no-await-in-loop
-      await mysql.query(
-        `INSERT INTO system_settings (setting_key, value_json)
-         VALUES (?, ?)
-         ON DUPLICATE KEY UPDATE value_json = VALUES(value_json)`,
-        [key, JSON.stringify(value)],
-      );
+      if (mysql.isPostgres) {
+        await mysql.query(
+          `INSERT INTO system_settings (setting_key, value_json)
+           VALUES (?, ?)
+           ON CONFLICT (setting_key) DO UPDATE SET value_json = EXCLUDED.value_json`,
+          [key, payload],
+        );
+      } else {
+        await mysql.query(
+          `INSERT INTO system_settings (setting_key, value_json)
+           VALUES (?, ?)
+           ON DUPLICATE KEY UPDATE value_json = VALUES(value_json)`,
+          [key, payload],
+        );
+      }
     }
     return res.json({ updated: true });
   } catch (err) {

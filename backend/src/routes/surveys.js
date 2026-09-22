@@ -149,46 +149,74 @@ async function syncQuestions(surveyId, questions) {
     return { question, id };
   });
 
-  await mysql.query(
-    `UPDATE survey_question_options o
-     INNER JOIN survey_questions q ON q.id = o.question_id
-     SET o.is_deleted = 1, o.deleted_at = NOW()
-     WHERE q.survey_id = ? AND o.is_deleted = 0`,
-    [surveyId]
-  );
+  if (mysql.isPostgres) {
+    await mysql.query(
+      `UPDATE survey_question_options AS o
+       SET is_deleted = 1, deleted_at = NOW()
+       FROM survey_questions AS q
+       WHERE q.id = o.question_id AND q.survey_id = ? AND o.is_deleted = 0`,
+      [surveyId]
+    );
+  } else {
+    await mysql.query(
+      `UPDATE survey_question_options o
+       INNER JOIN survey_questions q ON q.id = o.question_id
+       SET o.is_deleted = 1, o.deleted_at = NOW()
+       WHERE q.survey_id = ? AND o.is_deleted = 0`,
+      [surveyId]
+    );
+  }
   await mysql.query('UPDATE survey_questions SET is_deleted = 1, deleted_at = NOW() WHERE survey_id = ? AND is_deleted = 0', [surveyId]);
 
   for (let i = 0; i < preparedQuestions.length; i++) {
     const { question: q, id: qid } = preparedQuestions[i];
     const type = normalizeType(q.type);
     const parentId = q.conditionalParentId || q.conditional_parent_id || null;
-    await mysql.query(
-      `INSERT INTO survey_questions
-        (id, survey_id, question_text, question_type, placeholder, character_limit, is_required, is_published, sort_order, conditional_parent_id, conditional_trigger_value, allow_other)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         survey_id = VALUES(survey_id), question_text = VALUES(question_text),
-         question_type = VALUES(question_type), placeholder = VALUES(placeholder),
-         character_limit = VALUES(character_limit), is_required = VALUES(is_required),
-         is_published = VALUES(is_published), sort_order = VALUES(sort_order),
-         conditional_parent_id = VALUES(conditional_parent_id),
-         conditional_trigger_value = VALUES(conditional_trigger_value),
-         allow_other = VALUES(allow_other), is_deleted = 0, deleted_at = NULL`,
-      [
-        qid,
-        surveyId,
-        sanitizeText(q.text || q.question_text || `Question ${i + 1}`, 2000),
-        type,
-        q.placeholder ? sanitizeText(q.placeholder, 300) : null,
-        q.characterLimit != null && Number.isFinite(Number(q.characterLimit)) ? Number(q.characterLimit) : null,
-        q.isRequired || q.required ? 1 : 0,
-        q.isPublished === false || q.is_published === false ? 0 : 1,
-        q.sortOrder != null ? Number(q.sortOrder) : i,
-        questionIdMap.get(parentId) || parentId,
-        q.conditionalTriggerValue || q.conditional_trigger_value || null,
-        q.allowOther || q.allow_other ? 1 : 0,
-      ]
-    );
+    const questionParams = [
+      qid,
+      surveyId,
+      sanitizeText(q.text || q.question_text || `Question ${i + 1}`, 2000),
+      type,
+      q.placeholder ? sanitizeText(q.placeholder, 300) : null,
+      q.characterLimit != null && Number.isFinite(Number(q.characterLimit)) ? Number(q.characterLimit) : null,
+      q.isRequired || q.required ? 1 : 0,
+      q.isPublished === false || q.is_published === false ? 0 : 1,
+      q.sortOrder != null ? Number(q.sortOrder) : i,
+      questionIdMap.get(parentId) || parentId,
+      q.conditionalTriggerValue || q.conditional_trigger_value || null,
+      q.allowOther || q.allow_other ? 1 : 0,
+    ];
+    if (mysql.isPostgres) {
+      await mysql.query(
+        `INSERT INTO survey_questions
+          (id, survey_id, question_text, question_type, placeholder, character_limit, is_required, is_published, sort_order, conditional_parent_id, conditional_trigger_value, allow_other)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (id) DO UPDATE SET
+           survey_id = EXCLUDED.survey_id, question_text = EXCLUDED.question_text,
+           question_type = EXCLUDED.question_type, placeholder = EXCLUDED.placeholder,
+           character_limit = EXCLUDED.character_limit, is_required = EXCLUDED.is_required,
+           is_published = EXCLUDED.is_published, sort_order = EXCLUDED.sort_order,
+           conditional_parent_id = EXCLUDED.conditional_parent_id,
+           conditional_trigger_value = EXCLUDED.conditional_trigger_value,
+           allow_other = EXCLUDED.allow_other, is_deleted = 0, deleted_at = NULL`,
+        questionParams
+      );
+    } else {
+      await mysql.query(
+        `INSERT INTO survey_questions
+          (id, survey_id, question_text, question_type, placeholder, character_limit, is_required, is_published, sort_order, conditional_parent_id, conditional_trigger_value, allow_other)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           survey_id = VALUES(survey_id), question_text = VALUES(question_text),
+           question_type = VALUES(question_type), placeholder = VALUES(placeholder),
+           character_limit = VALUES(character_limit), is_required = VALUES(is_required),
+           is_published = VALUES(is_published), sort_order = VALUES(sort_order),
+           conditional_parent_id = VALUES(conditional_parent_id),
+           conditional_trigger_value = VALUES(conditional_trigger_value),
+           allow_other = VALUES(allow_other), is_deleted = 0, deleted_at = NULL`,
+        questionParams
+      );
+    }
     const opts = Array.isArray(q.options) ? q.options : [];
     for (let j = 0; j < opts.length; j++) {
       const opt = opts[j];
@@ -198,15 +226,28 @@ async function syncQuestions(surveyId, questions) {
       const optionId = typeof opt === 'object' && opt.id && existingOptionIds.has(opt.id)
         ? opt.id
         : crypto.randomUUID();
-      await mysql.query(
-        `INSERT INTO survey_question_options (id, question_id, option_text, sort_order, is_other)
-         VALUES (?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-           question_id = VALUES(question_id), option_text = VALUES(option_text),
-           sort_order = VALUES(sort_order), is_other = VALUES(is_other),
-           is_deleted = 0, deleted_at = NULL`,
-        [optionId, qid, sanitizeText(text, 300), opt.sortOrder != null ? Number(opt.sortOrder) : j, isOther ? 1 : 0]
-      );
+      const optionParams = [optionId, qid, sanitizeText(text, 300), opt.sortOrder != null ? Number(opt.sortOrder) : j, isOther ? 1 : 0];
+      if (mysql.isPostgres) {
+        await mysql.query(
+          `INSERT INTO survey_question_options (id, question_id, option_text, sort_order, is_other)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT (id) DO UPDATE SET
+             question_id = EXCLUDED.question_id, option_text = EXCLUDED.option_text,
+             sort_order = EXCLUDED.sort_order, is_other = EXCLUDED.is_other,
+             is_deleted = 0, deleted_at = NULL`,
+          optionParams
+        );
+      } else {
+        await mysql.query(
+          `INSERT INTO survey_question_options (id, question_id, option_text, sort_order, is_other)
+           VALUES (?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             question_id = VALUES(question_id), option_text = VALUES(option_text),
+             sort_order = VALUES(sort_order), is_other = VALUES(is_other),
+             is_deleted = 0, deleted_at = NULL`,
+          optionParams
+        );
+      }
     }
     // if allowOther and no Other option exists, add it
     if ((q.allowOther || q.allow_other) && !opts.some((o) => {

@@ -394,20 +394,31 @@ router.post('/milestones', async (req, res, next) => {
     }
     const id =
       typeof body.id === 'string' && body.id ? body.id : crypto.randomUUID();
-    await mysql.query(
-      `INSERT INTO career_milestones (id, user_id, type, title, description, milestone_date)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE type = VALUES(type), title = VALUES(title),
-         description = VALUES(description), milestone_date = VALUES(milestone_date)`,
-      [
-        id,
-        userId,
-        typeof body.type === 'string' ? body.type : 'firstJob',
-        String(body.title),
-        body.description ? String(body.description) : null,
-        isoDate(body.date) ?? new Date().toISOString().slice(0, 10),
-      ],
-    );
+    const milestoneParams = [
+      id,
+      userId,
+      typeof body.type === 'string' ? body.type : 'firstJob',
+      String(body.title),
+      body.description ? String(body.description) : null,
+      isoDate(body.date) ?? new Date().toISOString().slice(0, 10),
+    ];
+    if (mysql.isPostgres) {
+      await mysql.query(
+        `INSERT INTO career_milestones (id, user_id, type, title, description, milestone_date)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (id) DO UPDATE SET type = EXCLUDED.type, title = EXCLUDED.title,
+           description = EXCLUDED.description, milestone_date = EXCLUDED.milestone_date`,
+        milestoneParams,
+      );
+    } else {
+      await mysql.query(
+        `INSERT INTO career_milestones (id, user_id, type, title, description, milestone_date)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE type = VALUES(type), title = VALUES(title),
+           description = VALUES(description), milestone_date = VALUES(milestone_date)`,
+        milestoneParams,
+      );
+    }
     const rows = await mysql.query(
       'SELECT * FROM career_milestones WHERE id = ? LIMIT 1',
       [id],

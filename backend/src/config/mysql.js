@@ -1,3 +1,18 @@
+// Dual-database entry point (keeps the historic `require('../config/mysql')`
+// import path working). When DATABASE_URL (Neon Postgres) is set, every
+// `query` call is served by src/config/pg.js with MySQL-dialect translation.
+// Otherwise the original MySQL pool is used. Nothing is deleted.
+let pg = null;
+try {
+  pg = require('./pg');
+} catch (_) {
+  pg = null;
+}
+
+const usePostgres = Boolean(
+  pg && pg.configured && (process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || process.env.POSTGRES_URL),
+);
+
 let mysql = null;
 try {
   mysql = require('mysql2/promise');
@@ -51,12 +66,20 @@ if (mysql) {
   }
 }
 
+const isPostgres = usePostgres;
+
 module.exports = {
   pool,
+  isPostgres,
+  get kind() {
+    return isPostgres ? 'postgres' : 'mysql';
+  },
   get isConnected() {
+    if (isPostgres) return pg.isConnected;
     return isConnected;
   },
   async query(sql, params = []) {
+    if (isPostgres) return pg.query(sql, params);
     if (!pool) {
       throw new Error('MySQL connection pool is not initialized.');
     }
@@ -72,6 +95,7 @@ module.exports = {
    *  - Auto-drains extra resultsets to avoid "commands out of sync"
    */
   async call(procedure, params = []) {
+    if (isPostgres) return pg.call(procedure, params);
     if (!pool) {
       throw new Error('MySQL connection pool is not initialized.');
     }
@@ -104,6 +128,7 @@ module.exports = {
    * Raw CALL that returns all resultsets (useful for procedures returning multiple SELECTs).
    */
   async callRaw(procedure, params = []) {
+    if (isPostgres) return pg.callRaw(procedure, params);
     if (!pool) {
       throw new Error('MySQL connection pool is not initialized.');
     }
@@ -113,6 +138,10 @@ module.exports = {
     return results;
   },
   async close() {
+    if (isPostgres) {
+      await pg.close();
+      return;
+    }
     if (pool) {
       await pool.end();
       pool = null;

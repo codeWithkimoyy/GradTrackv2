@@ -3,7 +3,7 @@ const express = require('express');
 const helmet = require('helmet');
 
 const env = require('./config/env');
-const { isConnected: isMySQLConnected } = require('./config/mysql');
+const db = require('./config/mysql');
 const profileRouter = require('./routes/profile');
 const uploadRouter = require('./routes/upload');
 const alumniRouter = require('./routes/alumni');
@@ -40,11 +40,14 @@ app.use(
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', (_request, response) => {
+  const kind = db.kind === 'postgres' ? 'PostgreSQL (Neon)' : 'MySQL';
   response.json({
     status: 'ok',
     service: 'gradtrack-backend',
-    mysqlConfigured: isMySQLConnected,
-    database: 'MySQL',
+    mysqlConfigured: db.isConnected,
+    dbConfigured: db.isConnected,
+    dbKind: db.kind,
+    database: kind,
   });
 });
 
@@ -52,7 +55,8 @@ app.get('/api', (_request, response) => {
   response.json({
     name: 'GradTrack API',
     version: '2.0.0',
-    database: 'MySQL',
+    database: db.kind === 'postgres' ? 'PostgreSQL (Neon)' : 'MySQL',
+    dbKind: db.kind,
   });
 });
 

@@ -14,10 +14,19 @@ const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:8080')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  process.env.NEON_DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  '';
+const dbKind = databaseUrl ? 'postgres' : 'mysql';
+
 module.exports = Object.freeze({
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port,
   corsOrigins,
+  dbKind,
+  databaseUrl,
   mysql: {
     host:
       process.env.MYSQL_HOST || process.env.SQL_HOST || 'localhost',

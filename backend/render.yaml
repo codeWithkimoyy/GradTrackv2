@@ -1,0 +1,55 @@
+# Render blueprint for the GradTrack MySQL-backed API.
+# Push this repo, then: Render Dashboard -> New -> Blueprint -> select repo.
+# Fill the secret values (SQL_PASS, MESSAGE_ENCRYPTION_KEY, SMTP_*) in the
+# Render dashboard — never commit them.
+services:
+  - type: web
+    name: gradtrack-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Point these at your existing MySQL host (the same values you use in SQLyog).
+      - key: SQL_HOST
+        sync: false
+      - key: SQL_PORT
+        value: 3306
+      - key: SQL_USER
+        sync: false
+      - key: SQL_PASS
+        sync: false
+      - key: SQL_DATABASE
+        sync: false
+      # Comma-separated list of allowed frontend origins (no wildcard in prod).
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MESSAGE_ENCRYPTION_KEY
+        sync: false
+      - key: GOOGLE_SIGN_IN_CLIENT_ID
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 465
+      - key: SMTP_SECURE
+        value: true
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false

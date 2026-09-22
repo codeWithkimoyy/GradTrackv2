@@ -230,38 +230,62 @@ router.post('/:id/messages', async (req, res, next) => {
         try { await db.conversations.markReadAlumni(conversationId); } catch (_) {}
       }
     } catch (_) {
-      await mysql.query(
-        `INSERT INTO conversations
-           (id, alumni_id, alumni_name, alumni_email, alumni_course,
-            participant_ids_json, last_message, last_message_time,
-            last_sender_id, unread_admin, unread_alumni)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-           alumni_name = VALUES(alumni_name),
-           alumni_email = VALUES(alumni_email),
-           alumni_course = VALUES(alumni_course),
-           participant_ids_json = VALUES(participant_ids_json),
-           last_message = VALUES(last_message),
-           last_message_time = VALUES(last_message_time),
-           last_sender_id = VALUES(last_sender_id),
-           unread_admin = unread_admin + VALUES(unread_admin),
-           unread_alumni = unread_alumni + VALUES(unread_alumni),
-           is_deleted = 0,
-           deleted_at = NULL`,
-        [
-          conversationId,
-          alumniId,
-          alumniName,
-          alumniEmail,
-          alumniCourse,
-          JSON.stringify(participantIds),
-          encryptedText || previewText,
-          now,
-          req.user.uid,
-          isAdmin ? 0 : 1,
-          isAdmin ? 1 : 0,
-        ],
-      );
+      const convParams = [
+        conversationId,
+        alumniId,
+        alumniName,
+        alumniEmail,
+        alumniCourse,
+        JSON.stringify(participantIds),
+        encryptedText || previewText,
+        now,
+        req.user.uid,
+        isAdmin ? 0 : 1,
+        isAdmin ? 1 : 0,
+      ];
+      if (mysql.isPostgres) {
+        await mysql.query(
+          `INSERT INTO conversations
+             (id, alumni_id, alumni_name, alumni_email, alumni_course,
+              participant_ids_json, last_message, last_message_time,
+              last_sender_id, unread_admin, unread_alumni)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT (id) DO UPDATE SET
+             alumni_name = EXCLUDED.alumni_name,
+             alumni_email = EXCLUDED.alumni_email,
+             alumni_course = EXCLUDED.alumni_course,
+             participant_ids_json = EXCLUDED.participant_ids_json,
+             last_message = EXCLUDED.last_message,
+             last_message_time = EXCLUDED.last_message_time,
+             last_sender_id = EXCLUDED.last_sender_id,
+             unread_admin = conversations.unread_admin + EXCLUDED.unread_admin,
+             unread_alumni = conversations.unread_alumni + EXCLUDED.unread_alumni,
+             is_deleted = 0,
+             deleted_at = NULL`,
+          convParams,
+        );
+      } else {
+        await mysql.query(
+          `INSERT INTO conversations
+             (id, alumni_id, alumni_name, alumni_email, alumni_course,
+              participant_ids_json, last_message, last_message_time,
+              last_sender_id, unread_admin, unread_alumni)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             alumni_name = VALUES(alumni_name),
+             alumni_email = VALUES(alumni_email),
+             alumni_course = VALUES(alumni_course),
+             participant_ids_json = VALUES(participant_ids_json),
+             last_message = VALUES(last_message),
+             last_message_time = VALUES(last_message_time),
+             last_sender_id = VALUES(last_sender_id),
+             unread_admin = unread_admin + VALUES(unread_admin),
+             unread_alumni = unread_alumni + VALUES(unread_alumni),
+             is_deleted = 0,
+             deleted_at = NULL`,
+          convParams,
+        );
+      }
       if (isAdmin) {
         await mysql.query('UPDATE conversations SET unread_admin = 0 WHERE id = ?', [conversationId]);
       } else {
